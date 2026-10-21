@@ -8,6 +8,9 @@ A prototype platform that routes AICTE approval applications through configurabl
 
 - Build plan: [docs/BUILD_PLAN.md](docs/BUILD_PLAN.md)
 - Progress and what is next: [docs/PROGRESS.md](docs/PROGRESS.md)
+- Foundation modules for deadlines, email and documents: [docs/FOUNDATIONS.md](docs/FOUNDATIONS.md)
+- Screen-by-screen layout brief: [docs/UI_PAGES.md](docs/UI_PAGES.md)
+- Pitch outline and limitations: [docs/PITCH.md](docs/PITCH.md), [docs/LIMITATIONS.md](docs/LIMITATIONS.md)
 - Instructions for coding agents: [AGENTS.md](AGENTS.md)
 
 ## Stack
@@ -72,6 +75,6 @@ server/
     http/            request context, idempotency
     seed/            synthetic seed data and the demo policy
   test/              Vitest API tests
-web/src/             React app (pages/, ui.tsx, api.ts, session.tsx)
+web/src/             React app (pages/, ui.tsx, api.ts, session.tsx, motion.tsx)
 docs/                build plan, progress, strategy notes
 ```

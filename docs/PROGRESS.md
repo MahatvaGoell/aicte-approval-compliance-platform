@@ -1,10 +1,10 @@
 # Progress
 
-Last updated: 21 Oct 2026 · Specification: [BUILD_PLAN.md](BUILD_PLAN.md) · Agent rules: [../AGENTS.md](../AGENTS.md)
+Last updated: 22 Oct 2026 · Specification: [BUILD_PLAN.md](BUILD_PLAN.md) · Agent rules: [../AGENTS.md](../AGENTS.md)
 
 | Milestone | Status |
 |---|---|
-| M1 — Auth, scopes, records, one complete workflow | **Done** (30 API tests passing; web screens built, browser check pending) |
+| M1 — Auth, scopes, records, one complete workflow | **Done** (web screens checked in the browser) |
 | M2 — Returns, re-scrutiny, all routes, classification, appeals, policy versioning | **Next** — prompt in [NEXT_PROMPT.md](NEXT_PROMPT.md) |
 | M3 — Deadlines, worker, notifications, escalation, demo clock | Not started |
 | M4 — EVC queue, scheduling, conflicts, reports | Not started |
@@ -26,7 +26,7 @@ Last updated: 21 Oct 2026 · Specification: [BUILD_PLAN.md](BUILD_PLAN.md) · Ag
 - **Audit**: `GET /api/v1/audit`, `POST /api/v1/audit/verify` (recomputes the chain).
 - **Seed** (`seed/base.ts`): 3 synthetic regions, 6 institutions, committees (scrutiny per region, EVC pool, SAC, SHC), 23 demo users, policy sources, published policy v1.
 
-### Tests (`server/test/`, 30 passing)
+### Tests (`server/test/`, M1 part)
 
 Full Only-Scrutiny journey; completion blocked without partial change (W03); route explanation; conditional route; no-match classification (W02); frozen snapshot (W05); recommendation does not decide (W06); institution view hides internal notes; audit coverage + chain verify; idempotent replay and key reuse (C01, C02); stale version and simultaneous commands (C03); full rollback on failure (C04); login errors, lockout, session required, CSRF, cookie flags; cross-institution, cross-region, unassigned member, admin/policy roles, auditor read-only (S01); revoked grant (S02); role switch; audit trigger and tamper detection.
 
@@ -34,9 +34,15 @@ Full Only-Scrutiny journey; completion blocked without partial change (W03); rou
 
 Login (demo account picker), shell with role-aware navigation, role switcher and demo banner; home ("My work" / institution's applications); application list with filters and paging; new/edit draft form with field errors; case page (action panel, route progress with rule explanation, checklist, recommendation, completion conditions, assignment, decision form, permitted actions with reasons, recommendations, submission summary, stage history, history timeline); audit log with integrity check. Loading, empty, error, unauthorised and retry states.
 
+## Added after M1
+
+- **One-click demo sign-in**: `POST /api/v1/auth/demo-login` (demo mode only, listed accounts only, 404 otherwise). The login page signs in when a role card is clicked.
+- **UI redesign**: warm light/dark themes with toggle, bundled fonts (`web/public/fonts`, SIL OFL), intro screen, Lenis smooth scrolling, staggered page entrance, sliding nav highlight, top loading bar (`web/src/motion.tsx`). All motion is off under `prefers-reduced-motion`. Page layout brief for designers: [UI_PAGES.md](UI_PAGES.md).
+- **Foundation modules for M3 and M5** (pure, tested, not wired yet): deadline calendar, email adapters, upload checks and private storage. See [FOUNDATIONS.md](FOUNDATIONS.md).
+- Pitch outline [PITCH.md](PITCH.md) and limitations draft [LIMITATIONS.md](LIMITATIONS.md).
+
 ## Known gaps and notes for the next milestones
 
-- Browser walkthrough of the web screens has not been done by the agent; the team is checking manually.
 - `evaluateCompletion` in `modules/workflow/workflow.ts` checks `findings` and `evc_visits` with a `to_regclass` fallback because those tables do not exist yet. **Replace with direct queries** once M2 (findings) and M4 (EVC) add the tables.
 - No deadlines yet; the case page shows "No deadline policy is configured for this step yet" (M3).
 - `outbox_events` are written but nothing consumes them yet (M3 worker).

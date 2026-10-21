@@ -20,6 +20,8 @@ Read [docs/BUILD_PLAN.md](docs/BUILD_PLAN.md) (the specification) and [docs/PROG
 - Schema changes: add a new numbered file in `server/migrations/` (do not edit `001_init.sql`).
 - Errors: throw `AppError` subclasses from `server/src/db.ts`; they become `{ error: { code, message, details, correlationId } }`.
 - Validation: Zod at the API boundary; policy documents validated by `validatePolicy`.
+- Web layout: each page renders inside `.page` in `App.tsx` (staggered entrance is automatic); add new routes to `sectionFor()` for the `(NN) Section` label and to the sidebar nav with an `Icon` from `web/src/motion.tsx`. Keep motion in CSS and respect `prefers-reduced-motion`.
+- Reuse the tested foundation modules described in `docs/FOUNDATIONS.md` (deadline calendar, email adapters, upload checks, storage); do not rewrite them.
 - Web: data via TanStack Query and `web/src/api.ts`; reuse `Status`, `Loading`, `ErrorState`, `MutationError` from `web/src/ui.tsx`; colours only through CSS tokens in `styles.css`; status always shown as text plus colour.
 
 ## Checks before you finish
