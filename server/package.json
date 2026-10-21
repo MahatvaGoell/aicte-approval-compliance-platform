@@ -1,0 +1,35 @@
+{
+  "name": "server",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "db:start": "tsx scripts/db.ts",
+    "db:reset": "tsx scripts/reset.ts",
+    "migrate": "tsx scripts/migrate.ts",
+    "seed": "tsx scripts/seed.ts",
+    "dev": "tsx watch src/main.ts",
+    "start": "tsx src/main.ts",
+    "worker": "tsx src/worker/main.ts",
+    "test": "vitest run",
+    "evaluate": "tsx scripts/evaluate.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@fastify/cookie": "11.0.2",
+    "@fastify/multipart": "9.0.3",
+    "dotenv": "16.5.0",
+    "fastify": "5.4.0",
+    "nodemailer": "7.0.3",
+    "pg": "8.16.3",
+    "zod": "3.25.67"
+  },
+  "devDependencies": {
+    "@types/node": "22.15.30",
+    "@types/nodemailer": "6.4.17",
+    "@types/pg": "8.15.4",
+    "embedded-postgres": "17.5.0-beta.15",
+    "tsx": "4.20.3",
+    "typescript": "5.8.3",
+    "vitest": "3.2.4"
+  }
+}

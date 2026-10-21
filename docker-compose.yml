@@ -1,0 +1,15 @@
+# Optional alternative to `npm run db:start`. Same port and credentials as .env.example.
+services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: aicte
+      POSTGRES_PASSWORD: aicte_dev_password
+      POSTGRES_DB: aicte
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+    ports:
+      - "54329:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+volumes:
+  pgdata:

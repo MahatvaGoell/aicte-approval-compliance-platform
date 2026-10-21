@@ -1,0 +1,554 @@
+<title>SIH 26262 Win Plan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a government "file" read as a field manual — sticky contents rail on the left, one reading column on the right. */
+:root{
+  --bg:#f5f6f8; --surface:#ffffff; --ink:#151c2b; --muted:#566173; --line:#dce1e8;
+  --accent:#3a3fb0; --accent-soft:#e8e9fb;
+  --ok:#2f7d46; --warn:#a86a10; --bad:#bf2a2f;
+  --ok-soft:#e5f3ea; --warn-soft:#fbf0dc; --bad-soft:#fbe6e6;
+  --display:"Archivo","Segoe UI",system-ui,sans-serif;
+  --body:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f1219; --surface:#161b25; --ink:#e6e9f0; --muted:#9aa4b4; --line:#2a313e;
+  --accent:#a4a9ff; --accent-soft:#23264d;
+  --ok:#62cc8d; --warn:#f0b54e; --bad:#ff7a7a;
+  --ok-soft:#14301f; --warn-soft:#352711; --bad-soft:#3a1719; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1219; --surface:#161b25; --ink:#e6e9f0; --muted:#9aa4b4; --line:#2a313e;
+  --accent:#a4a9ff; --accent-soft:#23264d;
+  --ok:#62cc8d; --warn:#f0b54e; --bad:#ff7a7a;
+  --ok-soft:#14301f; --warn-soft:#352711; --bad-soft:#3a1719; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.6;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 64px}
+.wrap{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:230px minmax(0,1fr);gap:48px}
+@media (max-width:920px){.wrap{grid-template-columns:minmax(0,1fr);gap:0}.rail{display:none}}
+
+header.top{max-width:1180px;margin:0 auto;padding-block:48px 32px;border-bottom:1px solid var(--line);margin-bottom:40px}
+.fileno{font-family:var(--mono);font-size:12.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 18px}
+.fileno b{color:var(--accent);font-weight:500}
+h1{font-family:var(--display);font-weight:800;font-size:clamp(34px,5.4vw,58px);line-height:1.04;letter-spacing:-.02em;margin:18px 0 14px;text-wrap:balance;max-width:20ch}
+.lede{font-size:18.5px;color:var(--muted);max-width:68ch;margin:0}
+.lede strong{color:var(--ink)}
+
+.rail{position:sticky;top:env(safe-area-inset-top,0px);align-self:start;padding-top:8px;max-height:100vh;overflow:auto}
+.rail p{font-family:var(--mono);font-size:11.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 10px}
+.rail ol{list-style:none;margin:0;padding:0;display:grid;gap:2px;counter-reset:s}
+.rail a{display:flex;gap:10px;color:var(--muted);text-decoration:none;font-size:14px;padding:5px 8px;border-radius:6px}
+.rail a::before{counter-increment:s;content:counter(s,decimal-leading-zero);font-family:var(--mono);font-size:11.5px;color:var(--accent);padding-top:2px}
+.rail a:hover,.rail a:focus-visible{background:var(--accent-soft);color:var(--ink);outline:none}
+
+main{min-width:0}
+section{padding-block:8px 40px;border-bottom:1px solid var(--line);margin-bottom:40px}
+section:last-child{border-bottom:0}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin:0}
+h2{font-family:var(--display);font-weight:700;font-size:clamp(25px,3.2vw,32px);line-height:1.15;letter-spacing:-.01em;margin:6px 0 16px;text-wrap:balance}
+h3{font-family:var(--display);font-weight:700;font-size:19px;margin:28px 0 8px}
+p,li{max-width:72ch}
+p{margin:0 0 14px}
+ul,ol{padding-left:22px;margin:0 0 14px}
+li{margin-bottom:6px}
+a{color:var(--accent)}
+code,.mono{font-family:var(--mono);font-size:.9em}
+:not(pre)>code{background:var(--accent-soft);padding:1px 5px;border-radius:4px}
+strong{font-weight:600}
+
+.callout{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:8px;padding:16px 20px;margin:18px 0;max-width:76ch}
+.callout.bad{border-left-color:var(--bad)}
+.callout p:last-child{margin-bottom:0}
+.callout .k{font-family:var(--mono);font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);display:block;margin-bottom:4px}
+
+.tbl{overflow-x:auto;margin:16px 0 20px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:14.5px;min-width:640px}
+th,td{text-align:left;vertical-align:top;padding:10px 14px;border-bottom:1px solid var(--line)}
+th{font-family:var(--mono);font-weight:500;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:var(--bg)}
+tr:last-child td{border-bottom:0}
+td:first-child{font-weight:600}
+td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap;font-weight:500}
+
+.tag{display:inline-block;font-family:var(--mono);font-size:11px;letter-spacing:.05em;text-transform:uppercase;padding:2px 7px;border-radius:999px;white-space:nowrap;font-weight:500}
+.tag.must{background:var(--ok-soft);color:var(--ok)}
+.tag.diff{background:var(--accent-soft);color:var(--accent)}
+.tag.stretch{background:var(--warn-soft);color:var(--warn)}
+.tag.red{background:var(--bad-soft);color:var(--bad)}
+
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin:16px 0}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px 18px;min-width:0}
+.card h4{font-family:var(--display);font-size:16.5px;margin:0 0 6px;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.card p{font-size:14.5px;margin:0;color:var(--muted)}
+.card p+p{margin-top:8px}
+.card .why{color:var(--ink)}
+
+pre.code{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px;overflow-x:auto;font-family:var(--mono);font-size:13px;line-height:1.55;margin:14px 0}
+pre.mermaid{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px;overflow-x:auto;margin:14px 0;text-align:center}
+
+.ladder{display:grid;gap:0;margin:16px 0;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)}
+.step{display:grid;grid-template-columns:96px minmax(0,1fr);gap:14px;padding:12px 16px;border-bottom:1px solid var(--line);align-items:baseline}
+.step:last-child{border-bottom:0}
+.step .t{font-family:var(--mono);font-weight:500;font-size:13.5px;font-variant-numeric:tabular-nums}
+.step.g .t{color:var(--ok)} .step.a .t{color:var(--warn)} .step.r .t{color:var(--bad)}
+.step p{margin:0;font-size:14.5px}
+
+.weeks{display:grid;gap:12px;margin:16px 0}
+.week{display:grid;grid-template-columns:150px minmax(0,1fr);gap:18px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px 18px}
+.week .d{font-family:var(--mono);font-size:12.5px;color:var(--muted)}
+.week .d b{display:block;font-family:var(--display);font-size:17px;color:var(--ink);margin-bottom:2px}
+.week ul{margin:0}
+.week li{font-size:14.5px;margin-bottom:4px}
+.week .gate{margin-top:8px;font-size:13.5px;font-family:var(--mono);color:var(--accent)}
+@media (max-width:620px){.week,.step{grid-template-columns:minmax(0,1fr);gap:4px}}
+
+.script{counter-reset:act;display:grid;gap:10px;margin:16px 0}
+.act{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 18px;display:grid;grid-template-columns:84px minmax(0,1fr);gap:16px}
+.act .clock{font-family:var(--mono);font-size:13px;color:var(--accent);font-variant-numeric:tabular-nums}
+.act h4{margin:0 0 4px;font-family:var(--display);font-size:16px}
+.act p{margin:0;font-size:14.5px;color:var(--muted)}
+.act p.say{color:var(--ink);font-style:italic;margin-top:6px}
+@media (max-width:620px){.act{grid-template-columns:minmax(0,1fr);gap:4px}}
+
+.qa{display:grid;gap:10px;margin:16px 0}
+.qa div{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px 16px}
+.qa b{display:block;font-weight:600;margin-bottom:3px}
+.qa span{font-size:14.5px;color:var(--muted)}
+
+.checklist{list-style:none;padding:0}
+.checklist li{display:flex;gap:10px;align-items:baseline}
+.checklist li::before{content:"";flex:none;width:13px;height:13px;border:1.5px solid var(--accent);border-radius:3px;transform:translateY(2px)}
+.sources{font-size:13.5px;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+html{scroll-behavior:smooth}
+</style>
+
+<header class="top">
+  <div class="fileno"><span>PS ID <b>26262</b></span><span>AICTE · Regulation Bureau</span><span>Theme: Smart Automation</span><span>Plan dated 21 Oct 2026</span></div>
+  <h1>How we win problem statement 26262</h1>
+  <p class="lede">The product, the build order, the demo and the pitch for the <strong>Integrated AICTE Approval Workflow Automation, Compliance Monitoring and Alert Management System</strong>. Working name for the product: <strong>ANUPALAN</strong> (अनुपालन, "compliance").</p>
+</header>
+
+<div class="wrap">
+<nav class="rail" aria-label="Contents">
+  <p>Contents</p>
+  <ol>
+    <li><a href="#read">The honest read</a></li>
+    <li><a href="#timeline">Where we are</a></li>
+    <li><a href="#thesis">Product thesis</a></li>
+    <li><a href="#homework">Domain homework</a></li>
+    <li><a href="#features">Feature map</a></li>
+    <li><a href="#killers">Differentiators</a></li>
+    <li><a href="#engine">Workflow and SLA engine</a></li>
+    <li><a href="#arch">Architecture and stack</a></li>
+    <li><a href="#criteria">Scoring map</a></li>
+    <li><a href="#team">Team roles</a></li>
+    <li><a href="#weeks">Week-by-week plan</a></li>
+    <li><a href="#demo">Demo script</a></li>
+    <li><a href="#pitch">Deck and pitch</a></li>
+    <li><a href="#qa">Judge Q&amp;A bank</a></li>
+    <li><a href="#finale">Finale playbook</a></li>
+    <li><a href="#lose">How teams lose</a></li>
+    <li><a href="#now">Do this week</a></li>
+  </ol>
+</nav>
+
+<main>
+
+<section id="read">
+  <p class="eyebrow">Start here</p>
+  <h2>The honest read on this problem statement</h2>
+  <p>No plan can promise a win. What a plan can do is remove every avoidable reason to lose and give the jury three or four moments they remember. That is what this document is for.</p>
+  <p>Four facts shape everything below:</p>
+  <ol>
+    <li><strong>The jury knows this process better than you.</strong> AICTE runs SIH and wrote this problem statement. Its evaluators handle scrutiny, EVC and SAC files for a living. A team that uses the right words (EoA, LoA, deficiency, re-scrutiny, self-disclosure, Regional Office, Standing Appellate Committee) and models the real edge cases wins trust in the first minute. A team that shows a generic "application tracker" loses it.</li>
+    <li><strong>Most competing teams will build the same thing:</strong> a login, a form, a table of applications and a few charts. You beat them by making the <em>time-based automation</em> visible: clocks that run, pause, breach and escalate on their own, live in front of the jury.</li>
+    <li><strong>The evaluation criteria are written out for you</strong>: workflow accuracy, timeliness of alerts, reliability of deadline tracking, visibility of pending cases, reduction in manual follow-up and completeness of the audit trail. Every feature and every demo minute should map to one of these six (see <a href="#criteria">the scoring map</a>).</li>
+    <li><strong>The regulatory safeguard is a test.</strong> The statement says automation "shall not replace statutory scrutiny, verification, inspections or decisions". Build human sign-off into every decision step and say it out loud. Teams that pitch "AI approves applications" will be marked down.</li>
+  </ol>
+  <div class="callout">
+    <span class="k">On the motivation</span>
+    <p>Whatever the personal reason for wanting this, the jury only sees the product and the pitch. Put that energy into rehearsals and testing, which is where finals are actually decided.</p>
+  </div>
+</section>
+
+<section id="timeline">
+  <p class="eyebrow">Calendar</p>
+  <h2>Where we are on the SIH 2026 calendar</h2>
+  <p>Published reports for SIH 2026 put internal hackathons in September, online idea screening in October–November and a 36-hour offline grand finale in December 2026. Exact finale dates were not public in what I could find. <strong>Confirm the dates with your college SPOC and on sih.gov.in this week.</strong></p>
+  <p>That leaves roughly six to seven weeks. The rule: <strong>do not wait for shortlisting results to start building.</strong> Teams that arrive at the finale with a working, tested product and use the 36 hours for polish and jury feedback almost always beat teams that build at the venue.</p>
+  <p>One timing gift: the AICTE portal for the 2026-27 cycle opened on 28 November 2025. The 2027-28 cycle will open at about the same time as the finale, so you can pitch ANUPALAN as "ready for the cycle that starts this month".</p>
+</section>
+
+<section id="thesis">
+  <p class="eyebrow">What we are building</p>
+  <h2>Product thesis: a rules engine with a dashboard on top</h2>
+  <p>The core of ANUPALAN is a configurable engine that knows the APH. Dashboards are views of what the engine already knows. Five pillars:</p>
+  <div class="grid2">
+    <div class="card"><h4>1 · Route</h4><p>Each application type follows a stage path defined in versioned configuration. Changing the APH means editing config, with no code change and no effect on files already in flight.</p></div>
+    <div class="card"><h4>2 · Clock</h4><p>Every stage, EVC, undertaking and document has a deadline clock. Clocks pause when a file is returned to the institution and resume on response, on a working-day calendar with holidays.</p></div>
+    <div class="card"><h4>3 · Escalate</h4><p>Configurable ladders: remind the assignee, then the supervisor, then the Regional Office, then the Bureau. Digests instead of spam.</p></div>
+    <div class="card"><h4>4 · Watch</h4><p>Undertakings and documents (lease deeds and others) are tracked as obligations with evidence, verification and expiry. OCR proposes the expiry date and an official confirms it.</p></div>
+    <div class="card"><h4>5 · Prove</h4><p>Every action, alert, submission and decision is written to a tamper-evident, hash-chained audit log, with the reason recorded for every return or revert.</p></div>
+    <div class="card"><h4>Rule zero</h4><p class="why">The system recommends and reminds. A named official decides. Every decision screen shows who decides and records their action.</p></div>
+  </div>
+</section>
+
+<section id="homework">
+  <p class="eyebrow">Week 1, non-negotiable</p>
+  <h2>Domain homework that most teams skip</h2>
+  <p>This is the cheapest advantage available. Assign one person full time to it for the first week.</p>
+  <ol>
+    <li><strong>Read the APH.</strong> Download the Approval Process Handbook 2024-27 from aicte.gov.in plus the 2026 amendments and corrigenda. Extract: application categories (new institution, extension of approval, increase in intake, new course, change of name or site, closure, ODL/online), which ones need an EVC, prescribed timelines, land and lease requirements, and the conditions under which approval is granted with undertakings.</li>
+    <li><strong>Note the 2026 changes.</strong> The February 2026 corrigendum says EVCs are constituted by the Council (not the Regional Officer) and can be physical, online or hybrid, and that the Council constitutes the SAC, which hears appeals. Model EVC mode as a field and constitute committees at Council level in your role design. Mentioning this in the pitch signals you read the current rules.</li>
+    <li><strong>Interview your own college.</strong> Your institution files an AICTE application every year. Spend an hour with the person who does it (principal's office or AICTE coordinator). Ask: what gets stuck, what deficiencies come back, how they learn about deadlines, how lease or other document renewals are tracked today. Record quotes; one real quote in the deck is worth five charts.</li>
+    <li><strong>Collect real artefacts.</strong> Colleges publish EoA letters and SAC/SHC committee reports on their websites (search for "SAC_SHC" PDFs and "EOA report 2026-27"). Use their structure and field names for your forms and generated letters, so your screens look familiar to the jury.</li>
+    <li><strong>Get real scale numbers.</strong> Use AICTE's public dashboard for the number of approved institutions and their split by region and state. Size your synthetic data to match.</li>
+    <li><strong>Write a one-page glossary and a stage matrix</strong> (application type × stages × who acts × timeline). This becomes the seed for the workflow config and a backup slide.</li>
+  </ol>
+  <div class="callout"><span class="k">Rule</span><p>Every number in the product or deck that you could not source gets labelled as configurable or illustrative. Never present an invented SLA as "the APH timeline".</p></div>
+</section>
+
+<section id="features">
+  <p class="eyebrow">Scope</p>
+  <h2>Feature map against sections A–F</h2>
+  <p><span class="tag must">Must</span> ships before the finale no matter what. <span class="tag diff">Differentiator</span> is what makes us memorable. <span class="tag stretch">Stretch</span> only if everything else is done and tested.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>PS section</th><th>Feature</th><th>Priority</th></tr></thead>
+    <tbody>
+      <tr><td>A · Workflow</td><td>Rule-based routing by application type: Only Scrutiny, Scrutiny + EVC, Only EVC, EVC + SAC/SHC, plus custom paths</td><td><span class="tag must">Must</span></td></tr>
+      <tr><td>A · Workflow</td><td>Auto-advance on stage completion, guarded by role and preconditions (report uploaded, checklist complete)</td><td><span class="tag must">Must</span></td></tr>
+      <tr><td>A · Workflow</td><td>Return / revert with mandatory reason, deficiency list and institution response; clock pauses while with the institution</td><td><span class="tag must">Must</span></td></tr>
+      <tr><td>A · Workflow</td><td>Workflow Studio: visual editor of stage paths and SLAs, versioned per APH year</td><td><span class="tag diff">Differentiator</span></td></tr>
+      <tr><td>A · Workflow</td><td>Auto-drafted deficiency letters and an electronic case summary for committees, from templates plus a local LLM, marked "draft for official review"</td><td><span class="tag diff">Differentiator</span></td></tr>
+      <tr><td>B · Dashboard</td><td>Role-based dashboards: Chairman/Bureau, Regional Office, scrutiny officer, committee member, institution</td><td><span class="tag must">Must</span></td></tr>
+      <tr><td>B · Dashboard</td><td>Region × stage pendency heatmap with ageing buckets (0–15, 16–30, 31–60, 60+ days) and drill-down to the file</td><td><span class="tag must">Must</span></td></tr>
+      <tr><td>B · Dashboard</td><td>Officer workload view and reassign; bottleneck detector (stages where arrivals outpace completions)</td><td><span class="tag diff">Differentiator</span></td></tr>
+      <tr><td>B · Dashboard</td><td>Breach-risk score per file: projected finish from historical stage durations, explained in plain words</td><td><span class="tag diff">Differentiator</span></td></tr>
+      <tr><td>C · EVC</td><td>Auto-queue files needing EVC after preliminary scrutiny; track scheduling and completion deadlines, stricter for new institutions</td><td><span class="tag must">Must</span></td></tr>
+      <tr><td>C · EVC</td><td>Panel suggestion with conflict-of-interest rules and expert availability; clusters nearby institutions into one trip</td><td><span class="tag diff">Differentiator</span></td></tr>
+      <tr><td>C · EVC</td><td>EVC mode (physical / online / hybrid) and a mobile-friendly visit checklist with geotagged photos</td><td><span class="tag stretch">Stretch</span></td></tr>
+      <tr><td>D · Undertakings</td><td>Undertaking register: condition, due date, evidence upload, official verification, escalation, closure</td><td><span class="tag must">Must</span></td></tr>
+      <tr><td>D · Undertakings</td><td>Institution compliance scorecard and calendar; open undertakings flagged on the next year's application for the reviewer</td><td><span class="tag diff">Differentiator</span></td></tr>
+      <tr><td>E · Documents</td><td>Document vault with validity dates, advance alerts (90/60/30/7 days), renewal submission and verification</td><td><span class="tag must">Must</span></td></tr>
+      <tr><td>E · Documents</td><td>OCR reads the lease deed and proposes start date, term and expiry; official confirms. SHA-256 fingerprint for every file</td><td><span class="tag diff">Differentiator</span></td></tr>
+      <tr><td>F · Alerts</td><td>Configurable notification rules; in-app, email, SMS/WhatsApp through an adapter; Hindi and English templates</td><td><span class="tag must">Must</span></td></tr>
+      <tr><td>F · Alerts</td><td>Escalation ladders and daily/weekly digests to cut alert fatigue</td><td><span class="tag must">Must</span></td></tr>
+      <tr><td>F · Reports</td><td>One-click PDF/Excel: pendency, EVC status, undertakings, document validity, overdue, region-wise performance</td><td><span class="tag must">Must</span></td></tr>
+      <tr><td>F · Audit</td><td>Hash-chained audit log with a "Verify integrity" button that detects a tampered row</td><td><span class="tag diff">Differentiator</span></td></tr>
+      <tr><td>Cross-cutting</td><td>Demo time machine: a system clock the presenter can move forward, so 30-day deadlines fire in 30 seconds</td><td><span class="tag must">Must</span></td></tr>
+      <tr><td>Cross-cutting</td><td>Integration adapters: mock AICTE portal API, DigiLocker-style document pull, NIC-style SMS gateway</td><td><span class="tag stretch">Stretch</span></td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="killers">
+  <p class="eyebrow">Memorable moments</p>
+  <h2>The eight differentiators and why judges care</h2>
+  <div class="grid2">
+    <div class="card"><h4>Time machine <span class="tag red">most important</span></h4><p>All code reads time from one Clock service. In demo mode the presenter jumps forward 7, 30 or 90 days and alerts, breaches and escalations fire live.</p><p class="why">You cannot show "timeliness of alerts" in a 7-minute slot without it.</p></div>
+    <div class="card"><h4>Pausable SLA clocks</h4><p>Clock stops when a file goes back to the institution for a deficiency and restarts on response. Working days and a holiday calendar.</p><p class="why">This is how officials actually think about pendency. It separates you from teams that just subtract dates.</p></div>
+    <div class="card"><h4>Workflow Studio</h4><p>A flowchart editor (React Flow) over the JSON config. Change an SLA from 15 to 10 days and the dashboard recomputes.</p><p class="why">Answers "configurable rules aligned with the APH" by showing it.</p></div>
+    <div class="card"><h4>Tamper-evident audit</h4><p>Each audit event stores the hash of the previous one. Edit a row directly in the database during the demo and the integrity check shows exactly where the chain broke.</p><p class="why">Direct proof for "completeness of the digital audit trail".</p></div>
+    <div class="card"><h4>Lease OCR with human confirm</h4><p>Upload a lease deed scan; the system highlights the dates it found and asks the official to confirm the expiry.</p><p class="why">Removes data entry while keeping a human in the loop, exactly as the safeguard requires.</p></div>
+    <div class="card"><h4>EVC panel and trip planner</h4><p>Constraint solver (Google OR-Tools) assigns experts under conflict-of-interest, availability and load rules, and groups institutions in the same district into one visit trip.</p><p class="why">A real operational saving officials will recognise.</p></div>
+    <div class="card"><h4>Breach risk and bottlenecks</h4><p>Simple, explainable forecasting: "Likely to breach in 4 days: Scrutiny queue in this region is running 2.1× slower than its 60-day median."</p><p class="why">Moves dashboards from reporting to prevention. Keep it explainable; no black boxes.</p></div>
+    <div class="card"><h4>Bilingual, accessible, sovereign</h4><p>Hindi and English templates and UI, GIGW-minded accessibility, open-source stack, self-hosted LLM so no file leaves government servers.</p><p class="why">Deployability is a scoring factor for a government jury.</p></div>
+  </div>
+</section>
+
+<section id="engine">
+  <p class="eyebrow">How it works</p>
+  <h2>Workflow and SLA engine</h2>
+  <h3>Routing</h3>
+  <p>The stage combinations below come straight from the problem statement. Confirm the exact mapping of application types to paths against the APH during week 1; the engine does not care, because paths are data.</p>
+  <pre class="mermaid">
+flowchart LR
+  A["Application submitted"] --> R{"Routing rules: type, category, APH version"}
+  R -->|"Only Scrutiny"| S["Scrutiny"]
+  R -->|"Scrutiny + EVC"| S
+  R -->|"Only EVC"| E["EVC queue"]
+  R -->|"Appeal: EVC + SAC/SHC"| E
+  S -->|"Deficiency found"| D["Returned to institution, clock paused"]
+  D -->|"Response filed"| RS["Re-scrutiny"]
+  RS --> N{"EVC required?"}
+  S --> N
+  N -->|"Yes"| E
+  N -->|"No"| DEC["Decision by competent authority"]
+  E --> V["EVC visit and report"]
+  V -->|"Appeal path"| SAC["SAC / SHC"]
+  V --> DEC
+  SAC --> DEC
+  DEC -->|"Approved with conditions"| U["Undertaking and document watch"]
+  DEC -->|"Approved or rejected"| C["Letter issued, file closed"]
+  </pre>
+  <h3>Workflow definition as data</h3>
+  <p>One JSON (or YAML) definition per path, with a version tied to the APH year. Files in flight keep the version they started on.</p>
+<pre class="code">{
+  "id": "new-institution",
+  "aph_version": "2024-27/amend-2026-02",
+  "stages": [
+    { "key": "scrutiny",     "actor_role": "SCRUTINY_COMMITTEE", "sla_working_days": 15,
+      "on_complete": "evc_queue", "on_deficiency": "with_institution" },
+    { "key": "with_institution", "clock": "paused", "sla_working_days": 10,
+      "on_response": "re_scrutiny", "on_timeout": "escalate:RO" },
+    { "key": "re_scrutiny",  "actor_role": "SCRUTINY_COMMITTEE", "sla_working_days": 7,
+      "on_complete": "evc_queue" },
+    { "key": "evc_queue",    "actor_role": "COUNCIL_EVC_CELL",   "sla_working_days": 10,
+      "requires": ["panel_assigned", "visit_scheduled"], "on_complete": "evc_visit" },
+    { "key": "evc_visit",    "actor_role": "EVC",                "sla_working_days": 7,
+      "requires": ["evc_report_uploaded"], "on_complete": "decision" },
+    { "key": "decision",     "actor_role": "COMPETENT_AUTHORITY", "human_decision": true }
+  ],
+  "escalation_ladder": "default-stage-ladder"
+}</pre>
+  <p class="sources">SLA numbers above are placeholders to be set from the APH and AICTE practice. Label them as configurable in the demo.</p>
+
+  <h3>Example escalation ladder (configurable)</h3>
+  <div class="ladder">
+    <div class="step g"><span class="t">T − 7 days</span><p>In-app reminder to the assigned officer or committee.</p></div>
+    <div class="step g"><span class="t">T − 2 days</span><p>Reminder by email and SMS; file turns amber on all dashboards.</p></div>
+    <div class="step a"><span class="t">T + 0</span><p>Breach. Officer and immediate supervisor alerted; file turns red; counted in the overdue report.</p></div>
+    <div class="step r"><span class="t">T + 3 days</span><p>Escalated to the Regional Office head with the case summary attached.</p></div>
+    <div class="step r"><span class="t">T + 7 days</span><p>Escalated to the Approval Bureau head; listed in the Chairman's weekly digest.</p></div>
+  </div>
+  <p>Documents use a parallel ladder: alerts to the institution at 90, 60, 30 and 7 days before expiry; on expiry the Regional Office is alerted; if renewal is still missing after the grace period, the file is flagged for the reviewer on the institution's next application. The flag is information for a human; it does not block anything by itself.</p>
+
+  <h3>Engineering rules that make this reliable</h3>
+  <ul>
+    <li><strong>One Clock service.</strong> Nothing calls <code>now()</code> directly. This is what makes the time machine and the tests possible.</li>
+    <li><strong>Deadlines are rows, not cron guesses.</strong> A <code>deadlines</code> table holds every due date; a scheduler sweeps it every minute and fires each alert exactly once (idempotency key per alert).</li>
+    <li><strong>Transition + audit in one database transaction.</strong> A stage move without its audit event cannot exist.</li>
+    <li><strong>Audit table is append-only.</strong> Revoke UPDATE and DELETE at the database level; store <code>hash = SHA-256(prev_hash + canonical JSON of event)</code>.</li>
+    <li><strong>Scenario tests for every path.</strong> Write the expected stage sequence and alert timings for each route and assert them. "All 120 workflow scenarios pass" is a line for the pitch.</li>
+  </ul>
+</section>
+
+<section id="arch">
+  <p class="eyebrow">Build</p>
+  <h2>Architecture and stack</h2>
+  <p>Pick tools the team already knows. The recommendation below favours a Python backend because OCR, the solver and the LLM all live comfortably there.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Layer</th><th>Choice</th><th>Why</th></tr></thead>
+    <tbody>
+      <tr><td>Frontend</td><td>Next.js + TypeScript, Tailwind, shadcn/ui, ECharts, React Flow, next-intl (Hindi/English)</td><td>Fast to build polished, role-based screens; React Flow powers the Workflow Studio</td></tr>
+      <tr><td>API</td><td>FastAPI + SQLAlchemy + Pydantic</td><td>Typed, quick, auto-generated OpenAPI docs to show "integration-ready"</td></tr>
+      <tr><td>Database</td><td>PostgreSQL 16</td><td>Transactions for transition + audit; row-level filtering by region</td></tr>
+      <tr><td>Scheduler and jobs</td><td>Redis + Celery (beat) sweeping the deadlines table</td><td>Reliable timers and retries for notifications</td></tr>
+      <tr><td>Documents</td><td>MinIO (S3-compatible, self-hosted), ClamAV scan on upload</td><td>On-premise storage, encryption at rest, virus scanning</td></tr>
+      <tr><td>OCR</td><td>PaddleOCR or Tesseract + date-pattern extraction</td><td>Runs offline; good enough for proposing dates that a human confirms</td></tr>
+      <tr><td>LLM (assistive)</td><td>Small open model served locally through Ollama</td><td>Case summaries and draft letters without sending data outside</td></tr>
+      <tr><td>Optimisation</td><td>Google OR-Tools (CP-SAT), with a greedy fallback</td><td>EVC panel assignment and trip clustering</td></tr>
+      <tr><td>Notifications</td><td>Channel adapters: SMTP (Mailpit locally), SMS/WhatsApp sandbox, in-app via WebSocket</td><td>Swap in the NIC gateway in production without code changes</td></tr>
+      <tr><td>Auth</td><td>JWT + email OTP, role and region scoping on every query</td><td>Role-based access and data confidentiality; SSO-ready</td></tr>
+      <tr><td>Deploy</td><td>Docker Compose, one command; seeded demo data; Kubernetes-ready notes</td><td>Runs offline at the venue; credible path to government cloud</td></tr>
+    </tbody>
+  </table></div>
+  <h3>Core data model</h3>
+  <p><code>Institution</code>, <code>Region</code>, <code>User</code>/<code>Role</code>, <code>Application</code>, <code>WorkflowDefinition</code> (versioned), <code>StageInstance</code>, <code>Deadline</code>, <code>Deficiency</code>, <code>Committee</code>, <code>Expert</code>, <code>EVCVisit</code>, <code>Undertaking</code>, <code>Evidence</code>, <code>Document</code> / <code>DocumentVersion</code>, <code>NotificationRule</code>, <code>Alert</code>, <code>Escalation</code>, <code>HolidayCalendar</code>, <code>AuditEvent</code>.</p>
+  <h3>Synthetic data that looks real</h3>
+  <p>Generate institutions with the real regional and state split, a full cycle of applications at every stage with realistic ageing (most on time, a long tail overdue, one region visibly bottlenecked), experts with home states and availability, and leases expiring across the next 12 months. Use Indian names and places (Faker <code>en_IN</code>). Ship a <code>demo-reset</code> script that restores the exact demo state in under 30 seconds.</p>
+</section>
+
+<section id="criteria">
+  <p class="eyebrow">Scoring</p>
+  <h2>Every criterion mapped to proof</h2>
+  <div class="tbl"><table>
+    <thead><tr><th>Evaluation criterion</th><th>Feature that answers it</th><th>What the jury sees</th></tr></thead>
+    <tbody>
+      <tr><td>Workflow accuracy</td><td>Versioned routing config, guarded transitions, scenario test suite</td><td>Four application types take four different paths live; test report shows every scenario passing</td></tr>
+      <tr><td>Timeliness of alerts</td><td>Deadline sweeper, escalation ladders, time machine</td><td>Jump 30 days: notifications appear in-app and arrive on a team member's phone</td></tr>
+      <tr><td>Reliability of deadline tracking</td><td>Pausable working-day clocks, holiday calendar, idempotent alerts</td><td>Return a file for deficiency: clock visibly pauses, then resumes on response</td></tr>
+      <tr><td>Visibility of pending cases</td><td>Region × stage heatmap, ageing buckets, workload view, breach risk</td><td>Click a red cell, land on the overdue files and the officer holding them</td></tr>
+      <tr><td>Reduction in manual follow-up</td><td>Auto reminders, digests, auto-drafted letters, OCR</td><td>A counter: "1,284 reminders sent automatically this cycle". Back it with an explicit before/after estimate, labelled as an estimate</td></tr>
+      <tr><td>Completeness of audit trail</td><td>Hash-chained audit log, reason-mandatory reverts</td><td>File timeline shows every action; tamper one row, integrity check flags it</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="team">
+  <p class="eyebrow">People</p>
+  <h2>Team roles for six</h2>
+  <div class="tbl"><table>
+    <thead><tr><th>Role</th><th>Owns</th><th>Also</th></tr></thead>
+    <tbody>
+      <tr><td>Lead / architect</td><td>Workflow engine, Clock service, data model, code review, integration of everyone's work</td><td>Answers technical questions in the pitch</td></tr>
+      <tr><td>Backend 2</td><td>Deadlines, escalation, notifications and adapters, audit chain, reports</td><td>Owns the <code>demo-reset</code> script</td></tr>
+      <tr><td>Frontend 1</td><td>Officer, Regional Office and Chairman dashboards, heatmap, file timeline</td><td>Hindi/English UI</td></tr>
+      <tr><td>Frontend 2</td><td>Institution portal (submissions, undertakings, documents), Workflow Studio</td><td>Accessibility pass</td></tr>
+      <tr><td>AI / data</td><td>Synthetic data, OCR, breach-risk model, EVC solver, LLM summaries</td><td>Numbers on the impact slide</td></tr>
+      <tr><td>Domain + pitch</td><td>APH research, stage matrix, interview, test scenarios, deck, demo script, video</td><td>Lead presenter; runs mock juries</td></tr>
+    </tbody>
+  </table></div>
+  <p>Daily 15-minute stand-up, one shared board, one <code>main</code> branch that always runs. Nobody merges code that breaks the demo path.</p>
+</section>
+
+<section id="weeks">
+  <p class="eyebrow">Schedule</p>
+  <h2>Week-by-week plan to the finale</h2>
+  <p>Dates assume a finale in the first half of December. Shift the last two weeks once the official date is confirmed. Diwali falls around 8 November; plan that week lighter.</p>
+  <div class="weeks">
+    <div class="week"><div class="d"><b>Week 1</b>21–27 Oct</div><div><ul>
+      <li>APH reading, college interview, artefact collection, glossary and stage matrix</li>
+      <li>Repo, Docker Compose skeleton, CI, data model, Clock service</li>
+      <li>Wireframes of the five role dashboards; design tokens; product name and logo</li>
+      <li>Synthetic data generator v1</li></ul>
+      <div class="gate">Gate: stage matrix signed off, app boots with seeded data</div></div></div>
+    <div class="week"><div class="d"><b>Week 2</b>28 Oct – 3 Nov</div><div><ul>
+      <li>Workflow engine: config loader, routing, transitions, return/revert with reasons</li>
+      <li>Auth, roles, region scoping; audit events in the same transaction</li>
+      <li>Application intake and file timeline screens</li></ul>
+      <div class="gate">Gate: a file travels every path end to end</div></div></div>
+    <div class="week"><div class="d"><b>Week 3</b>4–10 Nov</div><div><ul>
+      <li>Deadlines table, pausable working-day clocks, holiday calendar</li>
+      <li>Escalation ladders, notification adapters, digests, time machine control</li>
+      <li>Dashboards v1: pendency heatmap, ageing, overdue list</li></ul>
+      <div class="gate">Gate: jump 30 days and the right alerts fire exactly once</div></div></div>
+    <div class="week"><div class="d"><b>Week 4</b>11–17 Nov</div><div><ul>
+      <li>EVC queue, scheduling, panel solver, trip clustering</li>
+      <li>Undertaking register with evidence and verification</li>
+      <li>Document vault, expiry ladder, lease OCR with confirm step</li></ul>
+      <div class="gate">Gate: all six PS sections demoable, rough edges allowed</div></div></div>
+    <div class="week"><div class="d"><b>Week 5</b>18–24 Nov</div><div><ul>
+      <li>Workflow Studio, hash-chain verification, reports (PDF/Excel)</li>
+      <li>Breach risk and bottleneck detection; LLM case summary and draft letters</li>
+      <li>Hindi templates, institution scorecard</li></ul>
+      <div class="gate">Gate: feature freeze on 24 Nov. Nothing new after this</div></div></div>
+    <div class="week"><div class="d"><b>Week 6</b>25 Nov – 1 Dec</div><div><ul>
+      <li>Scenario test suite, bug bash, security pass (OWASP basics, upload checks, rate limits)</li>
+      <li>UI polish of the demo path only; empty and error states</li>
+      <li>Final deck, 3-minute backup video, architecture diagram</li></ul>
+      <div class="gate">Gate: three clean demo runs in a row on a fresh machine</div></div></div>
+    <div class="week"><div class="d"><b>Week 7</b>2 Dec – finale</div><div><ul>
+      <li>Ten full rehearsals, timed; three mock juries with seniors or faculty playing AICTE officials</li>
+      <li>Q&amp;A drills from the bank below; every member can explain every module</li>
+      <li>Pack: two laptops with the full stack, offline mode, hotspot, HDMI adapters, printed one-pager</li></ul>
+      <div class="gate">Gate: anyone on the team can run the demo alone</div></div></div>
+  </div>
+</section>
+
+<section id="demo">
+  <p class="eyebrow">Seven minutes</p>
+  <h2>Demo script: one file's life, then the big picture</h2>
+  <p>Tell it as a story around one institution and one Regional Officer. Prepare a 3-minute, 5-minute and 8-minute cut, because jury slots vary.</p>
+  <div class="script">
+    <div class="act"><span class="clock">0:00–0:40</span><div><h4>The problem in one breath</h4><p>Show the overdue count and the region heatmap on the Chairman dashboard.</p><p class="say">"Today, follow-up on pendency, EVCs, undertakings and lease renewals happens over phone and email. ANUPALAN makes the rules run themselves and keeps a person in charge of every decision."</p></div></div>
+    <div class="act"><span class="clock">0:40–1:40</span><div><h4>Submission and routing</h4><p>An institution submits a new-institution application. The engine picks the Scrutiny + EVC path from the config and assigns it. Show the stage path on the file.</p></div></div>
+    <div class="act"><span class="clock">1:40–2:40</span><div><h4>Deficiency and paused clock</h4><p>Scrutiny officer returns the file with a reason and a deficiency list (auto-drafted letter, officer edits and sends). The SLA clock shows "paused". Institution responds; re-scrutiny starts and the clock resumes.</p></div></div>
+    <div class="act"><span class="clock">2:40–3:50</span><div><h4>EVC queue and escalation</h4><p>File moves to the EVC queue automatically. Solver proposes a panel with conflict checks and groups two nearby institutions into one trip. Presenter jumps the clock 12 days: EVC overdue, Regional Office escalation fires, an SMS lands on a teammate's phone.</p></div></div>
+    <div class="act"><span class="clock">3:50–5:00</span><div><h4>Conditional approval, undertakings and lease</h4><p>Competent authority approves with an undertaking. Institution uploads a lease deed scan; OCR proposes the expiry, official confirms. Jump 90 days: 60/30/7-day alerts, then expiry and escalation. Institution uploads the renewal; official verifies; case closes.</p></div></div>
+    <div class="act"><span class="clock">5:00–6:10</span><div><h4>The big picture</h4><p>Heatmap drill-down to a bottleneck, breach-risk list, workload rebalance, one-click region report. Workflow Studio: change one SLA and watch the dashboard recompute.</p></div></div>
+    <div class="act"><span class="clock">6:10–7:00</span><div><h4>Proof and safeguard</h4><p>Open the file's audit timeline. Edit one audit row in the database; "Verify integrity" pinpoints it.</p><p class="say">"Every alert and recommendation supports the official. No approval, rejection or inspection outcome is ever taken by the system."</p></div></div>
+  </div>
+</section>
+
+<section id="pitch">
+  <p class="eyebrow">Deck</p>
+  <h2>Deck and pitch structure</h2>
+  <p>The SIH idea template is six slides. Keep the same spine for the finale deck and add a backup appendix.</p>
+  <ol>
+    <li><strong>Title</strong>: PS ID 26262, title, theme, team. One line: "Rules that run themselves, decisions that stay human."</li>
+    <li><strong>Proposed solution</strong>: the five pillars as one diagram, one real quote from your college interview, and a screenshot of the working dashboard. A real screenshot at idea stage is a strong signal.</li>
+    <li><strong>Technical approach</strong>: architecture diagram, stack, the routing flowchart, the hash-chain idea in one picture.</li>
+    <li><strong>Feasibility and viability</strong>: open-source and self-hosted, runs on government cloud, adapters for existing AICTE systems, risks and their mitigations, the regulatory safeguard.</li>
+    <li><strong>Impact and benefits</strong>: map to the PS expected outcomes (less follow-up, fewer missed deadlines, faster processing, accountability). Numbers labelled as estimates with their assumptions.</li>
+    <li><strong>Research and references</strong>: APH 2024-27 and 2026 amendments, AICTE dashboard data, the interview, artefacts studied.</li>
+  </ol>
+  <p><strong>Appendix slides</strong> to pull up during Q&amp;A: data model, security model, scaling numbers, integration plan, cost of running, roadmap after SIH.</p>
+  <h3>Delivery rules</h3>
+  <ul>
+    <li>Demo beats slides. Spend at most 90 seconds on slides before the product is on screen.</li>
+    <li>One presenter drives the story, one drives the laptop. Everyone else answers questions in their area.</li>
+    <li>Use the jury's vocabulary. Say "file", "deficiency", "competent authority", "Regional Office".</li>
+    <li>When a judge suggests something, write it down visibly and, at the finale, build it before the next round. Judges remember being listened to.</li>
+  </ul>
+</section>
+
+<section id="qa">
+  <p class="eyebrow">Practice</p>
+  <h2>Judge Q&amp;A bank</h2>
+  <div class="qa">
+    <div><b>How would this work with the existing AICTE portal?</b><span>As a layer on top. An adapter reads application events from the portal (API, or a read-only replica / change-data-capture), and our engine adds routing, clocks and alerts. The mock portal API in the demo shows the contract.</span></div>
+    <div><b>What happens when the APH changes next year?</b><span>Paths, SLAs and ladders are versioned configuration. New files use the new version; files in flight finish on the version they started with. Shown in the Workflow Studio.</span></div>
+    <div><b>Can the system approve or reject an application?</b><span>No. Decision steps require a named competent authority's action. The system drafts, reminds and summarises; every draft is marked for review.</span></div>
+    <div><b>How do you avoid alert fatigue?</b><span>Ladders start with the assignee only, then widen. Officials get digests instead of one message per file, and can tune channels per rule.</span></div>
+    <div><b>What if the OCR reads the wrong date?</b><span>OCR only proposes. An official confirms the date, the confirmation is audited, and the original scan is always one click away.</span></div>
+    <div><b>Is data safe? Where does the LLM run?</b><span>Self-hosted model, no external API. Role and region scoping on every query, encrypted document storage, virus scanning, OTP login, full audit. Aligned with the DPDP Act 2023 and CERT-In practice.</span></div>
+    <div><b>Will it scale to every institution and every cycle?</b><span>Peak load is a few thousand transitions a day, well within one Postgres instance. Stateless API scales horizontally; give real numbers from your load test.</span></div>
+    <div><b>An officer goes on leave. What happens to their files?</b><span>Delegation: the supervisor reassigns in bulk or a standing delegate is set; clocks keep running and the audit records the handover.</span></div>
+    <div><b>How did you validate the workflow?</b><span>Against the APH text, published SAC/SHC and EoA documents, an interview with our own college's AICTE coordinator, and a scenario test suite for every path.</span></div>
+    <div><b>How is the audit trail tamper-proof?</b><span>Append-only table with UPDATE/DELETE revoked, plus a hash chain. Demonstrate the broken chain. Mention that the daily chain head can be anchored externally (for example, signed and archived).</span></div>
+    <div><b>What would it cost to run?</b><span>Open-source stack on existing government cloud; a handful of VMs. No licence fees.</span></div>
+    <div><b>Why not just use an off-the-shelf BPM tool?</b><span>A generic BPM can route, but AICTE needs APH-specific clocks that pause on deficiency, undertaking and document lifecycles, and region-scoped dashboards. We kept the engine small and the rules in config.</span></div>
+  </div>
+</section>
+
+<section id="finale">
+  <p class="eyebrow">36 hours</p>
+  <h2>Finale playbook and risk register</h2>
+  <h3>At the venue</h3>
+  <ul>
+    <li><strong>Hour 0–2:</strong> set up both laptops, run <code>demo-reset</code>, full demo once. Fix anything the venue network broke.</li>
+    <li><strong>Before each jury round:</strong> reset demo state, close other apps, notifications off, font size up, browser zoom 110–125%.</li>
+    <li><strong>After each round:</strong> five-minute debrief. Every judge comment becomes a task; pick the ones that can ship before the next round.</li>
+    <li><strong>Sleep in shifts.</strong> Two people rest at a time during the night. A tired presenter loses more points than a missing feature.</li>
+    <li><strong>Last 6 hours:</strong> no new features. Only fixes, polish and rehearsal.</li>
+  </ul>
+  <div class="tbl"><table>
+    <thead><tr><th>Risk</th><th>Mitigation</th></tr></thead>
+    <tbody>
+      <tr><td>Demo crashes or venue internet fails</td><td>Whole stack runs offline in Docker on two laptops; recorded backup video; mobile hotspot for the SMS moment</td></tr>
+      <tr><td>Domain mistake caught by a judge</td><td>Week 1 research, stage matrix reviewed by the college AICTE coordinator, "configurable" labels on every number</td></tr>
+      <tr><td>Scope creep</td><td>Feature freeze 24 Nov; stretch items only after all musts pass tests</td></tr>
+      <tr><td>One member unavailable</td><td>Everyone can run the demo and explain every module; documented setup</td></tr>
+      <tr><td>Integration broken late</td><td><code>main</code> always runs; demo path covered by automated tests</td></tr>
+      <tr><td>Judges question AI claims</td><td>Keep AI assistive and explainable; show the human confirmation step every time</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="lose">
+  <p class="eyebrow">Avoid</p>
+  <h2>How strong teams lose this kind of problem statement</h2>
+  <div class="callout bad">
+    <ul>
+      <li>A beautiful dashboard with nothing behind it: charts from static JSON, no engine.</li>
+      <li>Waiting in real time for deadlines, so the alerts never appear in the demo.</li>
+      <li>"AI decides approvals" anywhere in the deck or demo.</li>
+      <li>Invented APH timelines presented as fact.</li>
+      <li>Reading the slides; a demo that starts after minute four.</li>
+      <li>Only one person can run the demo or answer questions.</li>
+      <li>Building new features at 4 a.m. before the final round and breaking the demo path.</li>
+      <li>Fancy buzzwords (blockchain, microservices everywhere) without a reason an official would care about.</li>
+    </ul>
+  </div>
+</section>
+
+<section id="now">
+  <p class="eyebrow">Next seven days</p>
+  <h2>Do this week</h2>
+  <ul class="checklist">
+    <li>Confirm idea-screening status and finale dates with the college SPOC and sih.gov.in</li>
+    <li>Domain lead: download APH 2024-27 and the 2026 amendments; start the stage matrix</li>
+    <li>Book a one-hour interview with the college's AICTE coordinator; prepare ten questions</li>
+    <li>Collect five published EoA letters and five SAC/SHC reports from college websites</li>
+    <li>Lead: create the repo, Docker Compose skeleton, data model and Clock service</li>
+    <li>AI/data: synthetic data generator using real regional counts from the AICTE dashboard</li>
+    <li>Frontend: wireframes for the five role dashboards and the file timeline</li>
+    <li>Agree the feature freeze date (24 Nov) and the daily stand-up time</li>
+  </ul>
+  <h3>Sources used</h3>
+  <ul class="sources">
+    <li><a href="https://aicte.gov.in/sites/default/files/APH%20Final.pdf">AICTE Approval Process Handbook (APH Final), aicte.gov.in</a></li>
+    <li><a href="https://teamleaseregtech.com/updates/article/52940/aicte-issued-the-corrigendum-regarding-the-approval-process-2026-27">Corrigendum regarding the Approval Process 2026-27 (EVC and SAC constitution)</a></li>
+    <li><a href="https://www.teamleaseregtech.com/updates/article/52923/aicte-issued-the-approval-process-handbook">AICTE issued the Approval Process Handbook (2026 update, portal dates)</a></li>
+    <li><a href="https://news.careers360.com/aicte-approval-process-handbook-2026-27-update-engineering-college-business-school-management-foreign-student-seats-minor-diploma">Careers360: APH 2026-27 updates</a></li>
+    <li><a href="https://www.shcollege.ac.in/wp-content/uploads/SAC_SHC_1-46273286079_01-APR-26_Existing.pdf">Example published SAC/SHC report (college website)</a></li>
+    <li><a href="https://blogs.reskilll.com/smart-india-hackathon-2026-launched-timeline-registration-how-to-participate/">Reskilll: SIH 2026 timeline</a> and <a href="https://bcrec.ac.in/sih">BCREC SIH 2026 page</a></li>
+  </ul>
+</section>
+
+</main>
+</div>

@@ -1,0 +1,22 @@
+{
+  "name": "aicte-approval-compliance-platform",
+  "private": true,
+  "description": "AICTE Approval & Compliance Platform - SIH 2026 PS 26262 prototype",
+  "workspaces": [
+    "server",
+    "web"
+  ],
+  "scripts": {
+    "db:start": "npm -w server run db:start",
+    "db:reset": "npm -w server run db:reset",
+    "migrate": "npm -w server run migrate",
+    "seed": "npm -w server run seed",
+    "dev:api": "npm -w server run dev",
+    "dev:worker": "npm -w server run worker",
+    "dev:web": "npm -w web run dev",
+    "test": "npm -w server run test",
+    "evaluate": "npm -w server run evaluate",
+    "typecheck": "npm -w server run typecheck && npm -w web run typecheck",
+    "build": "npm -w web run build"
+  }
+}
