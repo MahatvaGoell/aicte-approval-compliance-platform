@@ -2,6 +2,7 @@ import { z } from 'zod';
 import type { Db } from '../../db.js';
 import { AppError, ValidationError, one, q } from '../../db.js';
 import { recordAudit } from '../audit/audit.js';
+import { localDate } from '../deadlines/calendar.js';
 import { coversRegion, has } from '../identity/permissions.js';
 import { emitEvent } from '../outbox/outbox.js';
 import { ruleRef } from '../policy/engine.js';
@@ -256,7 +257,9 @@ const classifyManually: CommandDef<z.ZodObject<any>> = {
   async run(tx, c, ctx, input) {
     const policy = c.policy!;
     const route = policy.doc.routes[input.routeKey];
-    if (!route) throw new ValidationError('Choose a route from the case policy version', [{ field: 'routeKey', message: 'Unknown route' }]);
+    if (!route || input.routeKey === policy.doc.appeal?.routeKey) {
+      throw new ValidationError('Choose a route from the case policy version', [{ field: 'routeKey', message: route ? 'That route is only for appeals' : 'Unknown route' }]);
+    }
     const wf = c.workflow!;
     const auto = wf.classification_trace;
     const trace: ClassificationTrace & { manual: unknown } = {
@@ -307,15 +310,16 @@ const fileAppeal: CommandDef<z.ZodObject<any>> = {
     const policy = c.policy!;
     const appeal = policy.doc.appeal!;
     const decision = c.decision!;
+    const tz = policy.doc.calendar.timezone;
     const deadline = new Date(new Date(decision.issued_at).getTime() + appeal.windowDays * 86_400_000);
     if (ctx.at > deadline) {
-      throw new AppError(409, 'APPEAL_WINDOW_CLOSED', `The ${appeal.windowDays}-day appeal window (demo rule) closed on ${deadline.toISOString().slice(0, 10)}`);
+      throw new AppError(409, 'APPEAL_WINDOW_CLOSED', `The ${appeal.windowDays}-day appeal window (demo rule) closed on ${localDate(deadline, tz)}`);
     }
     const route = policy.doc.routes[appeal.routeKey];
     const ref = ruleRef(policy.versionNo, 'appeal');
     const trace: ClassificationTrace = {
       status: 'CLASSIFIED', routeKey: appeal.routeKey, matchedRuleId: 'appeal', ruleRef: ref, provenance: appeal.provenance, evaluated: [],
-      explanation: `Appeal against decision of ${new Date(decision.issued_at).toISOString().slice(0, 10)} (${decision.outcome}) follows the configured appeal route "${route.name}": ${route.stages.map((s) => policy.doc.stages[s].name).join(' → ')}.`,
+      explanation: `Appeal against decision of ${localDate(new Date(decision.issued_at), tz)} (${decision.outcome}) follows the configured appeal route "${route.name}": ${route.stages.map((s) => policy.doc.stages[s].name).join(' → ')}.`,
     };
     const primary = c.workflow!;
     const wf = await one<WorkflowRow>(

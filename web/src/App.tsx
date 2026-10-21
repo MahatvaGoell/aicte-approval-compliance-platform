@@ -8,6 +8,7 @@ import { AuditPage } from './pages/Audit';
 import { CasePage } from './pages/Case';
 import { HomePage } from './pages/Home';
 import { LoginPage } from './pages/Login';
+import { PolicyListPage, PolicyVersionPage } from './pages/Policy';
 import { SessionProvider, useMe, useMeta, useSession } from './session';
 import { ErrorState, Loading } from './ui';
 
@@ -34,6 +35,7 @@ function sectionFor(path: string): [string, string] {
   if (path.startsWith('/applications/')) return ['02', 'Case file'];
   if (path.startsWith('/applications')) return ['02', 'Applications'];
   if (path.startsWith('/audit')) return ['04', 'Audit log'];
+  if (path.startsWith('/policy')) return ['05', 'Policy'];
   return ['00', 'Page'];
 }
 
@@ -76,6 +78,7 @@ function Shell() {
             {(can('APPLICATION_VIEW_SCOPE') || can('APPLICATION_VIEW_ASSIGNED')) && <NavLink to="/applications" className={() => (inApplications ? 'active' : '')}><Icon name="folder" />Applications</NavLink>}
             {can('APPLICATION_CREATE') && <NavLink to="/applications/new"><Icon name="plus" />New application</NavLink>}
             {can('AUDIT_VIEW') && <NavLink to="/audit"><Icon name="shield" />Audit log</NavLink>}
+            {can('POLICY_VIEW') && <NavLink to="/policy"><Icon name="layers" />Policy</NavLink>}
           </nav>
         </div>
         <div className="side-foot">
@@ -95,6 +98,8 @@ function Shell() {
               <Route path="/applications/:id" element={<CasePage />} />
               <Route path="/applications/:id/edit" element={<ApplicationFormPage />} />
               <Route path="/audit" element={<AuditPage />} />
+              <Route path="/policy" element={<PolicyListPage />} />
+              <Route path="/policy/:id" element={<PolicyVersionPage />} />
               <Route path="*" element={<div className="card empty">Page not found.</div>} />
             </Routes>
           </div>

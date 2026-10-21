@@ -139,7 +139,7 @@ export async function caseView(db: Db, actor: Actor, appId: string) {
     amendments,
     workflows,
     availableRoutes: c.policy && app.lifecycle_state === 'AWAITING_CLASSIFICATION'
-      ? Object.entries(c.policy.doc.routes).map(([key, r]) => ({ key, name: r.name, stages: r.stages.map((x) => c.policy!.doc.stages[x]?.name ?? x), provenance: r.provenance }))
+      ? Object.entries(c.policy.doc.routes).filter(([key]) => key !== c.policy!.doc.appeal?.routeKey).map(([key, r]) => ({ key, name: r.name, stages: r.stages.map((x) => c.policy!.doc.stages[x]?.name ?? x), provenance: r.provenance }))
       : [],
     workflow: c.workflow
       ? {
@@ -180,7 +180,7 @@ function actionPanel(c: CaseContext, completion: Array<{ condition: string; met:
     return {
       nextAction: 'Classify the application to choose its route',
       responsible: { role: 'Regional or bureau officer', person: null },
-      waitingSince: app.current_workflow_id ? null : null,
+      waitingSince: c.workflow?.created_at ?? null,
       blockers: [c.workflow?.classification_trace.explanation ?? 'No matching classification rule'],
       ruleRef: `policy v${c.policy?.versionNo} · classification`,
       reasonPending: 'No configured rule selected a route; the system does not guess',

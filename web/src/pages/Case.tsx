@@ -2,38 +2,14 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, type FormEvent } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { api } from '../api';
+import { useCommand } from '../caseCommand';
 import { Empty, ErrorState, formatDate, humanise, Loading, MutationError, Provenance, Status } from '../ui';
+import { Amendments, AppealForm, ClassifyForm, FindingsPanel, WorkflowHistory } from './CaseM2';
 
 type View = any;
 
 function useCase(id: string) {
   return useQuery({ queryKey: ['case', id], queryFn: () => api.get<View>(`/applications/${id}`) });
-}
-
-/** Runs a case command against the version the user is looking at. */
-function useCommand(view: View) {
-  const qc = useQueryClient();
-  const [error, setError] = useState<unknown>(null);
-  const [busy, setBusy] = useState<string | null>(null);
-  async function run(command: string, payload: Record<string, unknown> = {}) {
-    setBusy(command);
-    setError(null);
-    try {
-      await api.post(`/applications/${view.application.id}/commands`, { command, expectedVersion: view.application.rowVersion, ...payload });
-      await qc.invalidateQueries({ queryKey: ['case', view.application.id] });
-      await qc.invalidateQueries({ queryKey: ['timeline', view.application.id] });
-      qc.invalidateQueries({ queryKey: ['applications'] });
-      return true;
-    } catch (e) {
-      setError(e);
-      // A 409 usually means someone else changed the case; reload so the next attempt uses fresh data.
-      qc.invalidateQueries({ queryKey: ['case', view.application.id] });
-      return false;
-    } finally {
-      setBusy(null);
-    }
-  }
-  return { run, error, busy };
 }
 
 export function CasePage() {
@@ -52,6 +28,7 @@ export function CasePage() {
           <Status value={v.application.lifecycleState} label={v.application.lifecycleLabel} />
           {v.application.decisionOutcome && <Status value={v.application.decisionOutcome} />}
           {v.application.complianceStatus !== 'NONE' && <span className="chip warn">Compliance: {humanise(v.application.complianceStatus)}</span>}
+          {v.workflow?.kind === 'APPEAL' && <span className="chip info">Appeal in progress</span>}
           {v.application.isSynthetic && <span className="chip demo">Synthetic record</span>}
         </div>
         <p className="muted">
@@ -63,11 +40,15 @@ export function CasePage() {
       <div className="grid-2">
         <div className="stack">
           <ActionPanel panel={v.actionPanel} />
+          {allowed('CLASSIFY') && <ClassifyForm v={v} />}
           {v.workflow && <RouteCard v={v} />}
+          <FindingsPanel v={v} />
           {v.canEditDraft && <DraftActions v={v} />}
           {(allowed('SAVE_CHECKLIST') || allowed('RECORD_RECOMMENDATION') || allowed('COMPLETE_STAGE')) && <StageWork key={v.currentStageId} v={v} />}
           {allowed('RECORD_DECISION') && <DecisionForm v={v} />}
           {v.decision && <DecisionCard decision={v.decision} />}
+          {allowed('FILE_APPEAL') && <AppealForm v={v} />}
+          <WorkflowHistory v={v} />
           <StageHistory v={v} />
           <Timeline id={v.application.id} />
         </div>
@@ -340,17 +321,29 @@ function AssignForm({ v }: { v: View }) {
 }
 
 function PermittedActions({ list }: { list: any[] }) {
+  const allowed = list.filter((p) => p.allowed);
+  const blocked = list.filter((p) => !p.allowed);
   return (
     <section className="card stack" aria-labelledby="perm-title">
       <h2 id="perm-title">Your permitted actions</h2>
-      <ul style={{ listStyle: 'none', padding: 0, margin: 0 }} className="stack">
-        {list.map((p) => (
-          <li key={p.command} className="small">
-            <Status value={p.allowed ? 'SATISFIED' : 'NOT_APPLICABLE'} label={p.allowed ? 'Allowed' : 'Not available'} /> {p.label}
-            {!p.allowed && <div className="muted">{p.reason}</div>}
-          </li>
-        ))}
-      </ul>
+      {allowed.length === 0 ? <p className="small muted">Nothing for your role to do on this case right now.</p> : (
+        <ul style={{ listStyle: 'none', padding: 0, margin: 0 }} className="stack">
+          {allowed.map((p) => <li key={p.command} className="small"><Status value="SATISFIED" label="Allowed" /> {p.label}</li>)}
+        </ul>
+      )}
+      {blocked.length > 0 && (
+        <details className="pw">
+          <summary>{blocked.length} action(s) not available, and why</summary>
+          <ul style={{ listStyle: 'none', padding: 0, margin: '12px 0 0' }} className="stack">
+            {blocked.map((p) => (
+              <li key={p.command} className="small">
+                <Status value="NOT_APPLICABLE" label="Not available" /> {p.label}
+                <div className="muted">{p.reason}</div>
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
     </section>
   );
 }
@@ -384,6 +377,7 @@ function Submission({ v }: { v: View }) {
         {v.proposal.details.proposedSiteAddress && <><dt>Proposed site</dt><dd>{v.proposal.details.proposedSiteAddress}</dd></>}
         {v.application.snapshotSha256 && <><dt>Snapshot</dt><dd className="mono" title={v.application.snapshotSha256}>SHA-256 {v.application.snapshotSha256.slice(0, 16)}…</dd></>}
       </dl>
+      <Amendments list={v.amendments ?? []} />
     </section>
   );
 }

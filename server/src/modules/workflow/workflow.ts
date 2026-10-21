@@ -35,6 +35,7 @@ export interface WorkflowRow {
   classification_trace: ClassificationTrace;
   state: string;
   current_stage_id: string | null;
+  created_at: Date;
 }
 
 export interface StageRow {

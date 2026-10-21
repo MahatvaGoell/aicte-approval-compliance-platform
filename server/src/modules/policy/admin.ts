@@ -25,7 +25,7 @@ export async function listVersions(db: Db) {
     db,
     `SELECT v.id, v.version_no, v.label, v.status, v.effective_from, v.created_at, v.published_at, v.change_note, v.based_on_id,
             cu.name AS created_by_name, pu.name AS published_by_name,
-            (SELECT count(*)::int FROM workflow_instances w WHERE w.policy_version_id = v.id) AS case_count
+            (SELECT count(DISTINCT w.application_id)::int FROM workflow_instances w WHERE w.policy_version_id = v.id) AS case_count
        FROM policy_versions v
        LEFT JOIN users cu ON cu.id = v.created_by
        LEFT JOIN users pu ON pu.id = v.published_by

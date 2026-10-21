@@ -17,6 +17,7 @@
     "test": "npm -w server run test",
     "evaluate": "npm -w server run evaluate",
     "typecheck": "npm -w server run typecheck && npm -w web run typecheck",
-    "build": "npm -w web run build"
+    "build": "npm -w web run build",
+    "demo:scenarios": "npm -w server run demo:scenarios"
   }
 }

@@ -17,6 +17,7 @@ export function HomePage() {
           Your active role ({me.activeGrant.roleLabel}) manages configuration or administration and has no access to case records.
           Administrative access does not confer regulatory decision powers.
         </p>
+        {can('POLICY_VIEW') && <div><Link className="btn primary" to="/policy">Open policy versions</Link></div>}
       </div>
     );
   }
