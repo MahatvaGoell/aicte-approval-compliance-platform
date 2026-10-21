@@ -9,6 +9,7 @@ import { applicationRoutes } from './modules/applications/routes.js';
 import { auditRoutes } from './modules/audit/routes.js';
 import { actorFromToken } from './modules/identity/auth.js';
 import { identityRoutes } from './modules/identity/routes.js';
+import { policyRoutes } from './modules/policy/routes.js';
 import { referenceRoutes } from './modules/reference/routes.js';
 
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
@@ -88,6 +89,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(referenceRoutes, { prefix: '/api/v1' });
   await app.register(applicationRoutes, { prefix: '/api/v1' });
   await app.register(auditRoutes, { prefix: '/api/v1' });
+  await app.register(policyRoutes, { prefix: '/api/v1' });
 
   app.setNotFoundHandler((req, reply) => {
     reply.status(404).send({ error: { code: 'NOT_FOUND', message: 'No such endpoint', details: null, correlationId: req.correlationId } });

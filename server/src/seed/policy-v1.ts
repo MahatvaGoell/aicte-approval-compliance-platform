@@ -48,6 +48,7 @@ export const policyV1: PolicyDocumentInput = {
     ONLY_EVC: { name: 'Only EVC', stages: ['EVC', 'DECISION'], ...demo },
     EVC_SAC: { name: 'EVC + SAC', stages: ['EVC', 'SAC_REVIEW', 'DECISION'], ...demo },
     EVC_SHC: { name: 'EVC + SHC', stages: ['EVC', 'SHC_HEARING', 'DECISION'], ...demo },
+    APPEAL_SAC: { name: 'Appeal: SAC review', stages: ['SAC_REVIEW', 'DECISION'], ...demo, note: 'Used only for appeals against a decision.' },
   },
   stages: {
     SCRUTINY: {
@@ -107,4 +108,5 @@ export const policyV1: PolicyDocumentInput = {
     conditionsRequiredFor: ['APPROVED_WITH_CONDITIONS'],
     ...demo,
   },
+  appeal: { routeKey: 'APPEAL_SAC', appealableOutcomes: ['REJECTED'], windowDays: 30, ...demo, note: 'Demo appeal window, not an AICTE timeline.' },
 };

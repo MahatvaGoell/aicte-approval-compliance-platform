@@ -80,6 +80,15 @@ export const policyDocumentSchema = z.object({
     conditionsRequiredFor: z.array(z.enum(DECISION_OUTCOMES)).default(['APPROVED_WITH_CONDITIONS']),
     ...ruleMeta,
   }),
+  // Which route an appeal against a decision follows, and within how many calendar days it may be filed.
+  appeal: z
+    .object({
+      routeKey: z.string(),
+      appealableOutcomes: z.array(z.enum(DECISION_OUTCOMES)).min(1).default(['REJECTED']),
+      windowDays: z.number().int().min(1).max(365),
+      ...ruleMeta,
+    })
+    .optional(),
 });
 export type PolicyDocument = z.infer<typeof policyDocumentSchema>;
 /** Authoring shape: fields with defaults may be omitted. */
@@ -148,6 +157,7 @@ export function validatePolicy(raw: unknown): { doc: PolicyDocument | null; issu
     if (!categoryCodes.has(rule.categoryCode)) err(path, `Unknown category "${rule.categoryCode}"`);
     if (!doc.routes[rule.routeKey]) err(path, `Unknown route "${rule.routeKey}"`);
   });
+  if (doc.appeal && !doc.routes[doc.appeal.routeKey]) err('appeal.routeKey', `Unknown route "${doc.appeal.routeKey}"`);
   const ids = doc.classification.map((r) => r.id);
   if (new Set(ids).size !== ids.length) err('classification', 'Classification rule ids must be unique');
 

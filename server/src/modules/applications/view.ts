@@ -9,6 +9,7 @@ import { STATE_LABELS } from '../workflow/states.js';
 import { eligibleAssignees, evaluateCompletion } from '../workflow/workflow.js';
 import type { CaseContext } from './commands.js';
 import { loadCaseContext, permittedCommands } from './commands.js';
+import { findingsForView } from './commands-m2.js';
 import { submissionProblems } from './forms.js';
 
 const NEXT_ACTION_BY_KIND: Record<string, string> = {
@@ -95,6 +96,32 @@ export async function caseView(db: Db, actor: Actor, appId: string) {
       }
     : null;
 
+  const findings = await findingsForView(db, app.id, internal);
+  const amendments = (await q(
+    db,
+    `SELECT am.id, am.finding_id, am.changes, am.note, am.submitted_at, u.name AS submitted_by_name
+       FROM amendments am JOIN users u ON u.id = am.submitted_by WHERE am.application_id = $1 ORDER BY am.submitted_at`,
+    [app.id],
+  )).map((a) => ({ id: a.id, findingId: a.finding_id, changes: a.changes, note: a.note, submittedAt: a.submitted_at, submittedBy: a.submitted_by_name }));
+  // Every workflow instance of the case (primary and appeals) with its decision, oldest first.
+  const workflows = (await q(
+    db,
+    `SELECT w.id, w.kind, w.route_key, w.state, w.created_at, w.appeal_of_decision_id, w.policy_version_id,
+            d.id AS decision_id, d.outcome, d.reason, d.issued_at, du.name AS authority_name,
+            ap.grounds, ap.filed_at
+       FROM workflow_instances w
+       LEFT JOIN decisions d ON d.workflow_id = w.id
+       LEFT JOIN users du ON du.id = d.authority_user_id
+       LEFT JOIN appeals ap ON ap.workflow_id = w.id
+      WHERE w.application_id = $1 ORDER BY w.created_at`,
+    [app.id],
+  )).map((w) => ({
+    id: w.id, kind: w.kind, routeKey: w.route_key, routeName: w.route_key ? policyForNames.doc.routes[w.route_key]?.name ?? w.route_key : null,
+    state: w.state, createdAt: w.created_at, isCurrent: w.id === c.workflow?.id, appealOfDecisionId: w.appeal_of_decision_id,
+    appealGrounds: w.grounds ?? null, appealFiledAt: w.filed_at ?? null,
+    decision: w.decision_id ? { id: w.decision_id, outcome: w.outcome, reason: w.reason, issuedAt: w.issued_at, authorityName: w.authority_name } : null,
+  }));
+
   const canAssign = c.stage && has(actor, 'STAGE_ASSIGN');
   const assignable = canAssign && c.stageDef ? await eligibleAssignees(db, c.stageDef, app.region_id, now()) : [];
 
@@ -108,9 +135,15 @@ export async function caseView(db: Db, actor: Actor, appId: string) {
     institution,
     proposal: { categoryCode: proposal.category_code, categoryName: category?.name ?? proposal.category_code, details: proposal.details, classificationStatus: proposal.classification_status },
     form: app.lifecycle_state === 'DRAFT' ? app.draft_data : full.submitted_snapshot?.form ?? {},
+    findings,
+    amendments,
+    workflows,
+    availableRoutes: c.policy && app.lifecycle_state === 'AWAITING_CLASSIFICATION'
+      ? Object.entries(c.policy.doc.routes).map(([key, r]) => ({ key, name: r.name, stages: r.stages.map((x) => c.policy!.doc.stages[x]?.name ?? x), provenance: r.provenance }))
+      : [],
     workflow: c.workflow
       ? {
-          id: c.workflow.id, state: c.workflow.state, routeKey: c.workflow.route_key,
+          id: c.workflow.id, kind: c.workflowKind, state: c.workflow.state, routeKey: c.workflow.route_key,
           routeName: c.workflow.route_key ? c.policy!.doc.routes[c.workflow.route_key].name : null,
           policyVersion: { id: c.policy!.id, versionNo: c.policy!.versionNo, label: c.policy!.label },
           classification: c.workflow.classification_trace,
@@ -164,6 +197,18 @@ function actionPanel(c: CaseContext, completion: Array<{ condition: string; met:
         blockers: [`No eligible ${ROLE_LABELS[stage.owner_role as Role].toLowerCase()} was available for automatic assignment`],
         ruleRef: stage.rule_ref,
         reasonPending: 'Waiting for assignment',
+        requiresHumanDecision: false,
+      };
+    }
+    if (stage.state === 'AWAITING_RESPONSE') {
+      const pending = c.findings.filter((f) => f.state === 'RESPONSE_PENDING');
+      return {
+        nextAction: `Respond to ${pending.length} returned finding(s)`,
+        responsible: { role: 'Institution representative', person: null },
+        waitingSince: stage.entered_at,
+        blockers: [`${pending.length} finding(s) waiting for the institution's response`],
+        ruleRef: stage.rule_ref,
+        reasonPending: `${stageDef.name} returned the case to the institution; it resumes as a new attempt once every finding is answered`,
         requiresHumanDecision: false,
       };
     }

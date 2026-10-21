@@ -137,12 +137,16 @@ export async function enterStage(
   position: number,
   attemptNo = 1,
   reason = 'Previous stage completed',
+  opts: { preferredUserId?: string | null; carryFromStageId?: string } = {},
 ): Promise<StageRow> {
   const stages = routeStages(policy.doc, workflow.route_key!);
   const { key, def } = stages[position];
   const ref = ruleRef(policy.versionNo, `stages/${key}`);
   const candidates = await eligibleAssignees(tx, def, app.region_id, ctx.at);
-  const assignee = candidates[0] ?? null;
+  // A re-scrutiny attempt goes back to the previous owner when that person is still eligible.
+  const preferred = opts.preferredUserId ? candidates.find((x) => x.user_id === opts.preferredUserId) : undefined;
+  const assignee = preferred ?? candidates[0] ?? null;
+  const method = preferred ? 'PREVIOUS_OWNER' : 'AUTO_LEAST_LOADED';
   const stage = await one<StageRow>(
     tx,
     `INSERT INTO stage_instances (workflow_id, application_id, stage_key, stage_kind, route_position, attempt_no, state,
@@ -153,19 +157,29 @@ export async function enterStage(
       assignee?.committee_id ?? null, assignee?.user_id ?? null, ref, ctx.at,
     ],
   );
+  // Results of the previous attempt are carried over for reference. Items that were deficient go back to
+  // pending so the re-scrutiny looks at them again; the earlier attempt keeps its own rows unchanged.
+  const carried = opts.carryFromStageId
+    ? new Map((await q(tx, 'SELECT code, status, observation FROM checklist_items WHERE stage_instance_id = $1', [opts.carryFromStageId])).map((r) => [r.code, r]))
+    : new Map<string, any>();
   for (const item of def.checklist) {
+    const prev = carried.get(item.code);
+    const status = prev && (prev.status === 'SATISFIED' || prev.status === 'NOT_APPLICABLE') ? prev.status : 'PENDING';
+    const observation = prev?.observation ? (prev.status === 'DEFICIENT' ? `Previous attempt (deficient): ${prev.observation}` : prev.observation) : null;
     await tx.query(
-      `INSERT INTO checklist_items (stage_instance_id, code, requirement, rule_ref, provenance, evidence_doc_type)
-       VALUES ($1,$2,$3,$4,$5,$6)`,
+      `INSERT INTO checklist_items (stage_instance_id, code, requirement, rule_ref, provenance, evidence_doc_type, status, observation)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
       [stage.id, item.code, item.requirement, ruleRef(policy.versionNo, `stages/${key}/checklist/${item.code}`),
-        item.provenance, item.evidenceDocType ?? null],
+        item.provenance, item.evidenceDocType ?? null, status, observation],
     );
   }
   if (assignee) {
     await tx.query(
       `INSERT INTO stage_assignments (stage_instance_id, user_id, assigned_by, method, reason, assigned_at)
-       VALUES ($1, $2, NULL, 'AUTO_LEAST_LOADED', $3, $4)`,
-      [stage.id, assignee.user_id, `Least open stages among ${candidates.length} eligible ${def.ownerRole} user(s)`, ctx.at],
+       VALUES ($1, $2, NULL, $3, $4, $5)`,
+      [stage.id, assignee.user_id, method === 'PREVIOUS_OWNER' ? 'MANUAL' : 'AUTO_LEAST_LOADED',
+        method === 'PREVIOUS_OWNER' ? 'Re-scrutiny returns to the owner of the previous attempt'
+          : `Least open stages among ${candidates.length} eligible ${def.ownerRole} user(s)`, ctx.at],
     );
   }
   await tx.query('UPDATE workflow_instances SET current_stage_id = $2 WHERE id = $1', [workflow.id, stage.id]);
@@ -184,8 +198,8 @@ export async function enterStage(
   if (assignee) {
     await recordAudit(tx, ctx, {
       entityType: 'stage', entityId: stage.id, action: 'STAGE_ASSIGNED',
-      after: { assigneeUserId: assignee.user_id, method: 'AUTO_LEAST_LOADED' },
-      reason: 'Automatic assignment to the least-loaded eligible user',
+      after: { assigneeUserId: assignee.user_id, method },
+      reason: method === 'PREVIOUS_OWNER' ? 'Re-scrutiny returns to the owner of the previous attempt' : 'Automatic assignment to the least-loaded eligible user',
       applicationId: app.id, institutionId: app.institution_id, policyVersionId: policy.id, ruleRef: ref,
     });
   }
@@ -244,13 +258,17 @@ export async function evaluateCompletion(db: Db, stage: StageRow, def: StageDef)
   for (const condition of def.completion) {
     if (condition === 'CHECKLIST_COMPLETE') {
       const items = await q(db, 'SELECT code, status FROM checklist_items WHERE stage_instance_id = $1', [stage.id]);
+      // A deficiency whose finding was closed as not resolved is a recorded outcome, not unfinished work.
+      const standing = new Set((await q(db,
+        `SELECT DISTINCT checklist_code FROM findings WHERE workflow_id = $1 AND stage_key = $2 AND state = 'NOT_RESOLVED' AND checklist_code IS NOT NULL`,
+        [stage.workflow_id, stage.stage_key])).map((r) => r.checklist_code));
       const pending = items.filter((i) => i.status === 'PENDING').map((i) => i.code);
-      const deficient = items.filter((i) => i.status === 'DEFICIENT').map((i) => i.code);
+      const deficient = items.filter((i) => i.status === 'DEFICIENT' && !standing.has(i.code)).map((i) => i.code);
       const met = pending.length === 0 && deficient.length === 0;
       results.push({
         condition, met,
         detail: met
-          ? `All ${items.length} checklist items are satisfied or not applicable`
+          ? `All ${items.length} checklist items are satisfied, not applicable or recorded as unresolved deficiencies`
           : [pending.length ? `${pending.length} pending (${pending.join(', ')})` : '', deficient.length ? `${deficient.length} deficient (${deficient.join(', ')}) — return the case or resolve them` : '']
               .filter(Boolean).join('; '),
       });
@@ -258,7 +276,7 @@ export async function evaluateCompletion(db: Db, stage: StageRow, def: StageDef)
       const rec = await q(db, 'SELECT id FROM recommendations WHERE stage_instance_id = $1 LIMIT 1', [stage.id]);
       results.push({ condition, met: rec.length > 0, detail: rec.length ? 'Recommendation recorded' : 'No recommendation recorded for this stage yet' });
     } else if (condition === 'NO_OPEN_FINDING') {
-      const open = await openFindingCount(db, stage.application_id);
+      const open = await openFindingCount(db, stage.workflow_id);
       results.push({ condition, met: open === 0, detail: open === 0 ? 'No open findings' : `${open} finding(s) still open` });
     } else if (condition === 'EVC_REPORT_ACCEPTED') {
       const accepted = await evcReportAccepted(db, stage.id);
@@ -268,14 +286,13 @@ export async function evaluateCompletion(db: Db, stage: StageRow, def: StageDef)
   return results;
 }
 
-// Findings and EVC visits are added in later migrations; these checks degrade safely until the tables exist.
-async function openFindingCount(db: Db, applicationId: string): Promise<number> {
-  const exists = await q(db, `SELECT to_regclass('public.findings') AS t`);
-  if (!exists[0].t) return 0;
-  const rows = await q(db, `SELECT count(*)::int AS n FROM findings WHERE application_id = $1 AND state <> 'RESOLVED'`, [applicationId]);
+/** Findings of this workflow that still wait for someone: not yet sent, awaiting the institution, or awaiting review. */
+export async function openFindingCount(db: Db, workflowId: string): Promise<number> {
+  const rows = await q(db, `SELECT count(*)::int AS n FROM findings WHERE workflow_id = $1 AND state IN ('OPEN','RESPONSE_PENDING','RESPONSE_SUBMITTED')`, [workflowId]);
   return rows[0].n;
 }
 
+// EVC visits are added in Milestone 4; this check degrades safely until the table exists.
 async function evcReportAccepted(db: Db, stageId: string): Promise<boolean> {
   const exists = await q(db, `SELECT to_regclass('public.evc_visits') AS t`);
   if (!exists[0].t) return false;

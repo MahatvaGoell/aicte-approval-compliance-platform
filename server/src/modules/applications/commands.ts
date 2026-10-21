@@ -15,50 +15,11 @@ import {
   eligibleAssignees, enterStage, evaluateCompletion, loadWorkflowContext, recordTransition, setApplicationState, setStageState,
 } from '../workflow/workflow.js';
 import { assertVersion, bumpVersion, loadVisibleApplication } from './service.js';
+import type { CaseContext, CommandDef } from './command-kit.js';
+import { LIVE_WORK_STATES, assignedOwnerGuard, deny, loadCaseExtras, markStarted } from './command-kit.js';
+import { M2_COMMANDS } from './commands-m2.js';
 
-export interface CaseContext {
-  actor: Actor;
-  app: AppRow;
-  workflow: WorkflowRow | null;
-  policy: PolicyVersion | null;
-  stage: StageRow | null;
-  stageDef: StageDef | null;
-}
-
-export interface Denial {
-  status: 403 | 409;
-  code: string;
-  message: string;
-}
-
-interface CommandDef<S extends z.ZodTypeAny> {
-  name: string;
-  label: string;
-  input: S;
-  /** Who may run it and in what state. Evaluated without input, so it also drives "permitted actions". */
-  guard(c: CaseContext): Denial | null;
-  run(tx: pg.PoolClient, c: CaseContext, ctx: ActionContext, input: z.infer<S>): Promise<Record<string, unknown>>;
-}
-
-const deny = (status: 403 | 409, code: string, message: string): Denial => ({ status, code, message });
-const LIVE_WORK_STATES = ['ASSIGNED', 'IN_PROGRESS'];
-
-/** Shared guard: the actor is the assigned owner of the live stage and holds the stage's owner role. */
-function assignedOwnerGuard(c: CaseContext): Denial | null {
-  if (!c.stage || !c.stageDef) return deny(409, 'NO_ACTIVE_STAGE', 'The case has no active stage');
-  if (c.actor.role !== c.stage.owner_role) {
-    return deny(403, 'NOT_STAGE_OWNER_ROLE', `This stage is owned by the ${c.stage.owner_role.replace(/_/g, ' ').toLowerCase()} role`);
-  }
-  if (c.stage.assignee_user_id !== c.actor.userId) return deny(403, 'NOT_ASSIGNED', 'You are not assigned to this stage');
-  if (!LIVE_WORK_STATES.includes(c.stage.state)) return deny(409, 'STAGE_NOT_WORKABLE', `The stage is ${c.stage.state.toLowerCase().replace(/_/g, ' ')}`);
-  return null;
-}
-
-async function markStarted(tx: Db, c: CaseContext, ctx: ActionContext) {
-  if (c.stage && c.stage.state === 'ASSIGNED') {
-    await setStageState(tx, c.stage, 'IN_PROGRESS', { started_at: ctx.at });
-  }
-}
+export type { CaseContext, Denial } from './command-kit.js';
 
 const assignStage: CommandDef<z.ZodObject<any>> = {
   name: 'ASSIGN_STAGE',
@@ -296,13 +257,14 @@ const recordDecision: CommandDef<z.ZodObject<any>> = {
 };
 
 export const COMMANDS: Record<string, CommandDef<any>> = Object.fromEntries(
-  [assignStage, saveChecklist, recordRecommendation, completeStage, recordDecision].map((c) => [c.name, c]),
+  [assignStage, saveChecklist, recordRecommendation, completeStage, recordDecision, ...M2_COMMANDS].map((c) => [c.name, c]),
 );
 
 export async function loadCaseContext(db: Db, actor: Actor, appId: string, forUpdate: boolean): Promise<CaseContext> {
   const app = await loadVisibleApplication(db, actor, appId, forUpdate);
   const wf = await loadWorkflowContext(db, app);
-  return { actor, app, ...wf };
+  const extras = await loadCaseExtras(db, app, wf.workflow);
+  return { actor, app, ...wf, ...extras };
 }
 
 export function permittedCommands(c: CaseContext) {
