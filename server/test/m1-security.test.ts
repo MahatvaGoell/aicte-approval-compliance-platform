@@ -1,6 +1,8 @@
 import type { FastifyInstance } from 'fastify';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { config } from '../src/config.js';
 import { closePool, getPool } from '../src/db.js';
+import { resetLoginRateLimit } from '../src/modules/identity/routes.js';
 import { Client, createAndSubmit, resetDatabase, signIn, startApp } from './helpers.js';
 import type { SeedRefs } from '../src/seed/base.js';
 
@@ -54,6 +56,28 @@ describe('Authentication', () => {
     const cookie = String([res.headers['set-cookie']].flat()[0]);
     expect(cookie).toMatch(/HttpOnly/i);
     expect(cookie).toMatch(/SameSite=Strict/i);
+  });
+
+  it('demo one-click sign-in works only for listed accounts and only in demo mode', async () => {
+    resetLoginRateLimit();
+    const demo = config.demoMode;
+    try {
+      (config as { demoMode: boolean }).demoMode = true;
+      const c = new Client(app);
+      const ok = await c.raw('POST', '/api/v1/auth/demo-login', { email: 'ro.west@demo.aicte.test' });
+      expect(ok.statusCode).toBe(200);
+      c.sid = String([ok.headers['set-cookie']].flat()[0]).split(';')[0].slice(4);
+      expect((await c.get('/api/v1/me')).json().user.email).toBe('ro.west@demo.aicte.test');
+      // inst.south exists but is not in the demo list.
+      const unlisted = await new Client(app).raw('POST', '/api/v1/auth/demo-login', { email: 'inst.south@demo.aicte.test' });
+      expect(unlisted.statusCode).toBe(404);
+
+      (config as { demoMode: boolean }).demoMode = false;
+      const off = await new Client(app).raw('POST', '/api/v1/auth/demo-login', { email: 'ro.west@demo.aicte.test' });
+      expect(off.statusCode).toBe(404);
+    } finally {
+      (config as { demoMode: boolean }).demoMode = demo;
+    }
   });
 });
 

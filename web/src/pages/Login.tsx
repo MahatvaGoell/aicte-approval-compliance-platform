@@ -14,6 +14,21 @@ export function LoginPage() {
   const [error, setError] = useState<unknown>(null);
   const [busy, setBusy] = useState(false);
 
+  async function demoSignIn(demoEmail: string) {
+    setBusy(true);
+    setError(null);
+    setEmail(demoEmail);
+    try {
+      await api.post('/auth/demo-login', { email: demoEmail });
+      qc.clear();
+      navigate('/');
+    } catch (err) {
+      setError(err);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function submit(e: FormEvent) {
     e.preventDefault();
     setBusy(true);
@@ -53,11 +68,11 @@ export function LoginPage() {
           <section className="card stack" aria-labelledby="demo-title">
             <div>
               <h2 id="demo-title">Demo accounts</h2>
-              <p className="small muted">Synthetic users for the demonstration. Selecting one fills the email; the shared demo password is in the README.</p>
+              <p className="small muted">Synthetic users for the demonstration. Click one to sign in as that user.</p>
             </div>
             <div className="account-list">
               {meta.data.demoAccounts.map((a) => (
-                <button key={a.email} type="button" onClick={() => setEmail(a.email)}>
+                <button key={a.email} type="button" disabled={busy} onClick={() => demoSignIn(a.email)}>
                   <span>{a.label}</span>
                   <span className="mono muted">{a.email.split('@')[0]}</span>
                 </button>

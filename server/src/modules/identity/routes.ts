@@ -4,7 +4,7 @@ import { config } from '../../config.js';
 import { AppError, getPool } from '../../db.js';
 import { demoOffsetMs, now } from '../../lib/clock.js';
 import { requireActor } from '../../http/context.js';
-import { activeGrants, describeGrant, login, logout, switchGrant } from './auth.js';
+import { activeGrants, demoLogin, describeGrant, login, logout, switchGrant } from './auth.js';
 import { ROLE_LABELS } from './permissions.js';
 
 // Simple in-memory limiter for login attempts per client address (per API process).
@@ -32,6 +32,20 @@ export async function identityRoutes(app: FastifyInstance) {
     rateLimit(req.ip);
     const body = z.object({ email: z.string().email().max(200), password: z.string().min(1).max(200) }).parse(req.body);
     const { token, expires } = await login(getPool(), body.email, body.password, req.ip, String(req.headers['user-agent'] ?? ''));
+    reply.setCookie('sid', token, {
+      httpOnly: true, sameSite: 'strict', secure: config.cookieSecure, path: '/', expires,
+    });
+    return { ok: true };
+  });
+
+  // Demo mode only: one-click sign-in as a listed synthetic account. Returns 404 outside demo mode.
+  app.post('/auth/demo-login', async (req, reply) => {
+    if (!config.demoMode) throw new AppError(404, 'NOT_FOUND', 'Not found');
+    rateLimit(req.ip);
+    const body = z.object({ email: z.string().email().max(200) }).parse(req.body);
+    const { token, expires } = await demoLogin(
+      getPool(), body.email, DEMO_ACCOUNTS.map((a) => a.email), req.ip, String(req.headers['user-agent'] ?? ''),
+    );
     reply.setCookie('sid', token, {
       httpOnly: true, sameSite: 'strict', secure: config.cookieSecure, path: '/', expires,
     });
@@ -73,7 +87,8 @@ export async function identityRoutes(app: FastifyInstance) {
   }));
 }
 
-// Listed only in demo mode. Passwords for these synthetic accounts are documented in the README.
+// Listed only in demo mode, where they can also sign in with one click (/auth/demo-login).
+// Passwords for these synthetic accounts are documented in the README.
 export const DEMO_ACCOUNTS = [
   { email: 'inst.west@demo.aicte.test', label: 'Institution representative (Demo Institute of Technology, Pune)' },
   { email: 'inst.north@demo.aicte.test', label: 'Institution representative (Demo College of Engineering, Lucknow)' },

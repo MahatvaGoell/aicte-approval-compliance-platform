@@ -91,13 +91,32 @@ export async function login(db: Db, email: string, password: string, ip: string,
     throw new AppError(403, 'NO_ACTIVE_ROLE', 'This account has no active role assignment');
   }
   await db.query('UPDATE users SET failed_logins = 0, locked_until = NULL WHERE id = $1', [user.id]);
+  return createSession(db, user.id, grants[0].id, ip, userAgent);
+}
+
+/**
+ * Demo mode only: signs in as one of the listed synthetic accounts without a password.
+ * The caller must check config.demoMode and the allowlist; this function checks them again.
+ */
+export async function demoLogin(db: Db, email: string, allowed: readonly string[], ip: string, userAgent: string) {
+  if (!config.demoMode || !allowed.includes(email.toLowerCase())) {
+    throw new AppError(404, 'NOT_FOUND', 'Not found');
+  }
+  const user = await maybe(db, 'SELECT * FROM users WHERE lower(email) = lower($1) AND is_active', [email]);
+  if (!user) throw new AppError(404, 'NOT_FOUND', 'Not found');
+  const grants = await activeGrants(db, user.id);
+  if (grants.length === 0) throw new AppError(403, 'NO_ACTIVE_ROLE', 'This account has no active role assignment');
+  return createSession(db, user.id, grants[0].id, ip, userAgent);
+}
+
+async function createSession(db: Db, userId: string, grantId: string, ip: string, userAgent: string) {
   const token = newToken();
   // Session lifetime uses real time: the demo clock must never extend or shorten a login.
   const expires = new Date(Date.now() + config.sessionTtlHours * 3600_000);
   await db.query(
     `INSERT INTO sessions (token_hash, user_id, active_grant_id, expires_at, ip, user_agent)
      VALUES ($1, $2, $3, $4, $5, $6)`,
-    [sha256(token), user.id, grants[0].id, expires, ip, userAgent.slice(0, 300)],
+    [sha256(token), userId, grantId, expires, ip, userAgent.slice(0, 300)],
   );
   return { token, expires };
 }
