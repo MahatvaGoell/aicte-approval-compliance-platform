@@ -4,7 +4,10 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { ApiError } from './api';
 import { App } from './App';
+import { applySavedTheme } from './motion';
 import './styles.css';
+
+applySavedTheme();
 
 const queryClient = new QueryClient({
   defaultOptions: {
