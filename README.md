@@ -6,6 +6,7 @@ A prototype platform that routes AICTE approval applications through configurabl
 
 > **Prototype notice.** All institutions, people and rules in this repository are synthetic. Routing and timing rules are labelled `DEMO_ASSUMPTION` and are **not** AICTE rules. There is no live connection to any AICTE system. This is not an official AICTE product.
 
+- **Continuing on another machine: [docs/HANDOFF.md](docs/HANDOFF.md)**
 - Build plan: [docs/BUILD_PLAN.md](docs/BUILD_PLAN.md)
 - Progress and what is next: [docs/PROGRESS.md](docs/PROGRESS.md)
 - Foundation modules for deadlines, email and documents: [docs/FOUNDATIONS.md](docs/FOUNDATIONS.md)
