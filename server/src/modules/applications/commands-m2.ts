@@ -3,6 +3,7 @@ import type { Db } from '../../db.js';
 import { AppError, ValidationError, one, q } from '../../db.js';
 import { recordAudit } from '../audit/audit.js';
 import { localDate } from '../deadlines/calendar.js';
+import { closeDeadlines, extendDeadline, openResponseDeadline, pauseForReturn } from '../deadlines/engine.js';
 import { coversRegion, has } from '../identity/permissions.js';
 import { emitEvent } from '../outbox/outbox.js';
 import { ruleRef } from '../policy/engine.js';
@@ -99,6 +100,8 @@ const returnToInstitution: CommandDef<z.ZodObject<any>> = {
     );
     const from = stage.state;
     await setStageState(tx, stage, 'AWAITING_RESPONSE');
+    await pauseForReturn(tx, ctx, stage.id, `Returned to the institution: ${input.reason}`);
+    await openResponseDeadline(tx, ctx, c.app, c.workflow!.id, c.policy!, stage, c.stageDef!.name);
     await recordAudit(tx, ctx, {
       entityType: 'stage', entityId: stage.id, action: 'CASE_RETURNED',
       before: { state: from }, after: { state: 'AWAITING_RESPONSE', findingIds: ids, responseDueNote: input.responseDueNote },
@@ -150,6 +153,7 @@ const respondToFinding: CommandDef<z.ZodObject<any>> = {
 
     const old = c.stage!;
     await setStageState(tx, old, 'COMPLETED', { completed_at: ctx.at, outcome: 'RETURNED', outcome_reason: 'Returned to the institution; all findings answered' });
+    await closeDeadlines(tx, ctx, old.id, 'MET', 'Every returned finding was answered', 'INSTITUTION_RESPONSE');
     await tx.query('UPDATE stage_assignments SET ended_at = $2 WHERE stage_instance_id = $1 AND ended_at IS NULL', [old.id, ctx.at]);
     await recordTransition(tx, ctx, {
       applicationId: c.app.id, workflowId: c.workflow!.id, command: 'RESPONSES_COMPLETE', fromStage: old.stage_key, toStage: old.stage_key,
@@ -348,6 +352,26 @@ const fileAppeal: CommandDef<z.ZodObject<any>> = {
   },
 };
 
+const extendDeadlineCommand: CommandDef<z.ZodObject<any>> = {
+  name: 'EXTEND_DEADLINE',
+  label: 'Extend a deadline',
+  input: z.object({
+    deadlineId: z.string().uuid(),
+    newDueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD'),
+    reason: z.string().trim().min(10).max(2000),
+  }),
+  guard(c) {
+    if (!has(c.actor, 'DEADLINE_EXTEND')) return deny(403, 'MISSING_CAPABILITY', 'Your role cannot extend deadlines');
+    if (!coversRegion(c.actor, c.app.region_id)) return deny(403, 'OUT_OF_SCOPE', 'This case is outside your delegated scope');
+    if (c.activeDeadlineIds.length === 0) return deny(409, 'NO_RUNNING_DEADLINE', 'No deadline of this case is running');
+    return null;
+  },
+  async run(tx, c, ctx, input) {
+    await extendDeadline(tx, ctx, input.deadlineId, c.app.id, input.newDueDate, input.reason);
+    return { deadlineId: input.deadlineId, newDueDate: input.newDueDate };
+  },
+};
+
 export const M2_COMMANDS: CommandDef<any>[] = [
   raiseFinding,
   returnToInstitution,
@@ -357,6 +381,7 @@ export const M2_COMMANDS: CommandDef<any>[] = [
   requestAmendment,
   classifyManually,
   fileAppeal,
+  extendDeadlineCommand,
 ];
 
 /** Findings of every workflow of the case, with their responses; internal findings only for internal viewers. */

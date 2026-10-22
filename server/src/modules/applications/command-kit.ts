@@ -36,6 +36,8 @@ export interface CaseContext {
   /** True if that decision has already been appealed. */
   appealed: boolean;
   workflowKind: 'PRIMARY' | 'APPEAL' | null;
+  /** Clocks of the case that are still running. */
+  activeDeadlineIds: string[];
 }
 
 export interface Denial {
@@ -75,7 +77,8 @@ export async function markStarted(tx: Db, c: CaseContext, ctx: ActionContext) {
 
 
 export async function loadCaseExtras(db: Db, app: AppRow, workflow: WorkflowRow | null) {
-  if (!workflow) return { findings: [] as FindingRow[], decision: null, appealed: false, workflowKind: null };
+  const activeDeadlineIds = (await q(db, `SELECT id FROM deadlines WHERE application_id = $1 AND state = 'ACTIVE'`, [app.id])).map((r) => r.id as string);
+  if (!workflow) return { findings: [] as FindingRow[], decision: null, appealed: false, workflowKind: null, activeDeadlineIds };
   const findings = await q<FindingRow>(
     db,
     `SELECT id, stage_instance_id, stage_key, checklist_code, visibility, responsible_party, requests_amendment, state
@@ -85,5 +88,5 @@ export async function loadCaseExtras(db: Db, app: AppRow, workflow: WorkflowRow 
   const decision = (await q(db, 'SELECT id, outcome, issued_at FROM decisions WHERE workflow_id = $1', [workflow.id]))[0] ?? null;
   const appealed = decision ? (await q(db, 'SELECT 1 FROM appeals WHERE decision_id = $1', [decision.id])).length > 0 : false;
   const kind = (await q(db, 'SELECT kind FROM workflow_instances WHERE id = $1', [workflow.id]))[0].kind;
-  return { findings, decision, appealed, workflowKind: kind };
+  return { findings, decision, appealed, workflowKind: kind, activeDeadlineIds };
 }

@@ -80,6 +80,34 @@ export const policyDocumentSchema = z.object({
     conditionsRequiredFor: z.array(z.enum(DECISION_OUTCOMES)).default(['APPROVED_WITH_CONDITIONS']),
     ...ruleMeta,
   }),
+  // Clocks and the escalation ladder. Absent = no deadlines are tracked for cases on this version.
+  deadlines: z
+    .object({
+      stages: z.record(z.string(), z.object({
+        amount: z.number().int().min(0).max(366),
+        unit: z.enum(['WORKING_DAYS', 'CALENDAR_DAYS', 'CALENDAR_MONTHS']),
+        rollForwardToWorkingDay: z.boolean().optional(),
+        // Whether returning the case to the institution stops this clock. If false it keeps running (D04).
+        pauseOnReturn: z.boolean().default(false),
+        ...ruleMeta,
+      })).default({}),
+      institutionResponse: z.object({
+        amount: z.number().int().min(1).max(366),
+        unit: z.enum(['WORKING_DAYS', 'CALENDAR_DAYS', 'CALENDAR_MONTHS']),
+        rollForwardToWorkingDay: z.boolean().optional(),
+        ...ruleMeta,
+      }).optional(),
+      ladder: z.array(z.object({
+        id: z.string().regex(/^[A-Z0-9_]+$/),
+        offsetDays: z.number().int().min(-365).max(365),
+        kind: z.enum(['REMINDER', 'OVERDUE', 'ESCALATION']),
+        // OWNER = whoever must act (stage assignee, or the institution for a response clock);
+        // CASE_OFFICER = regional officers covering the case region; SUPERVISOR = bureau officers covering it.
+        recipients: z.array(z.enum(['OWNER', 'CASE_OFFICER', 'SUPERVISOR'])).min(1),
+        ...ruleMeta,
+      })).default([]),
+    })
+    .optional(),
   // Which route an appeal against a decision follows, and within how many calendar days it may be filed.
   appeal: z
     .object({
@@ -157,6 +185,17 @@ export function validatePolicy(raw: unknown): { doc: PolicyDocument | null; issu
     if (!categoryCodes.has(rule.categoryCode)) err(path, `Unknown category "${rule.categoryCode}"`);
     if (!doc.routes[rule.routeKey]) err(path, `Unknown route "${rule.routeKey}"`);
   });
+  if (doc.deadlines) {
+    for (const key of Object.keys(doc.deadlines.stages)) {
+      if (!doc.stages[key]) err(`deadlines.stages.${key}`, `Unknown stage "${key}"`);
+    }
+    const stepIds = doc.deadlines.ladder.map((l) => l.id);
+    if (new Set(stepIds).size !== stepIds.length) err('deadlines.ladder', 'Ladder step ids must be unique');
+    doc.deadlines.ladder.forEach((l, i) => {
+      if (l.kind === 'REMINDER' && l.offsetDays >= 0) err(`deadlines.ladder.${i}`, 'A reminder must come before the due date (negative offset)');
+      if (l.kind !== 'REMINDER' && l.offsetDays < 0) err(`deadlines.ladder.${i}`, 'Overdue and escalation steps come on or after the due date');
+    });
+  }
   if (doc.appeal && !doc.routes[doc.appeal.routeKey]) err('appeal.routeKey', `Unknown route "${doc.appeal.routeKey}"`);
   const ids = doc.classification.map((r) => r.id);
   if (new Set(ids).size !== ids.length) err('classification', 'Classification rule ids must be unique');

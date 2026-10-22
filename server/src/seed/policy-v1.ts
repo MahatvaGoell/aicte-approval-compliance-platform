@@ -108,5 +108,24 @@ export const policyV1: PolicyDocumentInput = {
     conditionsRequiredFor: ['APPROVED_WITH_CONDITIONS'],
     ...demo,
   },
+  // Demo timings. They illustrate the mechanism and are NOT AICTE service levels.
+  deadlines: {
+    stages: {
+      SCRUTINY: { amount: 10, unit: 'WORKING_DAYS', pauseOnReturn: true, ...demo },
+      EVC: { amount: 30, unit: 'CALENDAR_DAYS', rollForwardToWorkingDay: true, pauseOnReturn: false, ...demo },
+      SAC_REVIEW: { amount: 15, unit: 'WORKING_DAYS', ...demo },
+      SHC_HEARING: { amount: 15, unit: 'WORKING_DAYS', ...demo },
+      DECISION: { amount: 7, unit: 'WORKING_DAYS', ...demo },
+    },
+    institutionResponse: { amount: 15, unit: 'CALENDAR_DAYS', rollForwardToWorkingDay: true, ...demo },
+    ladder: [
+      { id: 'REMIND_30', offsetDays: -30, kind: 'REMINDER', recipients: ['OWNER'], ...demo },
+      { id: 'REMIND_7', offsetDays: -7, kind: 'REMINDER', recipients: ['OWNER'], ...demo },
+      { id: 'REMIND_1', offsetDays: -1, kind: 'REMINDER', recipients: ['OWNER'], ...demo },
+      { id: 'OVERDUE', offsetDays: 0, kind: 'OVERDUE', recipients: ['OWNER'], ...demo },
+      { id: 'ESCALATE_OFFICER', offsetDays: 1, kind: 'ESCALATION', recipients: ['CASE_OFFICER'], ...demo },
+      { id: 'ESCALATE_SUPERVISOR', offsetDays: 3, kind: 'ESCALATION', recipients: ['SUPERVISOR'], ...demo },
+    ],
+  },
   appeal: { routeKey: 'APPEAL_SAC', appealableOutcomes: ['REJECTED'], windowDays: 30, ...demo, note: 'Demo appeal window, not an AICTE timeline.' },
 };

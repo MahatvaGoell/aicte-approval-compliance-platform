@@ -6,6 +6,7 @@ import type { ActionContext } from '../audit/audit.js';
 import { recordAudit } from '../audit/audit.js';
 import type { Actor } from '../identity/permissions.js';
 import { coversRegion, has } from '../identity/permissions.js';
+import { closeDeadlines } from '../deadlines/engine.js';
 import { emitEvent } from '../outbox/outbox.js';
 import { routeStages, ruleRef } from '../policy/engine.js';
 import type { StageDef } from '../policy/schema.js';
@@ -171,6 +172,7 @@ const completeStage: CommandDef<z.ZodObject<any>> = {
     }
     const from = stage.state;
     await setStageState(tx, stage, 'COMPLETED', { completed_at: ctx.at, completed_by: ctx.actor!.userId, outcome: 'COMPLETED', outcome_reason: input.note ?? null });
+    await closeDeadlines(tx, ctx, stage.id, 'MET', `${c.stageDef!.name} completed`);
     await tx.query('UPDATE stage_assignments SET ended_at = $2 WHERE stage_instance_id = $1 AND ended_at IS NULL', [stage.id, ctx.at]);
     await recordAudit(tx, ctx, {
       entityType: 'stage', entityId: stage.id, action: 'STAGE_COMPLETED',
@@ -234,6 +236,7 @@ const recordDecision: CommandDef<z.ZodObject<any>> = {
     );
     const from = stage.state;
     await setStageState(tx, stage, 'COMPLETED', { completed_at: ctx.at, completed_by: ctx.actor!.userId, outcome: input.outcome, outcome_reason: input.reason });
+    await closeDeadlines(tx, ctx, stage.id, 'MET', 'Decision recorded');
     await tx.query('UPDATE stage_assignments SET ended_at = $2 WHERE stage_instance_id = $1 AND ended_at IS NULL', [stage.id, ctx.at]);
     await tx.query(`UPDATE workflow_instances SET state = 'COMPLETED', completed_at = $2 WHERE id = $1`, [c.workflow!.id, ctx.at]);
     await tx.query('UPDATE applications SET decision_outcome = $2, compliance_status = $3 WHERE id = $1', [

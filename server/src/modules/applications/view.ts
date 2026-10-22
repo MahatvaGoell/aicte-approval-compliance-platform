@@ -9,6 +9,7 @@ import { STATE_LABELS } from '../workflow/states.js';
 import { eligibleAssignees, evaluateCompletion } from '../workflow/workflow.js';
 import type { CaseContext } from './commands.js';
 import { loadCaseContext, permittedCommands } from './commands.js';
+import { deadlinesForCase } from '../deadlines/engine.js';
 import { findingsForView } from './commands-m2.js';
 import { submissionProblems } from './forms.js';
 
@@ -97,6 +98,7 @@ export async function caseView(db: Db, actor: Actor, appId: string) {
     : null;
 
   const findings = await findingsForView(db, app.id, internal);
+  const deadlines = await deadlinesForCase(db, app.id, now(), internal);
   const amendments = (await q(
     db,
     `SELECT am.id, am.finding_id, am.changes, am.note, am.submitted_at, u.name AS submitted_by_name
@@ -136,6 +138,7 @@ export async function caseView(db: Db, actor: Actor, appId: string) {
     proposal: { categoryCode: proposal.category_code, categoryName: category?.name ?? proposal.category_code, details: proposal.details, classificationStatus: proposal.classification_status },
     form: app.lifecycle_state === 'DRAFT' ? app.draft_data : full.submitted_snapshot?.form ?? {},
     findings,
+    deadlines,
     amendments,
     workflows,
     availableRoutes: c.policy && app.lifecycle_state === 'AWAITING_CLASSIFICATION'
@@ -155,11 +158,25 @@ export async function caseView(db: Db, actor: Actor, appId: string) {
     completion,
     recommendations,
     decision,
-    actionPanel: actionPanel(c, completion, app.lifecycle_state === 'DRAFT' ? submissionProblems(app.draft_data, proposal.category_code, proposal.details) : [], stageRows),
+    actionPanel: withDue(actionPanel(c, completion, app.lifecycle_state === 'DRAFT' ? submissionProblems(app.draft_data, proposal.category_code, proposal.details) : [], stageRows), c, deadlines),
     permittedCommands: permittedCommands(c),
     assignableUsers: assignable.map((a) => ({ id: a.user_id, name: a.name, openStages: a.open_load })),
     canEditDraft: app.lifecycle_state === 'DRAFT' && has(actor, 'APPLICATION_CREATE'),
     canSubmit: app.lifecycle_state === 'DRAFT' && has(actor, 'APPLICATION_SUBMIT'),
+  };
+}
+
+/** Adds the running clock that applies to the next action: the institution's response clock while returned, else the stage clock. */
+function withDue(panel: ReturnType<typeof actionPanel>, c: CaseContext, deadlines: Awaited<ReturnType<typeof deadlinesForCase>>) {
+  const open = deadlines.filter((d) => d.state === 'ACTIVE' || d.state === 'PAUSED');
+  const awaiting = c.stage?.state === 'AWAITING_RESPONSE';
+  const d = open.find((x) => x.clockType === (awaiting ? 'INSTITUTION_RESPONSE' : 'STAGE_HANDLING'));
+  return {
+    ...panel,
+    due: d ? {
+      deadlineId: d.id, label: d.label, dueDate: d.currentDueDate, originalDueDate: d.originalDueDate, state: d.state,
+      overdueDays: d.overdueDays, daysLeft: d.daysLeft, explanation: d.explanation, ruleRef: d.ruleRef, provenance: d.provenance,
+    } : null,
   };
 }
 

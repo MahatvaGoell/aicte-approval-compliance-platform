@@ -2,6 +2,7 @@ import type { Db } from '../../db.js';
 import { one, q } from '../../db.js';
 import type { ActionContext } from '../audit/audit.js';
 import { recordAudit } from '../audit/audit.js';
+import { carryStageDeadline, openStageDeadline } from '../deadlines/engine.js';
 import { emitEvent } from '../outbox/outbox.js';
 import type { ClassificationTrace } from '../policy/engine.js';
 import { classify, routeStages, ruleRef } from '../policy/engine.js';
@@ -183,6 +184,9 @@ export async function enterStage(
           : `Least open stages among ${candidates.length} eligible ${def.ownerRole} user(s)`, ctx.at],
     );
   }
+  // The stage clock: a re-scrutiny attempt continues the earlier attempt's clock; otherwise a new one starts.
+  const clockCarried = opts.carryFromStageId ? await carryStageDeadline(tx, ctx, opts.carryFromStageId, stage.id) : false;
+  if (!clockCarried) await openStageDeadline(tx, ctx, app, workflow.id, policy, stage, def.name);
   await tx.query('UPDATE workflow_instances SET current_stage_id = $2 WHERE id = $1', [workflow.id, stage.id]);
   workflow.current_stage_id = stage.id;
 
