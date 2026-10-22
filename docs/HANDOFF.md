@@ -22,7 +22,7 @@ The coding agent builds the whole platform, milestone by milestone, from [BUILD_
 |---|---|
 | M1 — auth, scopes, one complete workflow | Done |
 | M2 — findings/returns, re-scrutiny, all routes, manual classification, appeals, policy versioning | Done |
-| M3 — deadlines, escalation ladder, notifications, email outbox, worker, demo clock | Server done and pushed. Web screens (notifications, operations, deadlines on the case page) were being finished when the work moved; check `git log` and PROGRESS.md "Known gaps" for exactly what is left |
+| M3 — deadlines, escalation ladder, notifications, email outbox, worker, demo clock | Done (99 tests passing). Remaining small gaps are listed in PROGRESS.md "Known gaps" |
 | M4–M8 | Not started (see BUILD_PLAN §21) |
 | UI | Redesigned (warm light/dark themes, motion). Per-page layout brief for a designer: [UI_PAGES.md](UI_PAGES.md) |
 | SIH idea PPT | Not made yet — see "Pending: the SIH presentation" below |
@@ -84,7 +84,7 @@ Rules: commits/docs me koi AI ya Claude attribution mat daalna (no Co-Authored-B
 
 Kaam is order me:
 1. HANDOFF.md ke "Set up on the new laptop" steps chala (npm install, .env, db:start background me, db:reset, npm test). Kuch fail ho toh fix kar.
-2. Milestone 3 ka jo bacha hai (PROGRESS.md "Known gaps" / git log dekh) woh complete kar, tests pass karwa, commit + push.
+2. PROGRESS.md ke "Known gaps" dekh; jo chhota fix turant ho sakta hai woh kar, tests pass karwa, commit + push.
 3. SIH idea PPT bana docs/sih/SIH2026-IDEA-Presentation-Format.pptx template me, HANDOFF.md ke "Pending: the SIH presentation" table ke hisaab se: max 6 slides, flowcharts aur diagrams editable shapes me, har slide render karke check kar. Output docs/sih/SIH26262-Idea-Presentation.pptx me save kar aur mujhe bata kaha hai.
 4. Phir docs/NEXT_PROMPT.md ke hisaab se agla milestone (M4) shuru kar.
 
