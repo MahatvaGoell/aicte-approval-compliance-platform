@@ -8,6 +8,8 @@ import { AuditPage } from './pages/Audit';
 import { CasePage } from './pages/Case';
 import { HomePage } from './pages/Home';
 import { LoginPage } from './pages/Login';
+import { NotificationsPage, useUnreadCount } from './pages/Notifications';
+import { OpsPage } from './pages/Ops';
 import { PolicyListPage, PolicyVersionPage } from './pages/Policy';
 import { SessionProvider, useMe, useMeta, useSession } from './session';
 import { ErrorState, Loading } from './ui';
@@ -36,6 +38,8 @@ function sectionFor(path: string): [string, string] {
   if (path.startsWith('/applications')) return ['02', 'Applications'];
   if (path.startsWith('/audit')) return ['04', 'Audit log'];
   if (path.startsWith('/policy')) return ['05', 'Policy'];
+  if (path.startsWith('/notifications')) return ['06', 'Notifications'];
+  if (path.startsWith('/ops')) return ['07', 'Operations'];
   return ['00', 'Page'];
 }
 
@@ -79,6 +83,8 @@ function Shell() {
             {can('APPLICATION_CREATE') && <NavLink to="/applications/new"><Icon name="plus" />New application</NavLink>}
             {can('AUDIT_VIEW') && <NavLink to="/audit"><Icon name="shield" />Audit log</NavLink>}
             {can('POLICY_VIEW') && <NavLink to="/policy"><Icon name="layers" />Policy</NavLink>}
+            <NavLink to="/notifications"><Icon name="bell" />Notifications</NavLink>
+            {can('OPS_VIEW') && <NavLink to="/ops"><Icon name="pulse" />Operations</NavLink>}
           </nav>
         </div>
         <div className="side-foot">
@@ -100,6 +106,8 @@ function Shell() {
               <Route path="/audit" element={<AuditPage />} />
               <Route path="/policy" element={<PolicyListPage />} />
               <Route path="/policy/:id" element={<PolicyVersionPage />} />
+              <Route path="/notifications" element={<NotificationsPage />} />
+              <Route path="/ops" element={<OpsPage />} />
               <Route path="*" element={<div className="card empty">Page not found.</div>} />
             </Routes>
           </div>
@@ -123,6 +131,17 @@ function DemoBanner() {
   );
 }
 
+function NotificationBell() {
+  const count = useUnreadCount();
+  const n = count.data?.unreadCount ?? 0;
+  return (
+    <Link to="/notifications" className="btn icon bell" aria-label={n ? `${n} unread notifications` : 'Notifications'} title="Notifications">
+      <Icon name="bell" />
+      {n > 0 && <span className="badge num" key={n}>{n > 99 ? '99+' : n}</span>}
+    </Link>
+  );
+}
+
 function TopBar() {
   const { me, switchRole, logout } = useSession();
   return (
@@ -141,6 +160,7 @@ function TopBar() {
       ) : (
         <span className="chip accent">{me.activeGrant.roleLabel} · {me.activeGrant.scope}</span>
       )}
+      <NotificationBell />
       <ThemeToggle />
       <button onClick={logout}><Icon name="logout" />Sign out</button>
     </header>

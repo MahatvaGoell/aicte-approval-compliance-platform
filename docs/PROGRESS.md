@@ -6,8 +6,8 @@ Last updated: 22 Oct 2026 · Specification: [BUILD_PLAN.md](BUILD_PLAN.md) · Ag
 |---|---|
 | M1 — Auth, scopes, records, one complete workflow | **Done** (web screens checked in the browser) |
 | M2 — Returns, re-scrutiny, all routes, classification, appeals, policy versioning | **Done** |
-| M3 — Deadlines, worker, notifications, escalation, demo clock | Not started |
-| M4 — EVC queue, scheduling, conflicts, reports | Not started |
+| M3 — Deadlines, worker, notifications, escalation, demo clock | **Done** |
+| M4 — EVC queue, scheduling, conflicts, reports | **Next** — prompt in [NEXT_PROMPT.md](NEXT_PROMPT.md) |
 | M5 — Documents, obligations, verification, lease renewal | Not started |
 | M6 — Dashboards, reports, audit viewer, mock integration | Not started |
 | M7 — Differentiators (action/gap panel, priority queue, consistency, readiness, preview) | Not started |
@@ -33,6 +33,25 @@ Full Only-Scrutiny journey; completion blocked without partial change (W03); rou
 ### Web (`web/`, port 5180)
 
 Login (demo account picker), shell with role-aware navigation, role switcher and demo banner; home ("My work" / institution's applications); application list with filters and paging; new/edit draft form with field errors; case page (action panel, route progress with rule explanation, checklist, recommendation, completion conditions, assignment, decision form, permitted actions with reasons, recommendations, submission summary, stage history, history timeline); audit log with integrity check. Loading, empty, error, unauthorised and retry states.
+
+## M3 — what exists
+
+### Backend
+
+- **Migration** `003_deadlines_notifications.sql`: `deadlines` (clock type, anchor, rule, calendar, original and current due date, explanation, state ACTIVE/PAUSED/MET/CANCELLED, **generation**, `next_step_at`, ladder copied from the policy), `deadline_pause_segments`, `deadline_adjustments`, `alert_events` (unique on deadline + generation + step + recipient + channel, `NULLS NOT DISTINCT`; states CREATED/MISSED/UNRESOLVED), `notifications`, `deliveries` (email intent with lease, attempts, backoff, provider ref, duplicate flag), `delivery_attempts`, `worker_heartbeats`.
+- **Policy** `deadlines` config: per-stage clocks (`pauseOnReturn`), the institution response clock, and the escalation ladder (reminders 30/7/1 days before, overdue at expiry, case officer +1 day, bureau +3 days). All demo values, labelled `DEMO_ASSUMPTION`.
+- **Engine** (`modules/deadlines/engine.ts`, built on the tested `calendar.ts`): a stage clock opens on stage entry and closes as met or met late when the stage completes or a decision is recorded. A return pauses the clock only if the rule allows it; otherwise the audit records that it keeps running (D04). A returned attempt's clock carries over to the new attempt and resumes with the lost days added (new generation). The institution response clock opens on return and closes when every finding is answered. `EXTEND_DEADLINE` (`DEADLINE_EXTEND`) keeps the original date and starts a new generation (D05).
+- **Scheduler** (`scheduler.ts`): picks deadlines whose next step is due with `FOR UPDATE SKIP LOCKED`, sends the latest reached step to recipients resolved from grants (owner, case officers or bureau covering the region, institution users for a response clock), records earlier reached steps as MISSED (D06) and unresolved recipients. Overdue and escalation steps write audit events; escalation only notifies. `reconcileDeadlines` repairs missing next steps.
+- **Worker** (`modules/notifications/worker.ts`, `src/worker/tick.ts`, `src/worker/main.ts` — `npm run dev:worker`): outbox events → notifications (assignment, queued stage, classification needed, case returned, decision recorded, appeal filed), email delivery with a 60 s lease (N02), cancel of stale reminders whose clock closed or changed generation, retry with backoff, permanent bounce (N04), duplicate suppression by stable message id (N03), heartbeat, periodic reconciliation.
+- **APIs**: `/notifications` (list with filters, unread count, read, acknowledge, read-all); `/ops/health`, `/ops/deliveries` (+ retry of DEAD ones), `/ops/clock` (DEMO_CLOCK, demo mode, audited), `/ops/tick` (run one pass now, demo mode), `/ops/outbox` preview. Case view adds `deadlines` and `actionPanel.due`.
+
+### Web
+
+Bell with unread count in the top bar (30 s polling) and a notifications page (filters, read, acknowledge, email delivery state shown separately); operations page (health tiles, demo clock +1/+7/+30 days and reset, run scheduler now, deliveries with attempt errors and retry, local email outbox preview); case page deadlines card (current vs original due, rule, calculation text, pauses, extensions, alert history including missed steps) with an extension form; the action panel shows the running clock.
+
+### Tests added (14, `m3-deadlines.test.ts`)
+
+Stage clock from the pinned policy; D01 reminder fires at the local-time threshold and not before; D06 downtime sends only the current step and records missed ones; N01 three concurrent scans create one alert; clock closes as met; D04 scrutiny pauses and resumes with 3 working days added while the EVC clock keeps running; D05 extension keeps the original date, new generation, stale queued reminder cancelled, unauthorised and earlier dates refused; N02 expired lease reclaimed; N03 resend after lost acknowledgement is a suppressed duplicate; N04 bounce visible in ops health and not retryable, transient failure retried with backoff then accepted; outbox → notifications without duplicates, acknowledge does not change the case; demo clock permissions and audit; manual tick only in demo mode. D02/D03 are covered by `calendar.test.ts`.
 
 ## M2 — what exists
 
@@ -63,11 +82,13 @@ Case page: findings panel (raise, return, respond, amend, resolve / not resolved
 
 ## Known gaps and notes for the next milestones
 
+- Deadlines run on stage handling and institution response only. EVC scheduling, visit report, obligation, verification and document validity clocks come with M4/M5 and should reuse `modules/deadlines/engine.ts` (add clock types).
+- Jumping the demo clock far ahead records the skipped reminder steps as missed by design; reset the database (`npm run db:reset` then `npm run demo:scenarios`) for a clean demo.
+- Heartbeats use real time; the ops page shows "no worker" unless `npm run dev:worker` runs (the "Run scheduler now" button works without it in demo mode).
+- Digests and grouping of repeated reminders are not built.
 - `evaluateCompletion` still checks `evc_visits` with a `to_regclass` fallback; replace it with a direct query in M4.
 - The policy editor is JSON with live validation; a table-based editor for categories/classification/checklists is not built.
 - Committee members only see cases they are assigned to; SAC/SHC therefore see an appeal only once assigned.
-- No deadlines yet; the case page shows "No deadline policy is configured for this step yet" (M3).
-- `outbox_events` are written but nothing consumes them yet (M3 worker).
 - Committee membership currently comes from `capability_grants.committee_id`; a separate `committee_appointments` table (BUILD_PLAN §7) is still to be added if needed.
 - `docker-compose.yml` is provided but was not tested; the embedded PostgreSQL path was.
 - Port 5173 was occupied on the original dev machine, so the web app uses 5180.

@@ -467,3 +467,42 @@ button svg { width: 15px; height: 15px; flex: none; }
 .diff li.changed { border-left: 3px solid var(--warn); }
 .diff-tag { font-size: 10.5px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; }
 .diff-tag.added { color: var(--ok); } .diff-tag.removed { color: var(--bad); } .diff-tag.changed { color: var(--warn); }
+
+/* ---------- deadlines, notifications, operations (M3) ---------- */
+.due { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.clock { display: grid; gap: 10px; padding: 14px 16px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--raised); animation: stg 0.6s var(--ease) both; }
+.clock.late { border-color: color-mix(in srgb, var(--bad) 45%, var(--line)); background: color-mix(in srgb, var(--bad-soft) 60%, var(--raised)); }
+.clock-log { list-style: none; margin: 0; padding: 0 0 0 14px; border-left: 1px solid var(--line); display: grid; gap: 6px; }
+.clock-log [class^="tag-"] { font-size: 10.5px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; margin-right: 4px; }
+.tag-pause { color: var(--warn); } .tag-adjust { color: var(--info); }
+.tag-alert { color: var(--accent); } .tag-alert.missed, .tag-alert.unresolved { color: var(--muted); }
+.btn.icon { width: 36px; height: 36px; padding: 0; position: relative; }
+.btn.icon svg { width: 17px; height: 17px; }
+.bell .badge {
+  position: absolute; top: -4px; right: -4px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px;
+  background: var(--accent); color: var(--accent-ink); font-size: 10.5px; font-weight: 700; display: grid; place-items: center;
+  box-shadow: 0 0 0 2px var(--bg); animation: pop-badge 0.5s var(--ease) both;
+}
+.bell:hover svg { animation: ring 0.7s var(--ease); transform-origin: 50% 10%; }
+@keyframes pop-badge { 0% { transform: scale(0.4); } 60% { transform: scale(1.15); } 100% { transform: scale(1); } }
+@keyframes ring { 0%, 100% { rotate: 0deg; } 20% { rotate: 14deg; } 40% { rotate: -12deg; } 60% { rotate: 8deg; } 80% { rotate: -4deg; } }
+.notif-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.notif { display: grid; gap: 6px; padding: 14px 16px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow); animation: stg 0.6s var(--ease) both; }
+.notif:nth-child(2) { animation-delay: 40ms; } .notif:nth-child(3) { animation-delay: 80ms; } .notif:nth-child(n + 4) { animation-delay: 120ms; }
+.notif.unread { border-left: 3px solid var(--accent); }
+.notif.sev-escalation, .notif.sev-overdue { border-color: color-mix(in srgb, var(--bad) 40%, var(--line)); }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.stat { display: grid; gap: 2px; padding: 14px 16px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow); animation: stg 0.6s var(--ease) both; }
+.stat:nth-child(2) { animation-delay: 40ms; } .stat:nth-child(3) { animation-delay: 80ms; } .stat:nth-child(4) { animation-delay: 120ms; } .stat:nth-child(n + 5) { animation-delay: 160ms; }
+.stat-label { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.stat-value { font: 650 28px/1.1 var(--display); letter-spacing: -0.03em; }
+.stat.ok .stat-value { color: var(--ok); } .stat.warn .stat-value { color: var(--warn); } .stat.bad .stat-value { color: var(--bad); }
+.clock-face { display: grid; gap: 2px; padding: 14px 16px; border-radius: var(--radius-sm); background: var(--accent-soft); border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--line)); }
+.clock-face strong { font: 650 20px/1.2 var(--display); letter-spacing: -0.02em; }
+.outbox { display: grid; grid-template-columns: minmax(0, 220px) minmax(0, 1fr); gap: 12px; }
+.outbox ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; max-height: 360px; overflow: auto; align-content: start; }
+.outbox ul button { width: 100%; justify-content: flex-start; border-radius: var(--radius-sm); font-family: var(--mono); font-size: 11px; font-weight: 400; overflow: hidden; text-overflow: ellipsis; }
+.outbox ul button.on { border-color: var(--accent); background: var(--accent-soft); }
+.outbox-view { min-width: 0; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--raised); }
+.eml { white-space: pre-wrap; font-family: var(--mono); font-size: 12px; margin: 8px 0 0; }
+@media (max-width: 760px) { .outbox { grid-template-columns: minmax(0, 1fr); } }

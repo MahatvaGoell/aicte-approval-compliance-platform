@@ -1,17 +1,18 @@
-# Prompt for the next agent session — Milestone 2
+# Prompt for the next agent session — Milestone 4
 
 Copy everything below the line into the coding agent.
 
 ---
 
-You are continuing the **AICTE Approval & Compliance Platform** (SIH 2026, problem statement SIH26262) in this repository. Milestone 1 is complete. Your job is **Milestone 2** only.
+You are continuing the **AICTE Approval & Compliance Platform** (SIH 2026, problem statement SIH26262) in this repository. Milestones 1–3 are complete. Your job is **Milestone 4** only: the Expert Visit Committee (EVC) readiness queue, expert directory, conflicts, suggestions, confirmed reservations, rescheduling and visit reports.
 
 ## Read first
 
 1. `AGENTS.md` — product rules and code conventions. Follow them exactly.
-2. `docs/BUILD_PLAN.md` — the specification (especially §8 state models, §9 workflow engine and policy versioning, §15 API, §20 tests, §21 milestones).
+2. `docs/BUILD_PLAN.md` — especially §7 data model (EVC tables), §10 deadlines, §12 EVC, §15 API, §20 tests E01–E03, §21 milestones.
 3. `docs/PROGRESS.md` — what exists and known gaps.
-4. Skim `server/src/modules/applications/commands.ts`, `server/src/modules/workflow/workflow.ts`, `server/src/modules/policy/*`, `server/test/helpers.ts` and `web/src/pages/Case.tsx` before writing code. Match their style.
+4. `docs/FOUNDATIONS.md` — the deadline calendar is already used by `server/src/modules/deadlines/engine.ts`; reuse both.
+5. Skim `server/src/modules/applications/commands.ts`, `command-kit.ts`, `commands-m2.ts`, `server/src/modules/workflow/workflow.ts`, `server/src/modules/deadlines/engine.ts` and `scheduler.ts`, `server/test/helpers.ts`, `server/test/m3-deadlines.test.ts`, `web/src/pages/Case.tsx`, `CaseM2.tsx`, `CaseM3.tsx`. Match their style.
 
 ## Setup
 
@@ -20,50 +21,38 @@ npm install
 cp .env.example .env              # if .env does not exist
 npm run db:start                  # separate terminal (or: docker compose up -d db)
 npm run db:reset
-npm test                          # must show 30 passing before you start
+npm test                          # must show 99 passing before you start
+npm run dev:api                   # then, in another terminal: npm run demo:scenarios
 ```
 
-## Milestone 2 scope
+## Current EVC behaviour
+
+Routes `SCRUTINY_EVC`, `ONLY_EVC`, `EVC_SAC` and `EVC_SHC` reach the `EVC` stage (owner role `REGIONAL_OFFICER`, `allowReturn: true`, completion `EVC_REPORT_ACCEPTED` + `NO_OPEN_FINDING`) and stop there: `evaluateCompletion` checks `evc_visits` through a `to_regclass` fallback because the table does not exist yet. Seeded experts: `evc1`–`evc4@demo.aicte.test` (committee `EVC-POOL`); `ro.*` officers hold the extra capability `EVC_SCHEDULE`.
+
+## Milestone 4 scope
 
 Build each item as a working vertical slice (migration → service/command → API → web → tests).
 
-1. **Findings and deficiency returns** (new migration `002_findings.sql`)
-   - Tables `findings` (application, stage instance, checklist code, reason code, explanation, requested evidence, responsible party, visibility INTERNAL/INSTITUTION, state `RESPONSE_PENDING → RESPONSE_SUBMITTED → RESOLVED | NOT_RESOLVED`, raised by/at) and `finding_responses` (text, submitted by/at; document links come in M5).
-   - Commands: `RAISE_FINDING` (assigned stage owner with `FINDING_RAISE`), `RETURN_TO_INSTITUTION` (requires at least one open institution-visible finding, a reason and a response-due basis note; stage → `AWAITING_RESPONSE`, application lifecycle reflects it), `RESOLVE_FINDING` / `REJECT_FINDING_RESPONSE` (officer, with reason).
-   - Institution: `RESPOND_TO_FINDING` (capability `FINDING_RESPOND`, own institution only). When every returned finding has a response, close the current attempt (`outcome = RETURNED`, preserved) and open a **new attempt** of the same stage (`attempt_no + 1`, re-scrutiny) carrying over checklist results for reference, assigned to the same owner if still eligible.
-   - Only stages with `allowReturn: true` in the policy may return.
-   - Replace the `to_regclass` fallback for `NO_OPEN_FINDING` in `evaluateCompletion` with a direct query.
+1. **Schema** (new migration `004_evc.sql`): `expert_profiles` (user, specialisms, home region, eligibility flags, max visits per month), `expert_availability` (tstzrange), `declared_conflicts` (expert, institution, reason), `evc_visits` (application, stage instance, `ready_at`, mode PHYSICAL/ONLINE/HYBRID, time zone, scheduled tstzrange, state `PROPOSED → CONFIRMED → HELD → REPORT_SUBMITTED → REPORT_ACCEPTED`, plus `CANCELLED`/`RESCHEDULED` with history), `expert_reservations` (visit, expert, tstzrange, active flag) with a **database exclusion constraint** (`btree_gist`, no overlapping active reservation per expert), `visit_events` (history), `visit_findings`. Seed synthetic profiles, availability and one declared conflict.
+2. **Readiness queue**: a case enters the EVC queue only when its EVC stage is live and earlier stages are complete; record `ready_at` and measure scheduling delay from it. Queue API scoped by region with filters.
+3. **Conflict checks**: own institution, declared conflict, same-region affiliation (configurable which are mandatory; label demo). Missing directory data shows **information unavailable**, never "no conflict".
+4. **Suggestions**: eligible experts filtered by specialism, availability and no overlap; ranked by deadline urgency, expert workload and travel practicality, with each factor shown. Pure function with unit tests.
+5. **Commands** (through `POST /applications/:id/commands`, capability `EVC_SCHEDULE` and region scope): `PROPOSE_VISIT`, `CONFIRM_VISIT` (reserves every member in one transaction; the exclusion constraint rejects a competing confirmation → 409 with a clear message), `RESCHEDULE_VISIT` (replaces reservations, keeps history and reason, regenerates alerts), `CANCEL_VISIT`, `RECORD_VISIT_HELD`, `SUBMIT_VISIT_REPORT` (EVC member assigned to the visit), `ACCEPT_VISIT_REPORT` / `RETURN_VISIT_REPORT` (regional officer). Replace the `to_regclass` fallback with a direct query. Institution acknowledgement and member confirmation tracked.
+6. **Clocks**: add clock types for EVC scheduling due (from `ready_at`) and visit report due (from the visit end) to `deadlines`, with demo rules in the policy and the existing scheduler/ladder. Rescheduling bumps the generation so old reminders go stale.
+7. **Web**: EVC queue page (`/evc`) with ready-since and urgency, suggestion panel with factor chips and "information unavailable" warnings, week/month calendar of visits and reservations, visit detail on the case page (mode, members and confirmations, timeline, report submit/accept), expert directory table. Add the route to `sectionFor()` and the nav with an `Icon`.
+8. **Demo scenarios**: extend `server/scripts/demo-scenarios.ts` with a case waiting in the EVC queue and one with a confirmed visit.
 
-2. **Manual classification** for `AWAITING_CLASSIFICATION` cases: command `CLASSIFY` (capability `CLASSIFY`, region scope) choosing a route from the case's pinned policy version, with a mandatory reason. Records the decision trace and starts the first stage.
+## Tests required (Vitest, `server/test/m4-*.test.ts`)
 
-3. **Committee stages** (SAC/SHC in routes EVC_SAC / EVC_SHC) work through the existing commands, kept distinct by committee kind. EVC stage itself stays blocked on `EVC_REPORT_ACCEPTED` until M4 — that is expected.
-
-4. **Appeals (W07)**: command `FILE_APPEAL` by the institution on a `REJECTED` decision, with grounds. Creates a new workflow instance `kind = APPEAL`, `appeal_of_decision_id` set, using a configured appeal route (add `appeal` config to the policy schema, e.g. route `EVC_SAC`, provenance DEMO_ASSUMPTION). The original decision is never modified. Show the link both ways in the case view.
-
-5. **Linked amendments (W05)**: `amendments` table and `REQUEST_AMENDMENT` (institution, only while a finding requests it) storing changed fields as a linked record; the frozen snapshot never changes. Case view shows snapshot + amendments.
-
-6. **Policy versioning and change control**
-   - API per BUILD_PLAN §15: create draft (copy of a version), update draft (Zod + `validatePolicy`), validate (errors/warnings), diff two versions (routes, stages, checklists, classification, calendar — structured, human-readable), publish (only `POLICY_PUBLISH`, requires zero errors, effective date, change note; audit event), list versions, view `policy_sources`.
-   - `POLICY_ADMIN` drafts but cannot publish; `POLICY_APPROVER` publishes but cannot draft; neither can see cases.
-   - Existing cases keep their pinned version. Add a test that publishes v2 with a different route for a category and shows old cases unchanged and new submissions on v2.
-   - Web: policy list, version detail with provenance chips, a table-based structured editor for categories/classification/stages/checklists (JSON editor fallback is acceptable for less common fields), validation results, diff view, publish screen. No visual drag-and-drop builder.
-
-7. **Web for the above**: findings panel on the case page (raise, return, respond, resolve, with status chips and history of attempts), institution "Respond to findings" flow, classification form, appeal button and appeal link, amendment display, policy admin pages. Keep loading/empty/error/unauthorised/retry states.
-
-## Tests required (Vitest, `server/test/m2-*.test.ts`)
-
-- **W01** five route fixtures select and progress through the intended stages (EVC stages may stop at the EVC stage for now; assert they stop there with the right blocker).
-- **W02** manual classification after no match.
-- **W04** return → response → new attempt; original attempt, findings and checklist preserved.
-- **W05** amendment is a linked record; snapshot hash unchanged.
-- **W07** appeal creates a linked instance; original decision unchanged.
-- Return blocked on a stage with `allowReturn: false`; institution cannot respond to another institution's finding (404); internal findings hidden from institutions.
-- Policy: draft validation errors block publish; admin cannot publish; approver cannot draft; pinned version for existing cases; diff output for a known change.
+- **E01** two confirmations reserving the same expert at overlapping times concurrently → the database rejects the second.
+- **E02** reschedule or cancel → reservations replaced with history, alerts of the old generation not sent.
+- **E03** visit time passes without a report → stage not completable; after report accepted → completes.
+- Conflict detection (own institution, declared conflict, information unavailable); suggestion ranking with factors; queue scoping by region (404 out of scope); EVC member sees only visits they are on.
 - All existing tests still pass.
 
 ## Definition of done
 
 - `npm run typecheck` and `npm test` pass.
-- Update `docs/PROGRESS.md` (mark M2 done, list what was built, tests added, known gaps) and replace `docs/NEXT_PROMPT.md` with a prompt for **Milestone 3** in the same style, based on BUILD_PLAN §10 and §21.
+- Update `docs/PROGRESS.md` (mark M4 done, list what was built, tests added, known gaps) and replace `docs/NEXT_PROMPT.md` with a prompt for **Milestone 5** in the same style, based on BUILD_PLAN §11, §12 and §21 and on `docs/FOUNDATIONS.md` (upload checks and storage).
 - Do not invent official AICTE rules or timelines; label everything demo.
 - Commit with a clear message. Do not add AI-tool attribution lines to commits.

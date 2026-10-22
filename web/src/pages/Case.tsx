@@ -5,6 +5,7 @@ import { api } from '../api';
 import { useCommand } from '../caseCommand';
 import { Empty, ErrorState, formatDate, humanise, Loading, MutationError, Provenance, Status } from '../ui';
 import { Amendments, AppealForm, ClassifyForm, FindingsPanel, WorkflowHistory } from './CaseM2';
+import { DeadlinesCard, DueLine } from './CaseM3';
 
 type View = any;
 
@@ -43,6 +44,7 @@ export function CasePage() {
           {allowed('CLASSIFY') && <ClassifyForm v={v} />}
           {v.workflow && <RouteCard v={v} />}
           <FindingsPanel v={v} />
+          <DeadlinesCard v={v} />
           {v.canEditDraft && <DraftActions v={v} />}
           {(allowed('SAVE_CHECKLIST') || allowed('RECORD_RECOMMENDATION') || allowed('COMPLETE_STAGE')) && <StageWork key={v.currentStageId} v={v} />}
           {allowed('RECORD_DECISION') && <DecisionForm v={v} />}
@@ -72,7 +74,7 @@ function ActionPanel({ panel }: { panel: any }) {
         <dt>Responsible</dt>
         <dd>{panel.responsible ? <>{panel.responsible.role}{panel.responsible.person && <> · {panel.responsible.person}</>}</> : '—'}</dd>
         <dt>Due</dt>
-        <dd className="muted">No deadline policy is configured for this step yet</dd>
+        <dd><DueLine due={panel.due} /></dd>
         <dt>Waiting since</dt>
         <dd>{formatDate(panel.waitingSince)}</dd>
         <dt>Why pending</dt>
