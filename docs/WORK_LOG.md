@@ -69,3 +69,5 @@ Row: `id, appNo, institution, region, stage, stageState, owner, pendingAction, d
 - A2 done: ye file bani. Koi code change nahi.
 - B1 done: M6 design upar. Code nahi.
 - B2 done (server only): `server/src/modules/reports/{filters,definitions,service,routes}.ts`, registered in `app.ts`; `GET /reports`, `GET /reports/:name`, `GET /dashboards/:view`. Test `server/test/m6-reports.test.ts` (9, R01 included). Baaki: web (B3), CSV (B4), audit (B5), integration (B6). `stageKey=NONE` = no live stage. Expiring-documents / escalations / trends tiles "unavailable" dikhte hain, count nahi.
+- B3 done (web only): `web/src/pages/Dashboard.tsx` (`/dashboard`, officer/management tabs, tiles, region x stage matrix, unavailable list), `web/src/pages/Reports.tsx` (`/reports`, `/reports/:name`, filters in URL, paging, definitions), nav + `sectionFor` (11, 12) in `App.tsx`. Browser checked: officer, management, institution; tile -> same filtered report. Polling 30 s, stale/failed banner with retry. Baaki: CSV button (B4), audit (B5), integration (B6).
+
