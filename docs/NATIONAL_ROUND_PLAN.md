@@ -21,12 +21,14 @@ Kuch bhi "headline" mat banao jo problem se hat ke ho. Story hamesha same: *"Fil
 | M1 auth, scopes, ek poora workflow | Done |
 | M2 returns, re-scrutiny, 5 routes, classification, appeals, policy versioning | Done |
 | M3 deadlines, reminders 30/7/1, escalation, notifications, email outbox, worker, demo clock | Done (99 tests pass) |
-| M4–M8 | **Baaki** |
+| M4 EVC queue, conflicts, reservations, visit reports | Done (teammate, 26 Oct) |
+| M5 private documents, obligations, verification, lease renewal | Done (teammate, 26 Oct) — **139 tests pass**. Metadata abhi manual hai, OCR/auto-extraction nahi |
+| M6–M8 | **Baaki** (NEXT_PROMPT.md me M6 ka prompt hai) |
 | Idea PPT (internal round) | Done → `docs/sih/SIH26262-Idea-Presentation.pptx` aur `.pdf` |
 | Internal round | **Select ho gaye** |
 | 8 feature ideas ka "court trial" (jury of Claudes) | Done → `docs/sih/court-verdicts/` |
 
-PPT slide 4 me "8 modules working as one system" likha hai. Abhi sirf 3 bane hain. **National judges code + demo dekhenge, isliye pehla kaam promise poora karna hai.**
+PPT slide 4 me "8 modules working as one system" likha hai. Ab M1–M5 bane hain; M6–M8 baaki. **National judges code + demo dekhenge, isliye pehla kaam promise poora karna hai.**
 
 ---
 
@@ -55,10 +57,10 @@ Agar time kam pade toh **neeche se kaato, upar se nahi.** BUILD_PLAN §21 ka rul
 
 | # | Kaam | Kyun | Estimated effort* |
 |---|---|---|---|
-| 1 | **M4 EVC** (queue, experts, conflicts, suggestions, reservations, report) | PPT promise, workflow ka missing step | 2–3 din |
-| 2 | **M5 Documents + obligations** (upload, versions, verification, lease renewal, evidence trail) | Anchor feature, core pain "documents expire" | 3–4 din |
-| 3 | **PDF expiry-date extraction + highlight** (M5 ke andar) | Wow moment, jury ka sabse kam-negative idea | 2 din |
-| 4 | **M6 Dashboards + audit viewer + reports** | PPT promise, "pendency visible" | 2 din |
+| ✅ | ~~M4 EVC~~ | **Done** (teammate) | — |
+| ✅ | ~~M5 Documents + obligations~~ | **Done** (teammate) | — |
+| 1 | **M6 Dashboards + audit viewer + reports** (`docs/NEXT_PROMPT.md`) | PPT promise, "pendency visible" | 2 din |
+| 2 | **PDF expiry-date extraction + highlight** (M5 ke upload/review screen pe) | Wow moment, jury ka sabse kam-negative idea | 2 din |
 | 5 | **M7 Policy impact preview + action/gap panel** | PPT promise, second differentiator | 1–2 din |
 | 6 | **Demo prep**: chaos test, demo script, reset command, 3 full rehearsals | Live demo fail nahi hona chahiye | 1–2 din |
 | 7 | (Optional) QR tamper check, NL search, load test | Sirf agar sab upar ka done ho | — |
@@ -74,8 +76,8 @@ Agar time kam pade toh **neeche se kaato, upar se nahi.** BUILD_PLAN §21 ka rul
 Har milestone ka pattern same hai (AGENTS.md ke rules follow karo):
 **migration (`server/migrations/00N_*.sql`) → service/command (`POST /applications/:id/commands`) → API → web page → tests (`server/test/mN-*.test.ts`) → `npm run typecheck && npm test` → PROGRESS.md update → commit + push.**
 
-### 4.1 M4 — EVC scheduling
-Full prompt already likha hua hai: **`docs/NEXT_PROMPT.md`** (use as-is). Short version:
+### 4.1 M4 — EVC scheduling ✅ DONE (teammate)
+Ban chuka hai (PROGRESS.md dekho). Sirf **demo climax check** karo: point 9 neeche. Reference ke liye purane steps:
 1. Migration `004_evc.sql`: `expert_profiles`, `expert_availability`, `declared_conflicts`, `evc_visits`, `expert_reservations` (**btree_gist exclusion constraint**: ek expert ki overlapping active reservation DB hi reject kare), `visit_events`, `visit_findings`. Synthetic seed.
 2. Readiness queue (`ready_at` record karo), region-scoped API.
 3. Conflict checks: own institution, declared conflict, same-region affiliation. Data missing ho toh **"information unavailable"**, kabhi "no conflict" nahi.
@@ -86,7 +88,8 @@ Full prompt already likha hua hai: **`docs/NEXT_PROMPT.md`** (use as-is). Short 
 8. Tests: E01 (concurrent overlap rejected), E02 (reschedule → old alerts stale), E03 (report bina stage complete nahi).
 9. **Demo climax (jury ki condition):** ek expert jo apni hi college ka hai, suggestion me **blocked** dikhe, reason ke saath aur rule ka label (`DEMO_ASSUMPTION`) — double-booking ko climax mat banao.
 
-### 4.2 M5 — Documents, obligations, verification (anchor feature)
+### 4.2 M5 — Documents, obligations, verification ✅ DONE (teammate)
+Ban chuka hai (PROGRESS.md "M5 — what was built"). Demo me evidence trail panel aur lease renewal case check kar lo. Reference ke liye purane steps:
 BUILD_PLAN §11 aur §12 + `docs/FOUNDATIONS.md` (upload checks aur storage **already bane hue hain, reuse karo**).
 1. Migration `005_documents_obligations.sql`: `documents`, `document_versions` (storage key, SHA-256, uploader, receipt time, predecessor), `obligations` (decision/condition se link, due rule, verifier, state `OPEN → EVIDENCE_SUBMITTED → UNDER_VERIFICATION → FULFILLED / CLOSED_WITH_AUTHORISED_REASON`), `submissions` (receipt), `verifications` (accept/reject + reason), `extracted_fields` (field, value, page, excerpt, method, confirmed_by).
 2. Upload: quarantine → file signature/size/page check → private storage. Download har baar access re-check.
@@ -99,6 +102,7 @@ BUILD_PLAN §11 aur §12 + `docs/FOUNDATIONS.md` (upload checks aur storage **al
 9. Tests: O01–O03, S03 (BUILD_PLAN §20).
 
 ### 4.3 PDF se expiry date nikaalna (wow feature) — offline, free
+M5 me metadata review already hai (uploader suggestion + reviewer-confirmed valid-through, optional page/excerpt). Ye feature **usi suggestion ko automatic bharega**: upload ke baad extractor chale, suggested `valid-through` + page + excerpt bhare, reviewer wahi existing screen pe confirm kare. Naya review flow mat banao.
 Jury ki condition: *offline method naam se batao, scan PDFs bhi, aur accuracy number napo.*
 1. **Text PDF:** `pdfjs-dist` (ya `pdf-parse`) se har page ka text + position nikaalo.
 2. **Scan PDF:** text layer khaali ho toh `tesseract.js` (free, offline OCR) se page image → text + word boxes. Isolated worker me chalao.
@@ -143,7 +147,7 @@ npm install
 cp .env.example .env
 npm run db:start        # alag terminal, chalta rehne do (embedded PostgreSQL :54329)
 npm run db:reset
-npm test                # sab pass hone chahiye (abhi 99)
+npm test                # sab pass hone chahiye (abhi 139)
 npm run dev:api         # :4000
 npm run dev:worker      # reminders/alerts
 npm run dev:web         # http://localhost:5180
@@ -184,7 +188,7 @@ Rules: commits/docs me koi AI ya Claude attribution mat daalna (no Co-Authored-B
 
 Kaam:
 1. Setup chala (NATIONAL_ROUND_PLAN section 5), npm test pass karwa.
-2. NATIONAL_ROUND_PLAN section 3 ke order me kaam kar: pehle M4 (docs/NEXT_PROMPT.md follow kar), phir M5 + PDF date extraction, phir M6, M7, phir demo prep.
+2. NATIONAL_ROUND_PLAN section 3 ke order me kaam kar (M4 aur M5 ho chuke hain): pehle M6 (docs/NEXT_PROMPT.md follow kar), phir PDF date extraction (section 4.3), phir M7, phir demo prep.
 3. Har milestone ke baad typecheck + test, PROGRESS.md update, commit + push, aur NEXT_PROMPT.md agle milestone ke liye update.
 4. Har step ke baad mujhe batana kya hua aur browser me kya click karke check karu.
 ```
@@ -211,10 +215,10 @@ Khaali jagah (`___`) apne measured numbers se bharo. Bina measure kiye koi numbe
 
 | Member | Kaam |
 |---|---|
-| Arihant Jain | M5 documents + obligations + evidence trail (anchor) |
+| Arihant Jain | M6 dashboards + reports + CSV |
 | Yuvika Mittal | PDF date extraction + accuracy evaluation dataset |
-| Alwaz Alam | M4 EVC (backend + tests) |
-| Reeshu Singh Rajput | M6 dashboards, audit viewer, M7 policy preview (web) |
+| Alwaz Alam | M6 audit viewer + mock integration/reconciliation |
+| Reeshu Singh Rajput | M7 policy impact preview + gap panel + priority queue |
 | Mahatva Goel | Demo script, chaos test, rehearsal, national deck update, Q&A prep |
 
 Ek hi file pe do log ek saath kaam na karein; har feature apni branch me, merge se pehle `npm test`.
@@ -224,7 +228,7 @@ Ek hi file pe do log ek saath kaam na karein; har feature apni branch me, merge 
 ## 10. Files ka map
 
 - Plan (ye file): `docs/NATIONAL_ROUND_PLAN.md`
-- Agla milestone ka prompt: `docs/NEXT_PROMPT.md` (M4)
+- Agla milestone ka prompt: `docs/NEXT_PROMPT.md` (M6)
 - Poora spec: `docs/BUILD_PLAN.md` (§11 anchor, §12 EVC/docs, §16 AI, §19 demo, §20 tests, §21 milestones)
 - Kya bana hai: `docs/PROGRESS.md`
 - Reusable modules: `docs/FOUNDATIONS.md`
