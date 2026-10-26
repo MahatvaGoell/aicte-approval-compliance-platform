@@ -10,6 +10,7 @@ import { eligibleAssignees, evaluateCompletion } from '../workflow/workflow.js';
 import type { CaseContext } from './commands.js';
 import { loadCaseContext, permittedCommands } from './commands.js';
 import { deadlinesForCase } from '../deadlines/engine.js';
+import { visitViews } from '../evc/service.js';
 import { findingsForView } from './commands-m2.js';
 import { submissionProblems } from './forms.js';
 
@@ -139,6 +140,7 @@ export async function caseView(db: Db, actor: Actor, appId: string) {
     form: app.lifecycle_state === 'DRAFT' ? app.draft_data : full.submitted_snapshot?.form ?? {},
     findings,
     deadlines,
+    evc: { visits: await visitViews(db, actor, app.id), policy: c.policy?.doc.evc ?? null },
     amendments,
     workflows,
     availableRoutes: c.policy && app.lifecycle_state === 'AWAITING_CLASSIFICATION'
@@ -170,7 +172,8 @@ export async function caseView(db: Db, actor: Actor, appId: string) {
 function withDue(panel: ReturnType<typeof actionPanel>, c: CaseContext, deadlines: Awaited<ReturnType<typeof deadlinesForCase>>) {
   const open = deadlines.filter((d) => d.state === 'ACTIVE' || d.state === 'PAUSED');
   const awaiting = c.stage?.state === 'AWAITING_RESPONSE';
-  const d = open.find((x) => x.clockType === (awaiting ? 'INSTITUTION_RESPONSE' : 'STAGE_HANDLING'));
+  const evcClock = c.stage?.stage_kind === 'EVC' ? open.find((x) => x.clockType === (c.evcVisit ? 'EVC_REPORT' : 'EVC_SCHEDULING')) : null;
+  const d = evcClock ?? open.find((x) => x.clockType === (awaiting ? 'INSTITUTION_RESPONSE' : 'STAGE_HANDLING'));
   return {
     ...panel,
     due: d ? {

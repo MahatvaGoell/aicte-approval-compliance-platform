@@ -6,6 +6,7 @@ import { useCommand } from '../caseCommand';
 import { Empty, ErrorState, formatDate, humanise, Loading, MutationError, Provenance, Status } from '../ui';
 import { Amendments, AppealForm, ClassifyForm, FindingsPanel, WorkflowHistory } from './CaseM2';
 import { DeadlinesCard, DueLine } from './CaseM3';
+import { EvcCaseCard } from './CaseM4';
 
 type View = any;
 
@@ -45,6 +46,7 @@ export function CasePage() {
           {v.workflow && <RouteCard v={v} />}
           <FindingsPanel v={v} />
           <DeadlinesCard v={v} />
+          <EvcCaseCard v={v} />
           {v.canEditDraft && <DraftActions v={v} />}
           {(allowed('SAVE_CHECKLIST') || allowed('RECORD_RECOMMENDATION') || allowed('COMPLETE_STAGE')) && <StageWork key={v.currentStageId} v={v} />}
           {allowed('RECORD_DECISION') && <DecisionForm v={v} />}

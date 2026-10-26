@@ -127,5 +127,11 @@ export const policyV1: PolicyDocumentInput = {
       { id: 'ESCALATE_SUPERVISOR', offsetDays: 3, kind: 'ESCALATION', recipients: ['SUPERVISOR'], ...demo },
     ],
   },
+  evc: {
+    minMembers: 2, maxMembers: 3, mandatoryConflicts: ['OWN_INSTITUTION','DECLARED'],
+    scheduling: { amount: 7, unit: 'WORKING_DAYS', ...demo },
+    report: { amount: 3, unit: 'WORKING_DAYS', ...demo },
+    ...demo, note: 'Demonstration composition, conflicts and timings; not official requirements.',
+  },
   appeal: { routeKey: 'APPEAL_SAC', appealableOutcomes: ['REJECTED'], windowDays: 30, ...demo, note: 'Demo appeal window, not an AICTE timeline.' },
 };

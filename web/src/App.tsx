@@ -6,6 +6,7 @@ import { ApplicationFormPage } from './pages/ApplicationForm';
 import { ApplicationsPage } from './pages/Applications';
 import { AuditPage } from './pages/Audit';
 import { CasePage } from './pages/Case';
+import { EvcPage } from './pages/Evc';
 import { HomePage } from './pages/Home';
 import { LoginPage } from './pages/Login';
 import { NotificationsPage, useUnreadCount } from './pages/Notifications';
@@ -40,6 +41,7 @@ function sectionFor(path: string): [string, string] {
   if (path.startsWith('/policy')) return ['05', 'Policy'];
   if (path.startsWith('/notifications')) return ['06', 'Notifications'];
   if (path.startsWith('/ops')) return ['07', 'Operations'];
+  if (path.startsWith('/evc')) return ['08', 'Expert visits'];
   return ['00', 'Page'];
 }
 
@@ -85,6 +87,7 @@ function Shell() {
             {can('POLICY_VIEW') && <NavLink to="/policy"><Icon name="layers" />Policy</NavLink>}
             <NavLink to="/notifications"><Icon name="bell" />Notifications</NavLink>
             {can('OPS_VIEW') && <NavLink to="/ops"><Icon name="pulse" />Operations</NavLink>}
+            {can('EVC_VIEW') && (me.activeGrant.role !== 'COMMITTEE_MEMBER' || me.activeGrant.committeeKind === 'EVC') && <NavLink to="/evc"><Icon name="calendar" />Expert visits</NavLink>}
           </nav>
         </div>
         <div className="side-foot">
@@ -108,6 +111,7 @@ function Shell() {
               <Route path="/policy/:id" element={<PolicyVersionPage />} />
               <Route path="/notifications" element={<NotificationsPage />} />
               <Route path="/ops" element={<OpsPage />} />
+              <Route path="/evc" element={<EvcPage />} />
               <Route path="*" element={<div className="card empty">Page not found.</div>} />
             </Routes>
           </div>

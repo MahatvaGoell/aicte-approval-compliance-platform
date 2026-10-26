@@ -4,6 +4,7 @@ import type { ActionContext } from '../audit/audit.js';
 import { recordAudit } from '../audit/audit.js';
 import { carryStageDeadline, openStageDeadline } from '../deadlines/engine.js';
 import { emitEvent } from '../outbox/outbox.js';
+import { readiness } from '../evc/service.js';
 import type { ClassificationTrace } from '../policy/engine.js';
 import { classify, routeStages, ruleRef } from '../policy/engine.js';
 import type { StageDef } from '../policy/schema.js';
@@ -189,6 +190,7 @@ export async function enterStage(
   if (!clockCarried) await openStageDeadline(tx, ctx, app, workflow.id, policy, stage, def.name);
   await tx.query('UPDATE workflow_instances SET current_stage_id = $2 WHERE id = $1', [workflow.id, stage.id]);
   workflow.current_stage_id = stage.id;
+  await readiness(tx, ctx, app, workflow.id, policy, stage);
 
   await recordTransition(tx, ctx, {
     applicationId: app.id, workflowId: workflow.id, command: 'ENTER_STAGE', toStage: key, toState: stage.state,
@@ -297,10 +299,7 @@ export async function openFindingCount(db: Db, workflowId: string): Promise<numb
   return rows[0].n;
 }
 
-// EVC visits are added in Milestone 4; this check degrades safely until the table exists.
 async function evcReportAccepted(db: Db, stageId: string): Promise<boolean> {
-  const exists = await q(db, `SELECT to_regclass('public.evc_visits') AS t`);
-  if (!exists[0].t) return false;
   const rows = await q(db, `SELECT 1 FROM evc_visits WHERE stage_instance_id = $1 AND state = 'REPORT_ACCEPTED'`, [stageId]);
   return rows.length > 0;
 }

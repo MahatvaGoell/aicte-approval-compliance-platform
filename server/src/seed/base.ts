@@ -3,6 +3,7 @@ import { canonicalJson, hashPassword, newCorrelationId, sha256 } from '../lib/cr
 import { recordAudit } from '../modules/audit/audit.js';
 import { validatePolicy } from '../modules/policy/schema.js';
 import { policyV1 } from './policy-v1.js';
+import { seedEvc } from './evc.js';
 
 // Synthetic reference data. Every institution, person and address here is fictional.
 export const DEMO_PASSWORD = process.env.DEMO_PASSWORD ?? 'Demo@2026';
@@ -142,5 +143,6 @@ export async function seedBase(tx: pg.PoolClient): Promise<SeedRefs> {
     reason: 'Seeded demonstration policy', policyVersionId: policy.rows[0].id,
   });
   await tx.query(`INSERT INTO system_settings (key, value) VALUES ('demo_clock_offset_ms', '0')`);
+  await seedEvc(tx, ctx, users, institutions);
   return { institutions, users, policyV1Id: policy.rows[0].id };
 }

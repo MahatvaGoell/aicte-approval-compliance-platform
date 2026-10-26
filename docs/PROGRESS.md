@@ -1,17 +1,36 @@
 # Progress
 
-Last updated: 22 Oct 2026 · Specification: [BUILD_PLAN.md](BUILD_PLAN.md) · Agent rules: [../AGENTS.md](../AGENTS.md)
+Last updated: 26 Oct 2026 · Specification: [BUILD_PLAN.md](BUILD_PLAN.md) · Agent rules: [../AGENTS.md](../AGENTS.md)
 
 | Milestone | Status |
 |---|---|
 | M1 — Auth, scopes, records, one complete workflow | **Done** (web screens checked in the browser) |
 | M2 — Returns, re-scrutiny, all routes, classification, appeals, policy versioning | **Done** |
 | M3 — Deadlines, worker, notifications, escalation, demo clock | **Done** |
-| M4 — EVC queue, scheduling, conflicts, reports | **Next** — prompt in [NEXT_PROMPT.md](NEXT_PROMPT.md) |
-| M5 — Documents, obligations, verification, lease renewal | Not started |
+| M4 — EVC queue, scheduling, conflicts, reports | **Done** — EVC queue → accepted report → next stage, browser verified |
+| M5 — Documents, obligations, verification, lease renewal | **Next** — prompt in [NEXT_PROMPT.md](NEXT_PROMPT.md) |
 | M6 — Dashboards, reports, audit viewer, mock integration | Not started |
 | M7 — Differentiators (action/gap panel, priority queue, consistency, readiness, preview) | Not started |
 | M8 — Optional AI, load/recovery tests, docs, evaluation, rehearsal | Not started |
+
+## M4 — what was built
+
+Baseline: installed dependencies in an isolated checkout of GitHub main, reset the disposable development database and confirmed **99/99 tests** before implementation. Original local M3 work was left untouched.
+
+- Migration `004_evc.sql`: expert profiles, availability ranges, declared conflicts, durable readiness, visits, appointed members, active reservations, report revisions, separate observations and visit events. PostgreSQL `btree_gist` exclusion constraint prohibits overlapping active reservations; one live visit per stage. Reports/observations/events are append-only.
+- Readiness is recorded on EVC stage entry after preceding route positions complete; migration backfills existing eligible stages. Queue, total counts, calendar and visit detail are scoped to the active grant. Experts can access only visits assigned under their current EVC committee grant; assignments also populate My work.
+- Pinned optional `evc` policy config specifies demo composition, mandatory/advisory conflicts and scheduling/report durations. Fresh synthetic seed includes two selectable experts, an own-institution/declared conflict, an incomplete directory and availability. Published policies are never rewritten; old versions without EVC configuration remain explicitly unconfigured. Capacity uses visit-start month in the pinned policy timezone.
+- Deterministic suggestions expose eligibility, specialism, availability, conflicts, overlap, monthly capacity and workload/travel/urgency factors. Incomplete directory means information unavailable; travel uses a home-region proxy, not actual distance. Confirmation revalidates all factors and locks experts in stable order before reserving the entire team atomically.
+- Case commands: `PROPOSE_VISIT`, `CONFIRM_VISIT`, `RESCHEDULE_VISIT`, `CANCEL_VISIT`, `ACKNOWLEDGE_VISIT`, `CONFIRM_VISIT_MEMBER`, `RECORD_VISIT_HELD`, `SUBMIT_VISIT_REPORT`, `ACCEPT_VISIT_REPORT`, `RETURN_VISIT_REPORT`. They use existing case versions/idempotency plus visit versions, audit and outbox in one transaction. Booking conflicts return 409. Cancel a planned visit before returning its case; report correction is a separate review action.
+- Rescheduling retains the replaced visit and reservations, creates a linked replacement, resets acknowledgements and regenerates report alerts. Failed replacements roll back entirely. Cancellation releases reservations and reopens scheduling from original readiness, including overdue catch-up. A visit must have ended and have institution/member confirmations before it can be recorded held. Time passing never completes it.
+- Report revisions keep internal summaries and individually scoped observations. Only assigned EVC members submit; regional report reviewers accept or return the latest revision with a reason. Only an accepted report satisfies the direct EVC completion query. Regulatory approval remains a separate authority decision.
+- EVC scheduling/report clocks reuse the calendar, engine, scheduler and escalation ladder. Report reminders resolve appointed experts. Visit events become generic scoped notifications with local email intents; report contents are never copied into email.
+- Web: Expert visits nav, filtered/paged readiness queue, week/month reservation view, expert directory, explanation-based team selection, proposal/reschedule forms, confirmations, report editor/revision review and visit history on the case. Action panel selects the relevant EVC clock. Added one-click demo expert accounts and two EVC demo scenarios.
+- Tests: `m4-evc.test.ts` (16) and `m4-suggestions.test.ts` (4): E01–E03, concurrent API bookings, independent DB constraint, adjacent slots, capacity, reschedule rollback, stale deliveries, prerequisite queue, conflicts/missing info, expired grants, versions/idempotency, transaction rollback, report confidentiality/revisions and overdue cancellation. Total **119 tests**; final results recorded in the completion report.
+- Browser verified: proposal → confirmation → institution acknowledgement → both experts confirm → demo clock advance → held visit → expert report → regional acceptance → explicit stage completion to decision. No approval was automatically recorded.
+- Final verification: `npm run typecheck`, `npm test` (**119/119**), `npm run build` and `git diff --check` passed. Browser rescheduling also confirmed a new reserved slot, reset confirmations and a preserved historical visit. Browser console error log was empty during the walkthrough.
+
+M4 limits: expert directory/availability/conflicts are seeded read-only records (no directory administration UI); travel is a region proxy; visit reports are structured text. File attachments and evidence-version links belong to M5. No real portal integration, offline inspection workspace, external email delivery or M5 implementation was added.
 
 ## M1 — what exists
 
@@ -82,11 +101,11 @@ Case page: findings panel (raise, return, respond, amend, resolve / not resolved
 
 ## Known gaps and notes for the next milestones
 
-- Deadlines run on stage handling and institution response only. EVC scheduling, visit report, obligation, verification and document validity clocks come with M4/M5 and should reuse `modules/deadlines/engine.ts` (add clock types).
+- Clocks cover stage handling, institution response, EVC scheduling and visit reports. Obligation, verification and document validity clocks remain M5; reuse the deadline engine/calendar.
 - Jumping the demo clock far ahead records the skipped reminder steps as missed by design; reset the database (`npm run db:reset` then `npm run demo:scenarios`) for a clean demo.
 - Heartbeats use real time; the ops page shows "no worker" unless `npm run dev:worker` runs (the "Run scheduler now" button works without it in demo mode).
 - Digests and grouping of repeated reminders are not built.
-- `evaluateCompletion` still checks `evc_visits` with a `to_regclass` fallback; replace it with a direct query in M4.
+- `evaluateCompletion` now queries accepted EVC reports directly; no missing-table fallback remains.
 - The policy editor is JSON with live validation; a table-based editor for categories/classification/checklists is not built.
 - Committee members only see cases they are assigned to; SAC/SHC therefore see an appeal only once assigned.
 - Committee membership currently comes from `capability_grants.committee_id`; a separate `committee_appointments` table (BUILD_PLAN §7) is still to be added if needed.

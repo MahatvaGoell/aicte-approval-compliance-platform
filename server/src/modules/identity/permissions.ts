@@ -35,6 +35,8 @@ export const CAPABILITIES = [
   'EVIDENCE_VERIFY',
   'DOCUMENT_VERIFY',
   'EVC_SCHEDULE',
+  'EVC_VIEW',
+  'EVC_REVIEW',
   // authority
   'DECISION_RECORD',
   'DEADLINE_EXTEND',
@@ -59,21 +61,21 @@ export const ROLE_CAPABILITIES: Record<Role, Capability[]> = {
   INSTITUTION_REP: ['APPLICATION_CREATE', 'APPLICATION_SUBMIT', 'APPLICATION_VIEW_SCOPE', 'FINDING_RESPOND', 'APPEAL_FILE', 'EVIDENCE_UPLOAD'],
   REGIONAL_OFFICER: [
     'APPLICATION_VIEW_SCOPE', 'INTERNAL_NOTES_VIEW', 'STAGE_ASSIGN', 'STAGE_WORK', 'FINDING_RAISE', 'CASE_RETURN',
-    'CLASSIFY', 'EVIDENCE_VERIFY', 'DOCUMENT_VERIFY', 'REPORTS_VIEW',
+    'CLASSIFY', 'EVIDENCE_VERIFY', 'DOCUMENT_VERIFY', 'REPORTS_VIEW', 'EVC_VIEW', 'EVC_REVIEW',
   ],
   BUREAU_OFFICER: [
     'APPLICATION_VIEW_SCOPE', 'INTERNAL_NOTES_VIEW', 'STAGE_ASSIGN', 'CLASSIFY', 'EVIDENCE_VERIFY', 'DEADLINE_EXTEND',
-    'REPORTS_VIEW',
+    'REPORTS_VIEW', 'EVC_VIEW',
   ],
-  COMMITTEE_MEMBER: ['APPLICATION_VIEW_ASSIGNED', 'INTERNAL_NOTES_VIEW', 'STAGE_WORK', 'RECOMMEND', 'FINDING_RAISE', 'CASE_RETURN'],
+  COMMITTEE_MEMBER: ['APPLICATION_VIEW_ASSIGNED', 'INTERNAL_NOTES_VIEW', 'STAGE_WORK', 'RECOMMEND', 'FINDING_RAISE', 'CASE_RETURN', 'EVC_VIEW'],
   COMPETENT_AUTHORITY: [
     'APPLICATION_VIEW_SCOPE', 'INTERNAL_NOTES_VIEW', 'STAGE_WORK', 'DECISION_RECORD', 'DEADLINE_EXTEND', 'CASE_REOPEN',
-    'POLICY_MIGRATE', 'CLOSE_WITH_REASON', 'REPORTS_VIEW',
+    'POLICY_MIGRATE', 'CLOSE_WITH_REASON', 'REPORTS_VIEW', 'EVC_VIEW',
   ],
   SYSTEM_ADMIN: ['USERS_MANAGE', 'SETTINGS_MANAGE', 'DEMO_CLOCK', 'OPS_VIEW', 'POLICY_VIEW'],
   POLICY_ADMIN: ['POLICY_VIEW', 'POLICY_DRAFT'],
   POLICY_APPROVER: ['POLICY_VIEW', 'POLICY_PUBLISH'],
-  AUDITOR: ['APPLICATION_VIEW_SCOPE', 'INTERNAL_NOTES_VIEW', 'AUDIT_VIEW', 'REPORTS_VIEW', 'POLICY_VIEW'],
+  AUDITOR: ['APPLICATION_VIEW_SCOPE', 'INTERNAL_NOTES_VIEW', 'AUDIT_VIEW', 'REPORTS_VIEW', 'POLICY_VIEW', 'EVC_VIEW'],
 };
 
 export const ROLE_LABELS: Record<Role, string> = {
@@ -135,6 +137,12 @@ export function applicationScopeSql(actor: Actor, params: unknown[], alias = 'a'
   }
   if (has(actor, 'APPLICATION_VIEW_ASSIGNED')) {
     params.push(actor.userId);
+    const userParam = params.length;
+    if (actor.committeeKind === 'EVC') {
+      params.push(actor.committeeId);
+      return `EXISTS (SELECT 1 FROM evc_visits ev JOIN visit_members vm ON vm.visit_id = ev.id
+        WHERE ev.application_id = ${alias}.id AND vm.expert_user_id = $${userParam} AND vm.committee_id = $${params.length})`;
+    }
     return `EXISTS (SELECT 1 FROM stage_assignments sa JOIN stage_instances si ON si.id = sa.stage_instance_id
              WHERE si.application_id = ${alias}.id AND sa.user_id = $${params.length})`;
   }
@@ -154,6 +162,11 @@ export function institutionScopeSql(actor: Actor, params: unknown[], alias = 'i'
   }
   if (has(actor, 'APPLICATION_VIEW_ASSIGNED')) {
     params.push(actor.userId);
+    if (actor.committeeKind === 'EVC') {
+      const userParam = params.length; params.push(actor.committeeId);
+      return `EXISTS (SELECT 1 FROM applications av JOIN evc_visits ev ON ev.application_id = av.id JOIN visit_members vm ON vm.visit_id = ev.id
+        WHERE av.institution_id = ${alias}.id AND vm.expert_user_id = $${userParam} AND vm.committee_id = $${params.length})`;
+    }
     return `EXISTS (SELECT 1 FROM applications a2 JOIN stage_instances si ON si.application_id = a2.id
              JOIN stage_assignments sa ON sa.stage_instance_id = si.id
              WHERE a2.institution_id = ${alias}.id AND sa.user_id = $${params.length})`;

@@ -84,6 +84,7 @@ const returnToInstitution: CommandDef<z.ZodObject<any>> = {
   }),
   guard(c) {
     if (!has(c.actor, 'CASE_RETURN')) return deny(403, 'MISSING_CAPABILITY', 'Your role cannot return cases');
+    if (c.stage?.stage_kind === 'EVC' && c.evcVisit) return deny(409, 'EVC_VISIT_ACTIVE', 'Cancel a planned visit before returning the case; use report review for a visit already held');
     const d = assignedOwnerGuard(c);
     if (d) return d;
     if (!c.stageDef!.allowReturn) return deny(409, 'RETURN_NOT_ALLOWED', `The policy does not allow ${c.stageDef!.name} to return a case`);

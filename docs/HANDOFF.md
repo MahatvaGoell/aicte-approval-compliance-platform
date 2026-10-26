@@ -16,14 +16,15 @@ The coding agent builds the whole platform, milestone by milestone, from [BUILD_
 - Never present a demo rule or timeline as an official AICTE rule (provenance labels: `APH_CLAUSE`, `ADMIN_INSTRUCTION`, `DEMO_ASSUMPTION`).
 - All data is synthetic. Never send real emails or call real external services.
 
-## Status (22 Oct 2026)
+## Status (26 Oct 2026)
 
 | Milestone | State |
 |---|---|
 | M1 — auth, scopes, one complete workflow | Done |
 | M2 — findings/returns, re-scrutiny, all routes, manual classification, appeals, policy versioning | Done |
 | M3 — deadlines, escalation ladder, notifications, email outbox, worker, demo clock | Done (99 tests passing). Remaining small gaps are listed in PROGRESS.md "Known gaps" |
-| M4–M8 | Not started (see BUILD_PLAN §21) |
+| M4 — EVC readiness, conflicts, reservations, reports | Done; see PROGRESS.md for acceptance checks and limitations |
+| M5–M8 | Not started; NEXT_PROMPT.md starts M5 |
 | UI | Redesigned (warm light/dark themes, motion). Per-page layout brief for a designer: [UI_PAGES.md](UI_PAGES.md) |
 | SIH idea PPT | Not made yet — see "Pending: the SIH presentation" below |
 
@@ -86,7 +87,7 @@ Kaam is order me:
 1. HANDOFF.md ke "Set up on the new laptop" steps chala (npm install, .env, db:start background me, db:reset, npm test). Kuch fail ho toh fix kar.
 2. PROGRESS.md ke "Known gaps" dekh; jo chhota fix turant ho sakta hai woh kar, tests pass karwa, commit + push.
 3. SIH idea PPT bana docs/sih/SIH2026-IDEA-Presentation-Format.pptx template me, HANDOFF.md ke "Pending: the SIH presentation" table ke hisaab se: max 6 slides, flowcharts aur diagrams editable shapes me, har slide render karke check kar. Output docs/sih/SIH26262-Idea-Presentation.pptx me save kar aur mujhe bata kaha hai.
-4. Phir docs/NEXT_PROMPT.md ke hisaab se agla milestone (M4) shuru kar.
+4. Phir docs/NEXT_PROMPT.md ke hisaab se agla milestone (M5) shuru kar.
 
 Har step ke baad mujhe batana kya hua aur kya click karke check karu.
 ```

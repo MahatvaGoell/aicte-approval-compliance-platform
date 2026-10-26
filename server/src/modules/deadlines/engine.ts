@@ -20,7 +20,7 @@ export interface DeadlineRow {
   id: string;
   application_id: string;
   workflow_id: string | null;
-  clock_type: 'STAGE_HANDLING' | 'INSTITUTION_RESPONSE';
+  clock_type: 'STAGE_HANDLING' | 'INSTITUTION_RESPONSE' | 'EVC_SCHEDULING' | 'EVC_REPORT';
   subject_id: string;
   stage_key: string | null;
   label: string;
@@ -59,28 +59,31 @@ export function nextStepAfter(d: Pick<DeadlineRow, 'ladder' | 'current_due_date'
   return stepTimes(d).find((s) => (inclusive ? s.at >= from : s.at > from))?.at ?? null;
 }
 
-async function insertDeadline(
+export async function insertDeadline(
   tx: Db,
   ctx: ActionContext,
   input: {
     applicationId: string; workflowId: string; clockType: DeadlineRow['clock_type']; subjectId: string; stageKey: string; label: string;
-    rule: DurationRule & { pauseOnReturn?: boolean; provenance: string }; policy: PolicyVersion; ruleRefPath: string; institutionId: string;
+    rule: DurationRule & { pauseOnReturn?: boolean; provenance: string }; policy: PolicyVersion; ruleRefPath: string; institutionId: string; anchorAt?: Date;
   },
 ) {
   const cal = calendarOf(input.policy.doc);
-  const calc = computeDue(ctx.at, input.rule, cal);
+  const anchorAt = input.anchorAt ?? ctx.at;
+  const calc = computeDue(anchorAt, input.rule, cal);
   const ladder = input.policy.doc.deadlines?.ladder ?? [];
   const ref = ruleRef(input.policy.versionNo, input.ruleRefPath);
   const shape = { ladder, current_due_date: calc.dueDate, calendar: cal };
+  // A replacement scheduling clock keeps original readiness, including overdue catch-up after cancellation.
+  const generationStart = input.clockType === 'EVC_SCHEDULING' && anchorAt < ctx.at ? anchorAt : ctx.at;
   const row = await one<DeadlineRow>(
     tx,
     `INSERT INTO deadlines (application_id, workflow_id, clock_type, subject_id, stage_key, label, anchor_at, rule, calendar,
        original_due_date, original_due_at, current_due_date, current_due_at, explanation, state, generation, generation_started_at,
        pause_on_return, ladder, next_step_at, policy_version_id, rule_ref, provenance, created_at)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$10,$11,$12,'ACTIVE',1,$7,$13,$14,$15,$16,$17,$18,$7) RETURNING *`,
-    [input.applicationId, input.workflowId, input.clockType, input.subjectId, input.stageKey, input.label, ctx.at, JSON.stringify(input.rule),
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$10,$11,$12,'ACTIVE',1,$20,$13,$14,$15,$16,$17,$18,$19) RETURNING *`,
+    [input.applicationId, input.workflowId, input.clockType, input.subjectId, input.stageKey, input.label, anchorAt, JSON.stringify(input.rule),
       JSON.stringify(cal), calc.dueDate, calc.dueAt, JSON.stringify(calc), !!input.rule.pauseOnReturn, JSON.stringify(ladder),
-      nextStepAfter(shape, ctx.at), input.policy.id, ref, input.rule.provenance],
+      nextStepAfter(shape, generationStart), input.policy.id, ref, input.rule.provenance, ctx.at, generationStart],
   );
   await recordAudit(tx, ctx, {
     entityType: 'deadline', entityId: row.id, action: 'DEADLINE_SET',

@@ -13,6 +13,7 @@ import { notificationRoutes } from './modules/notifications/routes.js';
 import { opsRoutes } from './modules/ops/routes.js';
 import { policyRoutes } from './modules/policy/routes.js';
 import { referenceRoutes } from './modules/reference/routes.js';
+import { evcRoutes } from './modules/evc/routes.js';
 
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 export const CSRF_HEADER = 'x-requested-with';
@@ -63,6 +64,12 @@ export async function buildApp(): Promise<FastifyInstance> {
       });
     }
     const pgErr = err as { code?: string; constraint?: string };
+    if (pgErr.code === '23P01') {
+      return reply.status(409).send({ error: { code: 'EXPERT_RESERVATION_CONFLICT', message: 'An expert was booked for an overlapping visit. Refresh suggestions and choose another slot.', details: null, correlationId } });
+    }
+    if (pgErr.code === '40P01') {
+      return reply.status(409).send({ error: { code: 'CONCURRENT_CHANGE', message: 'A concurrent change prevented this action. Refresh and retry.', details: null, correlationId } });
+    }
     if (pgErr.code === '23505') {
       return reply.status(409).send({ error: { code: 'CONFLICT', message: 'A conflicting change was made at the same time. Refresh and try again.', details: { constraint: pgErr.constraint }, correlationId } });
     }
@@ -94,6 +101,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(policyRoutes, { prefix: '/api/v1' });
   await app.register(notificationRoutes, { prefix: '/api/v1' });
   await app.register(opsRoutes, { prefix: '/api/v1' });
+  await app.register(evcRoutes, { prefix: '/api/v1' });
 
   app.setNotFoundHandler((req, reply) => {
     reply.status(404).send({ error: { code: 'NOT_FOUND', message: 'No such endpoint', details: null, correlationId: req.correlationId } });

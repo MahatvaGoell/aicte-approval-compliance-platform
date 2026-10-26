@@ -9,6 +9,7 @@ export interface Grant {
   officialDesignation: string | null;
   scope: string;
   institutionId: string | null;
+  committeeKind: string | null;
 }
 
 export interface Me {

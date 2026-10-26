@@ -19,6 +19,7 @@ import { assertVersion, bumpVersion, loadVisibleApplication } from './service.js
 import type { CaseContext, CommandDef } from './command-kit.js';
 import { LIVE_WORK_STATES, assignedOwnerGuard, deny, loadCaseExtras, markStarted } from './command-kit.js';
 import { M2_COMMANDS } from './commands-m2.js';
+import { EVC_COMMANDS } from '../evc/commands.js';
 
 export type { CaseContext, Denial } from './command-kit.js';
 
@@ -260,14 +261,15 @@ const recordDecision: CommandDef<z.ZodObject<any>> = {
 };
 
 export const COMMANDS: Record<string, CommandDef<any>> = Object.fromEntries(
-  [assignStage, saveChecklist, recordRecommendation, completeStage, recordDecision, ...M2_COMMANDS].map((c) => [c.name, c]),
+  [assignStage, saveChecklist, recordRecommendation, completeStage, recordDecision, ...M2_COMMANDS, ...EVC_COMMANDS].map((c) => [c.name, c]),
 );
 
 export async function loadCaseContext(db: Db, actor: Actor, appId: string, forUpdate: boolean): Promise<CaseContext> {
   const app = await loadVisibleApplication(db, actor, appId, forUpdate);
   const wf = await loadWorkflowContext(db, app);
   const extras = await loadCaseExtras(db, app, wf.workflow);
-  return { actor, app, ...wf, ...extras };
+  const member = extras.evcVisit && actor.committeeKind === 'EVC' ? (await q(db, 'SELECT confirmed_at FROM visit_members WHERE visit_id = $1 AND expert_user_id = $2 AND committee_id = $3', [extras.evcVisit.id, actor.userId, actor.committeeId]))[0] : null;
+  return { actor, app, ...wf, ...extras, evcMember: !!member, evcMemberConfirmed: !!member?.confirmed_at };
 }
 
 export function permittedCommands(c: CaseContext) {

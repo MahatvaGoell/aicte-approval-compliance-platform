@@ -31,6 +31,26 @@ async function handleEvent(tx: Db, e: any, at: Date): Promise<number> {
   };
   const app = appId ? await maybe<{ institution_id: string; region_id: string }>(tx, 'SELECT institution_id, region_id FROM applications WHERE id = $1', [appId]) : null;
   switch (e.event_type) {
+    case 'EVC_VISIT_CONFIRMED':
+    case 'EVC_VISIT_CANCELLED':
+    case 'EVC_REPORT_SUBMITTED':
+    case 'EVC_REPORT_ACCEPTED':
+    case 'EVC_REPORT_RETURNED': {
+      if (!app) return 0;
+      const visit = await maybe(tx, 'SELECT * FROM evc_visits WHERE id = $1 AND application_id = $2', [p.visitId, appId]);
+      if (!visit) return 0;
+      if (e.event_type === 'EVC_VISIT_CONFIRMED' && visit.state !== 'CONFIRMED') return 0;
+      const members = await q<{ id: string }>(tx, `SELECT DISTINCT u.id FROM visit_members m JOIN users u ON u.id = m.expert_user_id
+        JOIN capability_grants g ON g.user_id = u.id AND g.committee_id = m.committee_id
+        WHERE m.visit_id = $1 AND u.is_active AND g.role = 'COMMITTEE_MEMBER' AND g.revoked_at IS NULL
+          AND g.valid_from <= $2 AND (g.valid_to IS NULL OR g.valid_to > $2)`, [visit.id, at]);
+      const recipients = e.event_type === 'EVC_REPORT_SUBMITTED'
+        ? await usersCoveringRegion(tx, 'REGIONAL_OFFICER', app.region_id, at)
+        : e.event_type === 'EVC_REPORT_RETURNED' ? members
+        : [...members, ...await institutionUsers(tx, app.institution_id, at)];
+      const unique = [...new Map(recipients.map((u) => [u.id, u])).values()];
+      return send(unique, e.event_type.replaceAll('_',' ').toLowerCase(), 'The EVC visit record changed. Open your authorised case workspace for the current schedule or review action. No report content is included.', true);
+    }
     case 'STAGE_ASSIGNED':
       if (!p.assigneeUserId) return 0;
       return send([{ id: p.assigneeUserId }], `Assigned to you: ${p.stageName} for ${p.appNo}`, `You are now responsible for the ${p.stageName} stage of ${p.appNo}.`);

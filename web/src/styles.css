@@ -1,3 +1,16 @@
+/* M4: visit planning and reservations, using shared theme tokens. */
+.evc-calendar { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; }
+.evc-calendar-item, .evc-visit-detail { padding: 16px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--raised); }
+.evc-calendar-item ul, .evc-visit-detail ul { padding-left: 20px; }
+.evc-expert-option { display: flex; align-items: flex-start; gap: 12px; padding: 14px; border: 1px solid var(--line); border-radius: var(--radius-sm); }
+.evc-expert-option input[type='checkbox'] { width: 18px; height: 18px; flex: 0 0 auto; margin-top: 3px; }
+.evc-expert-option > span { min-width: 0; }
+.evc-expert-option .small, .evc-factors { display: block; }
+.evc-factors { margin: 6px 0; }
+.evc-factors .chip { margin: 2px 5px 2px 0; }
+.evc-blocker { color: var(--bad); }
+.evc-finding { border-left: 3px solid var(--line); margin-top: 10px; padding: 10px; }
+
 /* Editorial operations console: warm neutrals, one accent, status always text plus colour.
    Fonts are bundled locally (web/public/fonts, SIL OFL) so the app still works offline. */
 

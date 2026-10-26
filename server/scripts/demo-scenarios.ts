@@ -129,6 +129,26 @@ async function main() {
   });
   await label(f, 'Lucknow · extension · approved with conditions');
 
+  // 7. Ready EVC queue, no inspection proposal yet.
+  const g = await submit('inst.west', 'CHANGE_OF_SITE', { proposedSiteAddress: '44 Synthetic Campus Road, Pune' });
+  await label(g, 'Pune · EVC ready queue · propose a visit (ro.west)');
+
+  // 8. Confirmed visit with real reservations; advance the demo clock after acknowledgements to record it held.
+  const h = await submit('inst.west', 'CHANGE_OF_SITE', { proposedSiteAddress: '66 Demonstration Road, Pune' });
+  const scheduler = await as('ro.west');
+  const meta = await scheduler.get('/meta');
+  const start = new Date(Date.parse(meta.businessTime) + 2 * 86400_000);
+  start.setUTCHours(4, 30, 0, 0);
+  const slot = { startsAt: start.toISOString(), endsAt: new Date(start.getTime() + 2 * 3600_000).toISOString(),
+    mode: 'PHYSICAL', timezone: 'Asia/Kolkata', specialism: 'ENGINEERING' };
+  const suggestions = await scheduler.get(`/evc/applications/${h}/suggestions?${new URLSearchParams(slot)}`);
+  const expertIds = suggestions.rows.filter((x: any) => x.selectable).slice(0,2).map((x: any) => x.userId);
+  await scheduler.command(h, 'PROPOSE_VISIT', { ...slot, expertIds, reason: 'Prepared synthetic visit for the M4 demonstration.' });
+  const hv = await scheduler.get(`/applications/${h}`);
+  const visit = hv.evc.visits[0];
+  await scheduler.command(h, 'CONFIRM_VISIT', { visitId: visit.id, visitExpectedVersion: visit.row_version, reason: 'Confirm synthetic expert reservations for the M4 demonstration.' });
+  await label(h, 'Pune · confirmed EVC visit · institution acknowledges, evc1/evc2 confirm participation');
+
   console.log('Demo cases created:\n  ' + made.join('\n  '));
 }
 

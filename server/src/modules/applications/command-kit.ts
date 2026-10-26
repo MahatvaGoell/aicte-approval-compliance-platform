@@ -38,6 +38,9 @@ export interface CaseContext {
   workflowKind: 'PRIMARY' | 'APPEAL' | null;
   /** Clocks of the case that are still running. */
   activeDeadlineIds: string[];
+  evcVisit: { id: string; state: string; ends_at: Date; institution_acknowledged_at: Date | null; pending_members: number } | null;
+  evcMember: boolean;
+  evcMemberConfirmed: boolean;
 }
 
 export interface Denial {
@@ -78,7 +81,10 @@ export async function markStarted(tx: Db, c: CaseContext, ctx: ActionContext) {
 
 export async function loadCaseExtras(db: Db, app: AppRow, workflow: WorkflowRow | null) {
   const activeDeadlineIds = (await q(db, `SELECT id FROM deadlines WHERE application_id = $1 AND state = 'ACTIVE'`, [app.id])).map((r) => r.id as string);
-  if (!workflow) return { findings: [] as FindingRow[], decision: null, appealed: false, workflowKind: null, activeDeadlineIds };
+  const evcVisit = workflow?.current_stage_id ? (await q(db, `SELECT v.id, v.state, v.ends_at, v.institution_acknowledged_at,
+    (SELECT count(*)::int FROM visit_members m WHERE m.visit_id = v.id AND m.confirmed_at IS NULL) AS pending_members
+    FROM evc_visits v WHERE v.stage_instance_id = $1 AND v.state NOT IN ('CANCELLED','RESCHEDULED')`, [workflow.current_stage_id]))[0] ?? null : null;
+  if (!workflow) return { findings: [] as FindingRow[], decision: null, appealed: false, workflowKind: null, activeDeadlineIds, evcVisit };
   const findings = await q<FindingRow>(
     db,
     `SELECT id, stage_instance_id, stage_key, checklist_code, visibility, responsible_party, requests_amendment, state
@@ -88,5 +94,5 @@ export async function loadCaseExtras(db: Db, app: AppRow, workflow: WorkflowRow 
   const decision = (await q(db, 'SELECT id, outcome, issued_at FROM decisions WHERE workflow_id = $1', [workflow.id]))[0] ?? null;
   const appealed = decision ? (await q(db, 'SELECT 1 FROM appeals WHERE decision_id = $1', [decision.id])).length > 0 : false;
   const kind = (await q(db, 'SELECT kind FROM workflow_instances WHERE id = $1', [workflow.id]))[0].kind;
-  return { findings, decision, appealed, workflowKind: kind, activeDeadlineIds };
+  return { findings, decision, appealed, workflowKind: kind, activeDeadlineIds, evcVisit };
 }

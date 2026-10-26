@@ -98,6 +98,8 @@ export const DEMO_ACCOUNTS = [
   { email: 'scrutiny.west1@demo.aicte.test', label: 'Scrutiny committee member, Demo West' },
   { email: 'scrutiny.west2@demo.aicte.test', label: 'Scrutiny committee member, Demo West' },
   { email: 'scrutiny.north1@demo.aicte.test', label: 'Scrutiny committee member, Demo North' },
+  { email: 'evc1@demo.aicte.test', label: 'EVC expert, Banerjee' },
+  { email: 'evc2@demo.aicte.test', label: 'EVC expert, Menon' },
   { email: 'authority@demo.aicte.test', label: 'Competent authority' },
   { email: 'policy.admin@demo.aicte.test', label: 'Policy administrator' },
   { email: 'policy.approver@demo.aicte.test', label: 'Policy approver' },

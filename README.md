@@ -52,6 +52,10 @@ With Docker, create the test database once: `docker compose exec db createdb -U 
 
 ## Demo accounts
 
+Milestones **M1–M4** are implemented. M4 adds **Expert visits**: readiness queue, conflict/availability suggestions, atomic reservations, rescheduling, acknowledgements and report revisions/acceptance. Reports are structured text; document attachments and post-approval obligations are M5.
+
+Run `npm run dev:worker` alongside the API/web for reminders, and `npm run demo:scenarios` to prepare eight synthetic cases, including a ready EVC case and a confirmed visit. Sign in as `ro.west`, open **Expert visits**, then the case. Institution acknowledgement uses `inst.west`; appointed members use `evc1` and `evc2` demo cards. Advance the demo clock from Operations after confirmations to demonstrate a held visit and report review. PostgreSQL must have the bundled `btree_gist` extension available.
+
 All demo accounts share the password **`Demo@2026`** (synthetic, demo mode only). The login page lists them.
 
 | Account | Role |

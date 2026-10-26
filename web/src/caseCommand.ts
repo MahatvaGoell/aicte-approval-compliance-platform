@@ -15,6 +15,7 @@ export function useCommand(view: any) {
       await qc.invalidateQueries({ queryKey: ['case', view.application.id] });
       await qc.invalidateQueries({ queryKey: ['timeline', view.application.id] });
       qc.invalidateQueries({ queryKey: ['applications'] });
+      qc.invalidateQueries({ queryKey: ['evc'] });
       return true;
     } catch (e) {
       setError(e);

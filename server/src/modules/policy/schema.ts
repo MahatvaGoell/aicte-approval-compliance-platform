@@ -81,6 +81,14 @@ export const policyDocumentSchema = z.object({
     ...ruleMeta,
   }),
   // Clocks and the escalation ladder. Absent = no deadlines are tracked for cases on this version.
+  evc: z.object({
+    minMembers: z.number().int().min(1).max(10),
+    maxMembers: z.number().int().min(1).max(10),
+    mandatoryConflicts: z.array(z.enum(['OWN_INSTITUTION', 'DECLARED', 'REGION_AFFILIATION'])),
+    scheduling: z.object({ amount: z.number().int().min(1).max(366), unit: z.enum(['WORKING_DAYS','CALENDAR_DAYS','CALENDAR_MONTHS']), ...ruleMeta }),
+    report: z.object({ amount: z.number().int().min(1).max(366), unit: z.enum(['WORKING_DAYS','CALENDAR_DAYS','CALENDAR_MONTHS']), ...ruleMeta }),
+    ...ruleMeta,
+  }).optional(),
   deadlines: z
     .object({
       stages: z.record(z.string(), z.object({
@@ -143,6 +151,7 @@ export function validatePolicy(raw: unknown): { doc: PolicyDocument | null; issu
   const warn = (path: string, message: string) => issues.push({ level: 'warning', path, message });
 
   const categoryCodes = new Set(doc.categories.map((c) => c.code));
+  if (doc.evc && doc.evc.minMembers > doc.evc.maxMembers) err('evc.maxMembers', 'Maximum members must cover the minimum composition');
   if (categoryCodes.size !== doc.categories.length) err('categories', 'Category codes must be unique');
 
   const usedStages = new Set<string>();

@@ -26,6 +26,10 @@ const RECIPIENT_TEXT: Record<string, string> = { OWNER: 'the responsible person'
 async function recipientsFor(db: Db, d: DeadlineRow & { region_id: string; institution_id: string }, rule: string, at: Date) {
   if (rule === 'OWNER') {
     if (d.clock_type === 'INSTITUTION_RESPONSE') return institutionUsers(db, d.institution_id, at);
+    if (d.clock_type === 'EVC_REPORT') return q<{ id: string; name: string }>(db, `SELECT DISTINCT u.id, u.name FROM visit_members m
+      JOIN users u ON u.id = m.expert_user_id JOIN capability_grants g ON g.user_id = u.id AND g.committee_id = m.committee_id
+      JOIN committees cm ON cm.id = g.committee_id WHERE m.visit_id = $1 AND u.is_active AND cm.kind = 'EVC'
+      AND g.role = 'COMMITTEE_MEMBER' AND g.revoked_at IS NULL AND g.valid_from <= $2 AND (g.valid_to IS NULL OR g.valid_to > $2)`, [d.subject_id, at]);
     const s = await maybe<{ id: string; name: string }>(db,
       `SELECT u.id, u.name FROM stage_instances si JOIN users u ON u.id = si.assignee_user_id WHERE si.id = $1 AND u.is_active`, [d.subject_id]);
     return s ? [s] : [];

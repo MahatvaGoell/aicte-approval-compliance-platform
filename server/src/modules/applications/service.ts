@@ -180,7 +180,11 @@ export async function listApplications(db: Db, actor: Actor, f: ListFilters) {
   if (f.categoryCode) add('p.category_code = ?', f.categoryCode);
   if (f.stageKey) add('si.stage_key = ?', f.stageKey);
   if (f.assigneeUserId) add('si.assignee_user_id = ?', f.assigneeUserId);
-  if (f.assignedToMe) add('si.assignee_user_id = ?', actor.userId);
+  if (f.assignedToMe) {
+    if (actor.committeeKind === 'EVC') add(`EXISTS (SELECT 1 FROM evc_visits ev JOIN visit_members vm ON vm.visit_id = ev.id
+      WHERE ev.stage_instance_id = si.id AND ev.state NOT IN ('CANCELLED','RESCHEDULED') AND vm.expert_user_id = ?)`, actor.userId);
+    else add('si.assignee_user_id = ?', actor.userId);
+  }
   if (f.lifecycleState) add('a.lifecycle_state = ?', f.lifecycleState);
   if (f.decisionOutcome) add('a.decision_outcome = ?', f.decisionOutcome);
   if (f.submittedFrom) add('a.submitted_at >= ?', f.submittedFrom);

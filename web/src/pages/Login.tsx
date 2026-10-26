@@ -10,7 +10,7 @@ import { MutationError } from '../ui';
 const GROUPS: { title: string; icon: string; match: (handle: string) => boolean }[] = [
   { title: 'Institutions', icon: 'building', match: (h) => h.startsWith('inst.') },
   { title: 'Regional offices and bureau', icon: 'map', match: (h) => h.startsWith('ro.') || h === 'bureau' },
-  { title: 'Committees', icon: 'users', match: (h) => h.startsWith('scrutiny.') },
+  { title: 'Committees', icon: 'users', match: (h) => h.startsWith('scrutiny.') || h.startsWith('evc') },
   { title: 'Authority', icon: 'gavel', match: (h) => h === 'authority' },
   { title: 'Policy, administration and audit', icon: 'sliders', match: () => true },
 ];
