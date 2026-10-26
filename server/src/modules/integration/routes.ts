@@ -9,8 +9,27 @@ import { assertIntegrationAccess, integrationScopeSql, requireIntegrationRegion,
 import { MAPPING_VERSION, MOCK_NOTICE, SOURCE_SYSTEM, syncSchema } from './contract.js';
 import { loadPortalFixture } from './fixtures.js';
 import { syncImport } from './import.js';
+import { listReconciliation, loadReconciliation, reconciliationDetail } from './reconciliation-read.js';
+import { queueQuery, resolveSchema } from './reconciliation-schema.js';
+import { resolveReconciliation } from './reconcile.js';
 
 export async function integrationRoutes(app:FastifyInstance) {
+  app.get('/integration/reconciliation',async req=>{
+    const actor=requireCapability(req,'INTEGRATION_VIEW');return listReconciliation(actor,queueQuery.parse(req.query));
+  });
+  app.get<{Params:{id:string}}>('/integration/reconciliation/:id',async req=>{
+    const actor=requireCapability(req,'INTEGRATION_VIEW');return reconciliationDetail(actor,z.string().uuid().parse(req.params.id));
+  });
+  app.post<{Params:{id:string}}>('/integration/reconciliation/:id/resolve',async req=>{
+    const actor=requireCapability(req,'INTEGRATION_RESOLVE');assertIntegrationAccess(actor,true);
+    if(!config.demoMode)throw new NotFoundError('Mock reconciliation is available only in demo mode');
+    const id=z.string().uuid().parse(req.params.id),input=resolveSchema.parse(req.body);
+    await loadReconciliation(getPool(),actor,id); // Scope must still hold when replaying a closed item.
+    return withTx(async tx=>{
+      const result=await withIdempotency(tx,actor.userId,idempotencyKey(req),`INTEGRATION_RESOLVE:${id}`,input,()=>resolveReconciliation(tx,actionContext(req),id,input));
+      return {...result.result,replayed:result.replayed};
+    });
+  });
   app.post('/integration/sync',async req=>{
     const actor=requireCapability(req,'INTEGRATION_RESOLVE');assertIntegrationAccess(actor,true);
     if(!config.demoMode)throw new NotFoundError('The mock sync adapter is available only in demo mode');

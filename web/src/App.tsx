@@ -10,6 +10,7 @@ import { EvcPage } from './pages/Evc';
 import { CompliancePage } from './pages/Compliance';
 import { DashboardPage } from './pages/Dashboard';
 import { ReportsPage } from './pages/Reports';
+import { IntegrationPage } from './pages/Integration';
 import { HomePage } from './pages/Home';
 import { LoginPage } from './pages/Login';
 import { NotificationsPage, useUnreadCount } from './pages/Notifications';
@@ -49,6 +50,7 @@ function sectionFor(path: string): [string, string] {
   if (path.startsWith('/obligations')) return ['10','Obligations'];
   if (path.startsWith('/dashboard')) return ['11', 'Dashboard'];
   if (path.startsWith('/reports')) return ['12', 'Reports'];
+  if (path.startsWith('/integration')) return ['13', 'Mock integration'];
   return ['00', 'Page'];
 }
 
@@ -93,6 +95,7 @@ function Shell() {
             {(can('APPLICATION_VIEW_SCOPE')||can('APPLICATION_VIEW_ASSIGNED'))&&<><NavLink to="/documents"><Icon name="folder"/>Documents</NavLink><NavLink to="/obligations"><Icon name="layers"/>Obligations</NavLink></>}
             {(me.activeGrant.role === 'INSTITUTION_REP' || can('REPORTS_VIEW')) && <><NavLink to="/dashboard"><Icon name="pulse" />Dashboard</NavLink><NavLink to="/reports"><Icon name="layers" />Reports</NavLink></>}
             {can('AUDIT_VIEW') && <NavLink to="/audit"><Icon name="shield" />Audit log</NavLink>}
+            {can('INTEGRATION_VIEW') && <NavLink to="/integration"><Icon name="layers" />Mock integration</NavLink>}
             {can('POLICY_VIEW') && <NavLink to="/policy"><Icon name="layers" />Policy</NavLink>}
             <NavLink to="/notifications"><Icon name="bell" />Notifications</NavLink>
             {can('OPS_VIEW') && <NavLink to="/ops"><Icon name="pulse" />Operations</NavLink>}
@@ -126,6 +129,7 @@ function Shell() {
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/reports" element={<ReportsPage />} />
               <Route path="/reports/:name" element={<ReportsPage />} />
+              <Route path="/integration" element={<IntegrationPage />} />
               <Route path="*" element={<div className="card empty">Page not found.</div>} />
             </Routes>
           </div>

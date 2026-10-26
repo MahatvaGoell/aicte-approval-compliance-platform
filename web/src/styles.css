@@ -228,6 +228,7 @@ body::after {
 .kv { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 8px 20px; }
 .kv dt { color: var(--muted); }
 .kv dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.integration-raw { max-height: 24rem; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; }
 
 /* status chips: text plus colour, never colour alone */
 .chip {

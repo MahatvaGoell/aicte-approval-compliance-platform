@@ -9,9 +9,19 @@ Last updated: 26 Oct 2026 · Specification: [BUILD_PLAN.md](BUILD_PLAN.md) · Ag
 | M3 — Deadlines, worker, notifications, escalation, demo clock | **Done** |
 | M4 — EVC queue, scheduling, conflicts, reports | **Done** — EVC queue → accepted report → next stage, browser verified |
 | M5 — Documents, obligations, verification, lease renewal | **Done** — 139 tests passing; lease renewal browser verified |
-| M6 — Dashboards, reports, audit viewer, mock integration | **In progress** — B2–B6a complete (186 tests); reconciliation UI/resolution B6b pending |
+| M6 — Dashboards, reports, audit viewer, mock integration | **In progress** — B2–B6b complete (204 tests); B7 milestone closure pending |
 | M7 — Differentiators (action/gap panel, priority queue, consistency, readiness, preview) | Not started |
 | M8 — Optional AI, load/recovery tests, docs, evaluation, rehearsal | Not started |
+
+## M6 — B6b reconciliation and integration workspace
+
+Migration `007_integration_reconciliation.sql` adds immutable resolution attempts and explicit links from queue/mirror to the latest review. Scoped queue/list/detail APIs expose the original source/run/mapping, validation details, current mirror and ordered human review history. `POST /integration/reconciliation/:id/resolve` supports reasoned RETRY, CORRECT_AND_RETRY and DISMISS with item and regional cursor versions, idempotency, current capability/scope checks, audit and outbox in one transaction. A blocked retry stays OPEN and records the attempt; successful application resolves the item; dismissal closes only the queue item. Each attempt advances both item and regional cursor versions, so imports and reviews cannot silently overwrite each other.
+
+Corrections retain original raw JSON, source identity, pinned mapping and historical run counts. Only explicitly reviewed title/status/source timestamp or an originally unmapped institution can affect the separate mirror. Existing institution bindings, conflicting identities, old revisions and forbidden authority fields cannot be forced through. Later valid source revisions replace the current mirror correction pointer while preserving its immutable review history. No application, decision, snapshot, policy, obligation or deadline is changed.
+
+Web `/integration` includes synthetic fixture sync, historical run counts, scoped queue filters/paging, raw record/hash/validation, current mirror, reviewed correction/retry/dismissal and attempt history. Mock/disconnected/demo labels remain explicit. Auditor/authority views are read-only; loading, empty, failed/stale refresh, retry and mutation errors are displayed. Recoverable mutation failures retain entered review fields.
+
+Baseline **186/186**, 18 new reconciliation tests, final **204/204**; typecheck, production build and whitespace checks pass. Tests cover concurrency/idempotency, stale item/cursor, changed/revoked grants, cross-region reads/mutations, rollback including outbox failure and local-state isolation. Browser verified West import -> blocked retry -> reviewed correction -> resolved; older revision dismissal; repeat import -> 8 duplicates without reopening items; auditor read-only view. A second-tab import caused an expected stale-cursor 409 and entered review reason/title survived refresh. No unexpected browser console errors occurred. Full outputs remain local under `var/b6b-*-tests.log`. B6b is complete locally; B7 closure, PDF extraction and M7 remain pending. No push was performed.
 
 ## M6 — B6a mock import backend
 
@@ -19,13 +29,13 @@ Migration `006_integration.sql` adds pinned immutable mapping versions, per-regi
 
 Contract and field-authority matrix: [INTEGRATION_CONTRACT.md](INTEGRATION_CONTRACT.md). All mappings are `DEMO_ASSUMPTION`; API labels explicitly state mock/synthetic/disconnected from AICTE/NSWS. Fresh West fixture: 8 records = **2 accepted, 1 duplicate, 2 invalid, 3 reconciliation**; a new-key identical retry reports **8 duplicates** and preserves the mirror/queue. Live local API import/replay/retry was verified. Sixteen new integration tests cover these counts plus scoping, revoked/expired grants, concurrency, immutable history, atomic outbox-failure rollback and local-state isolation. Baseline **170/170**, final **186/186**; typecheck, build and whitespace checks pass. Full test outputs remain local under `var/`.
 
-B6a is server-only: reconciliation records exist, but queue/read/detail/resolve APIs and Integration web page are **B6b**, not yet implemented. No production connector, background import scheduler, writeback, real portal request or email was added. B7 milestone closure remains pending.
+B6a delivered the server importer; queue/read/detail/resolve APIs and the Integration web page are now delivered in B6b above. No production connector, background import scheduler, writeback, real portal request or email was added. B7 milestone closure remains pending.
 
 ## M6 — B5 audit viewer
 
 B2–B4 dashboards, reports and CSV work is recorded in WORK_LOG.md. B5 adds a paged audit API with exact case ID/number, action, entity, actor and inclusive Asia/Kolkata date filters; scoped totals/facets; detail fetched only on expansion; and integrity verification timestamps/limits. Regional audit grants see only events on visible cases, excluding application-less system/export events. Missing internal-note capability restricts list, facets and detail to institution-visible events. Scoped integrity results omit global counts and broken-event IDs. Full before/after state is absent from list rows and available only through the independently scoped detail endpoint.
 
-The web viewer keeps applied filters/page in the URL, restores actor selection after facets load, displays scoped totals/refresh time, and supports paging, case links, detail expansion, integrity verification, loading/empty/failure/retry states. Browser verification covered these flows without console errors. Thirteen B5 tests bring the full suite from **157 to 170 passing**; typecheck, production build and whitespace checks pass. Saved full test outputs are local under `var/`. B6b reconciliation/web and B7 closure remain pending; M6 is not complete.
+The web viewer keeps applied filters/page in the URL, restores actor selection after facets load, displays scoped totals/refresh time, and supports paging, case links, detail expansion, integrity verification, loading/empty/failure/retry states. Browser verification covered these flows without console errors. Thirteen B5 tests bring the full suite from **157 to 170 passing**; typecheck, production build and whitespace checks pass. Saved full test outputs are local under `var/`. B6b reconciliation/web is now complete; B7 closure remains pending and M6 is not yet marked complete.
 
 ## M5 — what was built
 

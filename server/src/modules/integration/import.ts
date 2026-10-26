@@ -5,6 +5,7 @@ import { recordAudit, type ActionContext } from '../audit/audit.js';
 import { emitEvent } from '../outbox/outbox.js';
 import { assertIntegrationAccess, requireIntegrationRegion, sourceInstitution } from './access.js';
 import { identitySchema, MAPPING_VERSION, mappingSchema, MOCK_NOTICE, sourceRecordSchema, type Outcome, type SyncInput } from './contract.js';
+import { applySourceMirror } from './mirror.js';
 
 // Serialise mock source identity allocation across regions, then use cursor versions for stale requests.
 // Keep this lock before recordAudit's lock in every future reconciliation mutation too.
@@ -36,23 +37,10 @@ async function processRecord(tx:Db,ctx:ActionContext,input:SyncInput,runId:strin
         if(!parsed.success) result={outcome:'INVALID',reasonCode:'INVALID_RECORD',canonicalId,details:parsed.error.issues.map(x=>({field:x.path.join('.'),message:x.message}))};
         else if(!institutionId) result={outcome:'RECONCILIATION',reasonCode:'INSTITUTION_UNMAPPED',canonicalId};
         else {
-          const record=parsed.data;
-          // Own-property lookup: names such as __proto__ and toString are never known status codes.
-          const status=Object.hasOwn(statusCodes,record.fields.statusCode)?statusCodes[record.fields.statusCode]:null;
-          const old=(await q(tx,'SELECT * FROM integration_mirrors WHERE source_system=$1 AND external_id=$2 FOR UPDATE',[input.sourceSystem,record.externalId]))[0];
-          if(!status) result={outcome:'RECONCILIATION',reasonCode:'UNKNOWN_CODE',canonicalId};
-          else if(old&&old.institution_id!==institutionId) result={outcome:'RECONCILIATION',reasonCode:'INSTITUTION_BINDING_CONFLICT',canonicalId};
-          else if(old&&record.revision<=old.latest_revision) result={outcome:'RECONCILIATION',reasonCode:'OUT_OF_ORDER',canonicalId};
-          else if(old&&Date.parse(record.sourceUpdatedAt)<old.source_updated_at.getTime()) result={outcome:'RECONCILIATION',reasonCode:'SOURCE_TIME_REGRESSION',canonicalId};
-          else {
-            const mirror=await one(tx,`INSERT INTO integration_mirrors(source_system,external_id,region_id,institution_id,source_title,source_status,source_updated_at,latest_revision,latest_event_id,mapping_version_id,updated_at)
-              VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) ON CONFLICT(source_system,external_id) DO UPDATE SET
-              source_title=EXCLUDED.source_title,source_status=EXCLUDED.source_status,source_updated_at=EXCLUDED.source_updated_at,
-              latest_revision=EXCLUDED.latest_revision,latest_event_id=EXCLUDED.latest_event_id,mapping_version_id=EXCLUDED.mapping_version_id,
-              row_version=integration_mirrors.row_version+1,updated_at=EXCLUDED.updated_at RETURNING *`,
-              [input.sourceSystem,record.externalId,input.regionId,institutionId,record.fields.title,status,record.sourceUpdatedAt,record.revision,canonicalId,MAPPING_VERSION,ctx.at]);
-            mirrorId=mirror.id;before=old??null;after=mirror;result={outcome:'ACCEPTED',canonicalId};
-          }
+          const mirror=await applySourceMirror(tx,{sourceSystem:input.sourceSystem,regionId:input.regionId,institutionId,mappingVersion:MAPPING_VERSION,
+            canonicalId:canonicalId!,record:parsed.data,statusCodes,at:ctx.at});
+          if(!mirror.applied)result={outcome:'RECONCILIATION',reasonCode:mirror.reasonCode,canonicalId};
+          else {mirrorId=mirror.after.id;before=mirror.before;after=mirror.after;result={outcome:'ACCEPTED',canonicalId};}
         }
       }
     }

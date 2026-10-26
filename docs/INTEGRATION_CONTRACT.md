@@ -1,4 +1,4 @@
-# Mock portal integration — contract v1 (B6a)
+# Mock portal integration — contract v1 (B6a/B6b)
 
 **Disconnected, synthetic, demonstration only.** This adapter reads a checked-in fixture or supplied synthetic JSON. It has no network client, credentials, live AICTE/NSWS connection, scraping or writeback. All source codes/mappings below are `DEMO_ASSUMPTION`, not official AICTE rules.
 
@@ -89,4 +89,36 @@ Each observation and completed run is audited. One generic `INTEGRATION_SYNC_COM
 
 West has valid/changed/duplicate records, malformed content, an unknown code, a late revision, conflicting event reuse and an invalid authority-field injection. New-key West retry: 0 accepted, 8 duplicates, 0 invalid, 0 reconciliation; mirror/queue unchanged. Run `npm -w server run test -- test/m6-integration.test.ts` for 16 B6a acceptance tests, including concurrency, full rollback and local-state isolation.
 
-B6b remains pending: scoped reconciliation API, reasoned/versioned resolve/retry and Integration web page. B6a creates queue records but exposes no resolution action or integration UI. This is an atomic, bounded local mock importer, not a production connector or background import scheduler.
+## Human reconciliation (B6b)
+
+**GET /integration/reconciliation** (`INTEGRATION_VIEW`): filters `regionId`, `runId` (UUID), `state=OPEN|RESOLVED|DISMISSED|ALL` (default OPEN), `reasonCode`, `page` (1–100000), `pageSize` (1–100). Returns scoped `{mock,connected:false,notice,provenance,total,page,pageSize,rows,refreshedAt}`. Each row includes item/run/source IDs, original reason, mapping, state/version and latest attempt outcome. Counts and rows share one read snapshot. Out-of-scope filters return empty results.
+
+**GET /integration/reconciliation/:id** (`INTEGRATION_VIEW`): independently scopes the item (404 outside scope), then returns `item`, `raw`, `runCounts`, `currentMirror`, pinned `statusCodes`, visible `institutionOptions` and immutable ordered `attempts`. `item.rowVersion` and `item.cursorVersion` are the current mutation versions; `canResolve`, `canCorrect`, `canCorrectInstitution` describe available review fields. Raw JSON/hash/receipt, original validation and import outcome remain visible. `runCounts` are historical import counts, separate from current queue-state counts.
+
+**POST /integration/reconciliation/:id/resolve** (`INTEGRATION_RESOLVE`, regional visibility, demo mode): same CSRF and idempotency headers as sync. Example:
+
+```json
+{
+  "action": "CORRECT_AND_RETRY",
+  "expectedVersion": 1,
+  "expectedCursorVersion": 1,
+  "reason": "Reviewed the synthetic export and confirmed the received source code.",
+  "corrections": {"statusCode": "RECEIVED"}
+}
+```
+
+Use versions from the current detail response. `reason` is required (10–2000 characters). Actions:
+
+| Action | Effect |
+|---|---|
+| RETRY | Revalidate the retained original record against its pinned mapping and current mirror ordering. No corrections body. |
+| CORRECT_AND_RETRY | Apply only explicit reviewed `title`, `statusCode`, `sourceUpdatedAt`, `institutionCode` fields to a separate evaluated copy; revalidate before mirror application. At least one correction required. |
+| DISMISS | Close the queue item with a reason; leave the mirror unchanged. No corrections body. |
+
+Source system/external/event IDs and revision cannot be edited or invented. Existing institution bindings are fixed; an originally unmapped institution may be corrected only to a visible institution in the same region. Unknown codes require an explicit reviewed mapping choice; they are never silently coerced. Corrections preserve unexpected original keys, so an injected local authority field still fails validation. Conflicting identities, old revisions, changed bindings and regressing source times cannot bypass the importer guards. The original mapping document stays pinned and immutable.
+
+Response: `{mock,connected:false,notice,provenance,item:{id,state,rowVersion},attempt:{id,outcome,reasonCode},syncState:{regionId,rowVersion},replayed}`. Outcomes are APPLIED (queue RESOLVED), STILL_BLOCKED (queue stays OPEN, reason/details retained), or DISMISSED. Every committed attempt advances item **and regional cursor** versions, including blocked retries/dismissals. Both sync and review must use the latest regional cursor; stale item/cursor returns 409 with no partial change. Same-key/body replay returns the recorded result after current capability/scope checks, even after closure; changed body/key reuse and new attempts on closed items conflict.
+
+Source lock precedes audit lock. Attempt, mirror, queue, cursor, idempotency, audit and outbox are one transaction. An immutable attempt retains action/outcome/reason, actor/time, original item/cursor versions, evaluated copy, explicit corrections, pinned mapping/canonical IDs and mirror before/after where evaluated. Original raw/canonical events and run counts never change. A corrected mirror points to `latest_resolution_id`; a later valid source revision clears that current pointer while preserving all review attempts. Reviews emit a generic outbox event without source content and send no email.
+
+Web `/integration` provides sync, historical runs, filtered/paged queue, raw/detail and reasoned reviews/history. Auditors/authorities can inspect only. Regional officers/bureau can review their active scope. Institutions and other excluded roles have no integration access. Run `npm -w server run test -- test/m6-reconciliation.test.ts` for 18 B6b tests. This remains a bounded local mock, with no live portal connection, writeback or background import scheduler.

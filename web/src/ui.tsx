@@ -11,6 +11,7 @@ const TONE: Record<string, string> = {
   WAITING: 'warn', PROPOSED: 'warn', CONFIRMED: 'info', HELD: 'accent', REPORT_SUBMITTED: 'warn', REPORT_ACCEPTED: 'ok', RESCHEDULED: 'neutral', INTERNAL: 'neutral', INSTITUTION: 'info',
   APPROVED: 'ok', APPROVED_WITH_CONDITIONS: 'ok', REJECTED: 'bad', DEFERRED: 'warn',
   NONE: 'neutral', OPEN: 'warn', OVERDUE: 'bad', ALL_FULFILLED: 'ok',
+  SOURCE_RECEIVED:'info', SOURCE_PROCESSING:'accent', SOURCE_REPORTED_COMPLETE:'neutral', RESOLVED:'ok', DISMISSED:'neutral', APPLIED:'ok', STILL_BLOCKED:'warn',
   PENDING: 'neutral', SATISFIED: 'ok', DEFICIENT: 'bad', NOT_APPLICABLE: 'neutral',
   DEMO_ASSUMPTION: 'demo', APH_CLAUSE: 'ok', ADMIN_INSTRUCTION: 'info',
 };

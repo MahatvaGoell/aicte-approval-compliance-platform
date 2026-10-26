@@ -4,12 +4,12 @@ Chat-by-chat notes. Plan: `../STEP_PLAN.md` (outer folder, not in this repo). Pe
 
 ## Project kya hai
 AICTE approval workflow + compliance + alert system (PS SIH26262). Route -> Clock -> Escalate -> Watch -> Prove. **System kabhi approve/reject nahi karta**; sirf `DECISION_RECORD` wala user karta hai. Sab data synthetic, real email/service nahi. Har rule pe label `APH_CLAUSE` / `ADMIN_INSTRUCTION` / `DEMO_ASSUMPTION`. Approval outcome, compliance, lifecycle alag fields; upload != verification != closure; case apni policy version pe rehta hai.
-Status: M1-M5 done. M6 B2-B6a done (186 tests); B6b reconciliation/web aur B7 closure baaki. PDF expiry, M7, demo prep baaki. M8 (AI/load) national plan me nahi.
+Status: M1-M5 done. M6 B2-B6b done (204 tests); B7 closure baaki. PDF expiry, M7, demo prep baaki. M8 (AI/load) national plan me nahi.
 
 ## Folder structure
 - `server/src/modules/`: applications (commands.ts, commands-m2.ts, command-kit.ts), audit, compliance (status.ts, routes.ts), deadlines (engine.ts, scheduler.ts, calendar.ts), documents, evc, identity (permissions.ts), notifications (worker.ts), ops, outbox, policy, reference, workflow
 - `server/src/`: app.ts, db.ts (AppError, withTx), lib/clock.ts (now()), seed/, worker/, http/
-- `server/migrations/`: 001..006 (agla naya = 007_*.sql; purane migration mat chhedo). `server/test/`: m1..m6 tests + helpers.ts. `server/scripts/`: demo:scenarios
+- `server/migrations/`: 001..007 (agla naya = 008_*.sql; purane migration mat chhedo). `server/test/`: m1..m6 tests + helpers.ts. `server/scripts/`: demo:scenarios
 - `web/src/`: App.tsx (sectionFor, nav), api.ts, ui.tsx, motion.tsx (Icon), styles.css, pages/ (Home, Compliance, Audit, Case*, Evc, Ops, Policy ...)
 - `docs/`: BUILD_PLAN (spec), PROGRESS, NEXT_PROMPT, HANDOFF, FOUNDATIONS, NATIONAL_ROUND_PLAN
 
@@ -66,6 +66,10 @@ Row: `id, appNo, institution, region, stage, stageState, owner, pendingAction, d
 **STEP_PLAN me sudhaar (suggest, file nahi badli)**: B5 me "Verify integrity" button + date/actor/action filter jodo. B6 bada hai: do chats karo (6a: contract + fixtures + migration + import + run counts, 6b: reconciliation queue + resolve + web). B7 me `npm run build` + `git diff --check` jodo. B2/B3/B4 ke "Common rules" same.
 
 ## Log
+- B6b done: migration `007_integration_reconciliation.sql`, scoped queue/detail APIs aur reason/version/idempotency wale RETRY / CORRECT_AND_RETRY / DISMISS; immutable attempt history, pinned mapping, mirror-only changes, original raw/run counts preserved.
+  Web `/integration`: synthetic sync, run history, queue filters/paging, raw + current mirror, reviewed corrections/dismissal/history; auditor read-only. Browser: blocked retry -> explicit correction -> resolved; older revision dismissed; reimport = 8 duplicates, closed items stay closed; stale-cursor 409 retains entered fields; no unexpected console errors.
+  Baseline **186/186**, 18 new `m6-reconciliation.test.ts` tests, final **204/204**; typecheck/build/diff checks pass. Concurrency/stale cursors, scope/revocation, atomic rollback and local case/decision isolation covered; logs `var/b6b-*-tests.log` (ignored).
+  Contract/PROGRESS/LIMITATIONS updated. B6b par rukna; one local commit, **push nahi**. Next = B7 M6 closure; PDF expiry/M7 abhi start nahi.
 - A2 done: ye file bani. Koi code change nahi.
 - B1 done: M6 design upar. Code nahi.
 - B2 done (server only): `server/src/modules/reports/{filters,definitions,service,routes}.ts`, registered in `app.ts`; `GET /reports`, `GET /reports/:name`, `GET /dashboards/:view`. Test `server/test/m6-reports.test.ts` (9, R01 included). Baaki: web (B3), CSV (B4), audit (B5), integration (B6). `stageKey=NONE` = no live stage. Expiring-documents / escalations / trends tiles "unavailable" dikhte hain, count nahi.
