@@ -43,6 +43,22 @@ export const api = {
   upload: <T>(url:string,body:FormData,key:string=newKey())=>request<T>('POST',url,body,key),
 };
 
+/** Downloads a file response (for example CSV). Errors come back as ApiError like every other call. */
+export async function download(url: string): Promise<{ blob: Blob; filename: string }> {
+  let res: Response;
+  try {
+    res = await fetch(`/api/v1${url}`, { headers: { 'x-requested-with': 'aicte-web' }, credentials: 'same-origin' });
+  } catch {
+    throw new ApiError(0, 'NETWORK', 'Cannot reach the server. Check that the API is running and try again.', null, null);
+  }
+  if (!res.ok) {
+    const e = (await res.json().catch(() => null))?.error ?? {};
+    throw new ApiError(res.status, e.code ?? 'ERROR', e.message ?? res.statusText, e.details ?? null, e.correlationId ?? null);
+  }
+  const name = /filename="([^"]+)"/.exec(res.headers.get('content-disposition') ?? '')?.[1] ?? 'export.csv';
+  return { blob: await res.blob(), filename: name };
+}
+
 export function qs(params: Record<string, string | number | boolean | undefined | null>) {
   const s = new URLSearchParams();
   for (const [k, v] of Object.entries(params)) if (v !== undefined && v !== null && v !== '' && v !== false) s.set(k, String(v));

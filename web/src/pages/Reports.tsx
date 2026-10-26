@@ -1,8 +1,8 @@
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery } from '@tanstack/react-query';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
-import { api, qs } from '../api';
+import { api, download, qs } from '../api';
 import { useSession } from '../session';
-import { Empty, ErrorState, formatDate, humanise, Loading, Status } from '../ui';
+import { Empty, ErrorState, formatDate, humanise, Loading, MutationError, Status } from '../ui';
 
 export const FILTER_KEYS = ['regionId', 'institutionId', 'categoryCode', 'stageKey', 'submittedFrom', 'submittedTo'] as const;
 type FilterKey = (typeof FILTER_KEYS)[number];
@@ -134,6 +134,18 @@ function ReportDetail({ name }: { name: string }) {
     refetchInterval: 30_000,
   });
 
+  const { can } = useSession();
+  const exportCsv = useMutation({
+    mutationFn: () => download(`/reports/${name}/csv${qs(filters)}`),
+    onSuccess: ({ blob, filename }) => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+    },
+  });
+
   const goPage = (p: number) => { const next = new URLSearchParams(params); next.set('page', String(p)); setParams(next); };
   const data = q.data;
   const isObligation = data?.entity === 'obligation';
@@ -146,7 +158,17 @@ function ReportDetail({ name }: { name: string }) {
           <h1>{data?.label ?? def?.label ?? humanise(name)}</h1>
           <p className="small muted" style={{ marginTop: 6 }}><Link to="/dashboard">← Dashboard</Link> · <Link to="/reports">All reports</Link></p>
         </div>
+        {can('REPORTS_EXPORT') && (
+          <div className="stack" style={{ justifyItems: 'end' }}>
+            <button className="primary" disabled={exportCsv.isPending || dateBad || q.isLoading} onClick={() => exportCsv.mutate()}>
+              {exportCsv.isPending ? 'Preparing CSV…' : 'Download CSV'}
+            </button>
+            <span className="small muted">Same filters and scope as this list. Each export is recorded in the audit log.</span>
+          </div>
+        )}
       </div>
+      <MutationError error={exportCsv.error} />
+      {exportCsv.isSuccess && <div className="alert ok" role="status">CSV downloaded for the filters shown below.</div>}
       <FilterBar report={def} params={params} setParams={setParams} />
 
       {q.isLoading ? <div className="card"><Loading rows={5} /></div>

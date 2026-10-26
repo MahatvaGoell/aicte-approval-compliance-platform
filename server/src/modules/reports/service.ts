@@ -3,6 +3,7 @@ import { AppError, NotFoundError, one, q } from '../../db.js';
 import { now } from '../../lib/clock.js';
 import type { Actor } from '../identity/permissions.js';
 import { applicationScopeSql, has } from '../identity/permissions.js';
+import { EXPORT_MAX_ROWS, toCsv } from './csv.js';
 import type { ReportDef, ReportName } from './definitions.js';
 import {
   DAY_MS, DUE_SOON_DAYS, INSTITUTION_CLOCKS, OFFICE_CLOCKS, PENDING_LIFECYCLE, REPORT_TZ, REPORTS, canReadReport, findReport,
@@ -182,6 +183,44 @@ export async function runReport(db: Db, actor: Actor, def: ReportDef, f: ReportF
     rows: rows.map((r) => mapRow(def, r, actor, at)),
     definition: { denominator: def.denominator, ageingAnchor: def.ageingAnchor },
     refreshedAt: at,
+  };
+}
+
+/**
+ * CSV of exactly the rows the report lists for the same filters and scope. Internal-only columns (owner, waiting reason)
+ * are left out for institutions, who never receive them in the JSON report either.
+ */
+export async function exportReportCsv(db: Db, actor: Actor, def: ReportDef, f: ReportFilters, maxRows = EXPORT_MAX_ROWS) {
+  if (!has(actor, 'REPORTS_EXPORT')) throw new AppError(403, 'FORBIDDEN', 'Your active role cannot export reports');
+  const at = now();
+  const b = buildQuery(actor, def, f, at);
+  const rows = (await q(db, `SELECT ${b.select} ${b.from} ORDER BY ${b.order} LIMIT ${maxRows + 1}`, b.params)).map((r) => mapRow(def, r, actor, at) as any);
+  if (rows.length > maxRows) {
+    throw new AppError(422, 'EXPORT_TOO_LARGE', `This export would exceed ${maxRows} rows. Narrow the filters and try again.`, { maxRows });
+  }
+  const office = !isInstitutionActor(actor);
+  const obligation = def.entity === 'obligation';
+  const cols: Array<[string, (r: any) => unknown]> = [
+    ['Application number', (r) => r.appNo],
+    ['Institution', (r) => r.institution],
+    ['Region', (r) => r.regionId],
+    [obligation ? 'Condition' : 'Live stage', (r) => (obligation ? r.condition : r.stageKey ?? 'No live stage')],
+    [obligation ? 'Obligation state' : 'Stage state', (r) => (obligation ? r.obligationState : r.stageState ?? r.lifecycleState)],
+    ...(office ? [['Owner', (r: any) => r.owner] as [string, (r: any) => unknown]] : []),
+    ['Pending action', (r) => r.pendingAction],
+    ['Due at (UTC)', (r) => r.dueAt],
+    ['Due basis', (r) => r.dueBasis],
+    ['Overdue', (r) => (r.overdue ? 'Yes' : 'No')],
+    ['Overdue days', (r) => r.overdueDays],
+    ...(office ? [['Waiting for', (r: any) => r.waitingReason] as [string, (r: any) => unknown]] : []),
+    ['Age in days', (r) => r.ageingDays],
+    ...(obligation ? [['Submission on time', (r: any) => (r.submissionOnTime === null ? '' : r.submissionOnTime ? 'Yes' : 'No')] as [string, (r: any) => unknown]] : []),
+  ];
+  return {
+    csv: toCsv(cols.map((c) => c[0]), rows.map((r) => cols.map((c) => c[1](r)))),
+    rowCount: rows.length,
+    filename: `${def.name}-${at.toISOString().slice(0, 10)}.csv`,
+    at,
   };
 }
 
