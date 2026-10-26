@@ -4,12 +4,12 @@ Chat-by-chat notes. Plan: `../STEP_PLAN.md` (outer folder, not in this repo). Pe
 
 ## Project kya hai
 AICTE approval workflow + compliance + alert system (PS SIH26262). Route -> Clock -> Escalate -> Watch -> Prove. **System kabhi approve/reject nahi karta**; sirf `DECISION_RECORD` wala user karta hai. Sab data synthetic, real email/service nahi. Har rule pe label `APH_CLAUSE` / `ADMIN_INSTRUCTION` / `DEMO_ASSUMPTION`. Approval outcome, compliance, lifecycle alag fields; upload != verification != closure; case apni policy version pe rehta hai.
-Status: M1-M5 done. M6 B2-B5 done (170 tests); B6 mock integration aur B7 closure baaki. PDF expiry, M7, demo prep baaki. M8 (AI/load) national plan me nahi.
+Status: M1-M5 done. M6 B2-B6a done (186 tests); B6b reconciliation/web aur B7 closure baaki. PDF expiry, M7, demo prep baaki. M8 (AI/load) national plan me nahi.
 
 ## Folder structure
 - `server/src/modules/`: applications (commands.ts, commands-m2.ts, command-kit.ts), audit, compliance (status.ts, routes.ts), deadlines (engine.ts, scheduler.ts, calendar.ts), documents, evc, identity (permissions.ts), notifications (worker.ts), ops, outbox, policy, reference, workflow
 - `server/src/`: app.ts, db.ts (AppError, withTx), lib/clock.ts (now()), seed/, worker/, http/
-- `server/migrations/`: 001..005 (naya = 006_*.sql; 001 mat chhedo). `server/test/`: m1..m5 tests + helpers.ts. `server/scripts/`: demo:scenarios
+- `server/migrations/`: 001..006 (agla naya = 007_*.sql; purane migration mat chhedo). `server/test/`: m1..m6 tests + helpers.ts. `server/scripts/`: demo:scenarios
 - `web/src/`: App.tsx (sectionFor, nav), api.ts, ui.tsx, motion.tsx (Icon), styles.css, pages/ (Home, Compliance, Audit, Case*, Evc, Ops, Policy ...)
 - `docs/`: BUILD_PLAN (spec), PROGRESS, NEXT_PROMPT, HANDOFF, FOUNDATIONS, NATIONAL_ROUND_PLAN
 
@@ -75,4 +75,8 @@ Row: `id, appNo, institution, region, stage, stageState, owner, pendingAction, d
   Integrity result me `verifiedAt`/limits; scoped viewers ko global `checked`/`firstBrokenId` nahi. `web/src/pages/Audit.tsx`: URL filters, paging, detail expansion, retry/empty/stale states; async facets ke baad actor selection retain hota hai.
   `server/test/m6-audit.test.ts`: 13 tests; baseline **157/157**, final **170/170**, typecheck/build/diff checks pass. Full test logs `var/b5-baseline-tests.log` aur `var/b5-full-tests.log` (local/ignored); purana full-test failure reproduce nahi hua.
   Browser: combined filters + local dates, reload/actor restore, disjoint pages, empty result, case link, detail aur integrity verified; console errors empty. Baaki: **B6a**, phir B6b/B7. B5 par rukna; push nahi kiya.
+- B6a done: `006_integration.sql`, `modules/integration/{access,contract,fixtures,import,routes}.ts`, fixed synthetic `server/fixtures/portal-export.json`; scoped sync/runs APIs, canonical IDs + immutable raw receipts, mirror-only updates, regional cursor versions aur retained reconciliation items.
+  `docs/INTEGRATION_CONTRACT.md` me source schema, mapping v1, field-authority matrix, limits aur API examples. Fresh West counts: 2 accepted / 1 duplicate / 2 invalid / 3 reconciliation; new-key retry = 8 duplicates, mirror/queue unchanged.
+  `m6-integration.test.ts`: 16 tests. Baseline **170/170**, final **186/186**, typecheck/build/diff checks pass; logs `var/b6a-*-tests.log` (ignored). Idempotency/concurrency, ordering/conflicts, scope/revocation, immutable history, atomic rollback aur local decision/obligation isolation covered.
+  Live local API import/replay/retry verified. Server-only step: RO login ke baad `/api/v1/integration/runs` se counts dekh sakte ho; Integration UI aur reasoned/versioned queue resolve/retry **B6b** me. B6a par rukna; push nahi kiya.
 

@@ -10,6 +10,7 @@ import { applicationRoutes } from './modules/applications/routes.js';
 import { auditRoutes } from './modules/audit/routes.js';
 import { actorFromToken } from './modules/identity/auth.js';
 import { identityRoutes } from './modules/identity/routes.js';
+import { integrationRoutes } from './modules/integration/routes.js';
 import { notificationRoutes } from './modules/notifications/routes.js';
 import { opsRoutes } from './modules/ops/routes.js';
 import { policyRoutes } from './modules/policy/routes.js';
@@ -110,6 +111,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(documentRoutes, { prefix: '/api/v1' });
   await app.register(complianceRoutes, { prefix: '/api/v1' });
   await app.register(reportRoutes, { prefix: '/api/v1' });
+  await app.register(integrationRoutes, { prefix: '/api/v1' });
 
   app.setNotFoundHandler((req, reply) => {
     reply.status(404).send({ error: { code: 'NOT_FOUND', message: 'No such endpoint', details: null, correlationId: req.correlationId } });

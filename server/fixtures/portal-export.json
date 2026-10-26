@@ -1,0 +1,16 @@
+{
+  "sourceSystem": "MOCK_PORTAL", "contractVersion": 1, "synthetic": true,
+  "records": [
+    {"regionId":"DEMO-WEST","event":{"externalId":"DEMO-WEST-LEASE","eventId":"west-lease-1","revision":1,"institutionCode":"DEMO-1-10001","sourceUpdatedAt":"2026-10-01T10:00:00+05:30","fields":{"title":"Synthetic Pune lease export","statusCode":"RECEIVED"}}},
+    {"regionId":"DEMO-WEST","event":{"externalId":"DEMO-WEST-LEASE","eventId":"west-lease-1","revision":1,"institutionCode":"DEMO-1-10001","sourceUpdatedAt":"2026-10-01T10:00:00+05:30","fields":{"title":"Synthetic Pune lease export","statusCode":"RECEIVED"}}},
+    {"regionId":"DEMO-WEST","event":{"externalId":"DEMO-WEST-LEASE","eventId":"west-lease-3","revision":3,"institutionCode":"DEMO-1-10001","sourceUpdatedAt":"2026-10-03T10:00:00+05:30","fields":{"title":"Synthetic Pune lease export revised","statusCode":"PROCESSING"}}},
+    {"regionId":"DEMO-WEST","event":{"externalId":"DEMO-WEST-INVALID","eventId":"west-invalid-1","revision":1,"institutionCode":"DEMO-1-10002","sourceUpdatedAt":"2026-10-01T10:00:00+05:30","fields":{"title":"","statusCode":"RECEIVED"}}},
+    {"regionId":"DEMO-WEST","event":{"externalId":"DEMO-WEST-UNKNOWN","eventId":"west-unknown-1","revision":1,"institutionCode":"DEMO-1-10002","sourceUpdatedAt":"2026-10-01T10:00:00+05:30","fields":{"title":"Synthetic unknown portal code","statusCode":"UNRECOGNISED_CODE"}}},
+    {"regionId":"DEMO-WEST","event":{"externalId":"DEMO-WEST-LEASE","eventId":"west-lease-2","revision":2,"institutionCode":"DEMO-1-10001","sourceUpdatedAt":"2026-10-02T10:00:00+05:30","fields":{"title":"Synthetic late revision","statusCode":"RECEIVED"}}},
+    {"regionId":"DEMO-WEST","event":{"externalId":"DEMO-WEST-LEASE","eventId":"west-lease-3","revision":3,"institutionCode":"DEMO-1-10001","sourceUpdatedAt":"2026-10-03T10:00:00+05:30","fields":{"title":"Conflicting synthetic event reuse","statusCode":"COMPLETE"}}},
+    {"regionId":"DEMO-WEST","event":{"externalId":"DEMO-WEST-FORBIDDEN","eventId":"west-forbidden-1","revision":1,"institutionCode":"DEMO-1-10001","sourceUpdatedAt":"2026-10-01T10:00:00+05:30","fields":{"title":"Synthetic disallowed authority field","statusCode":"COMPLETE","decisionOutcome":"APPROVED"}}},
+    {"regionId":"DEMO-NORTH","event":{"externalId":"DEMO-NORTH-PORTAL","eventId":"north-1","revision":1,"institutionCode":"DEMO-1-20001","sourceUpdatedAt":"2026-10-01T10:00:00+05:30","fields":{"title":"Synthetic Lucknow portal export","statusCode":"RECEIVED"}}},
+    {"regionId":"DEMO-NORTH","event":{"externalId":"DEMO-NORTH-PORTAL","eventId":"north-2","revision":2,"institutionCode":"DEMO-1-20001","sourceUpdatedAt":"2026-10-02T10:00:00+05:30","fields":{"title":"Synthetic Lucknow portal export revised","statusCode":"COMPLETE"}}},
+    {"regionId":"DEMO-SOUTH","event":{"externalId":"DEMO-SOUTH-PORTAL","eventId":"south-1","revision":1,"institutionCode":"DEMO-1-30001","sourceUpdatedAt":"2026-10-01T10:00:00+05:30","fields":{"title":"Synthetic Chennai portal export","statusCode":"RECEIVED"}}}
+  ]
+}
