@@ -42,5 +42,29 @@ Status: M1-M5 done (139 tests). M6, PDF expiry, M7, demo prep baaki. M8 (AI/load
 - NATIONAL_ROUND_PLAN 4.4 R01 test + "Verify integrity" button; STEP_PLAN B5 me button ka zikr nahi.
 - Dashboards pe "invented official timeline/performance figure" nahi.
 
+## M6 design (B1)
+**Ek read-model, teen jagah same**: `reports/service.ts` me har report ek definition (FROM+WHERE+columns). Dashboard tile count, drill-down rows aur CSV teeno isi se bante hain => R01 reconcile by construction. Scope hamesha `applicationScopeSql(actor)` se; filter uske upar AND (out-of-scope region filter = khaali, leak nahi). Time `now()`. Koi migration B2-B5 me nahi; sirf B6 me `006_integration.sql`.
+
+**Naye files**: `server/src/modules/reports/{filters,definitions,service,routes}.ts` (B2; CSV `csv.ts` B4), `modules/audit/routes.ts` extend (B5), `modules/integration/{contract,fixtures,import,reconcile,routes}.ts` + `migrations/006_integration.sql` + `server/fixtures/portal-export.json` (B6), `server/test/m6-{reports,csv,audit,integration}.test.ts`, web: `pages/Dashboard.tsx`, `Reports.tsx`, `Integration.tsx`, `Audit.tsx` update (B3-B6), `app.ts` me routes register.
+
+**Reports (B2)**, filters: `regionId, institutionId, categoryCode, stageKey, submittedFrom, submittedTo, page, pageSize<=100`. Entity application unless likha:
+| name | kaun dekhe | definition |
+|---|---|---|
+| `pending` | office + institution | lifecycle SUBMITTED/AWAITING_CLASSIFICATION/IN_PROCESS/AWAITING_DECISION (denominator for % nahi, sirf count) |
+| `overdue` | office | pending + koi ACTIVE office clock (STAGE_HANDLING/EVC_*) `current_due_at <= now()` |
+| `due-soon` | office | pending, not overdue, ACTIVE clock due within 7 din (`DEMO_ASSUMPTION`) |
+| `awaiting-institution` | office + institution | live stage AWAITING_RESPONSE |
+| `evc-unscheduled` | office | EVC stage ready (`evc_readiness`) aur koi live visit nahi |
+| `evidence-backlog` (obligation) | office | state EVIDENCE_SUBMITTED/UNDER_VERIFICATION; `onTime` receipt se alag dikhao |
+| `obligations-overdue` (obligation) | office + institution | state OPEN + ACTIVE OBLIGATION_SUBMISSION clock due <= now (same as `complianceStatus`) |
+Row: `id, appNo, institution, region, stage, stageState, owner, pendingAction, dueAt, dueBasis, overdueDays, waitingReason (INSTITUTION_RESPONSE/OFFICER_REVIEW/VISIT_AVAILABILITY/EXTERNAL_INFORMATION/UNKNOWN), ageingDays`. Ageing anchor = live stage `entered_at`; case age = `submitted_at`. Institution ko owner, officer clocks, waitingReason internal detail nahi; sirf office+institution reports. Expiring-documents tile B2 me nahi (doc validity clock alag, B3 pe "unavailable" dikhega).
+
+**Endpoints** (sab `/api/v1`): `GET /reports` (actor ke liye catalogue), `GET /reports/:name` -> `{name, filters, total, page, pageSize, rows, definition:{denominator, ageingAnchor}, refreshedAt}`; `GET /dashboards/:view` (`institution` = role INSTITUTION_REP, `officer` = STAGE_WORK/STAGE_ASSIGN/EVC_REVIEW, `management` = REPORTS_VIEW; galat view 403) -> `{tiles:[{key,label,count,report,filters}], matrix (management: region x stage pendency + avg ageing), refreshedAt, pollSeconds:30}`. Anjaan/unauthorised report naam = 404. Bad filter = 422. B4: `GET /reports/:name?format=csv` + capability `REPORTS_EXPORT` (officers, auditor, institution safe columns), max 5000 rows, `=+-@\t\r` prefix pe `'`. B5: `GET /audit` me `from/to/actor/action/applicationId/page` + scoped `total`; institution ko sirf `visibility=INSTITUTION`; `POST /audit/verify` same. B6: `POST /integration/sync`, `GET /integration/runs`, `GET /integration/reconciliation`, `POST /integration/reconciliation/:id/resolve` (capabilities `INTEGRATION_VIEW`, `INTEGRATION_RESOLVE`; reason + expectedVersion + Idempotency-Key + audit + outbox ek tx me).
+
+**Tests**: B2 `m6-reports.test.ts` R01 (tile = total = pages ka sum, empty result, demo time aage badhne pe overdue badle), scope (dusra region/institution 0 rows, institution `overdue` = 404, committee member management = 403, 401), bad filter 422, on-time evidence late review pe `obligations-overdue` me nahi. B4 CSV escape/formula/bound/institution columns. B5 audit scope + filters. B6 duplicate/retry/older revision/unknown code/run totals/resolution concurrency/rollback/mock approve-reject nahi kar sakta.
+
+**STEP_PLAN me sudhaar (suggest, file nahi badli)**: B5 me "Verify integrity" button + date/actor/action filter jodo. B6 bada hai: do chats karo (6a: contract + fixtures + migration + import + run counts, 6b: reconciliation queue + resolve + web). B7 me `npm run build` + `git diff --check` jodo. B2/B3/B4 ke "Common rules" same.
+
 ## Log
 - A2 done: ye file bani. Koi code change nahi.
+- B1 done: M6 design upar. Code nahi.
