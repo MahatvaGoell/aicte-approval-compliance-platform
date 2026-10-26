@@ -11,6 +11,7 @@ Keep this file current at the end of every milestone.
 - **Document authenticity is not verified.** Upload checks inspect size, headers/extensions, encryption markers and rough PDF structure/page count; they are heuristic, not malware scanning or full parsing/render validation. SHA-256 checks byte integrity only. Metadata is manually confirmed. Issuer/registry verification is out of scope (PS 26261). Storage is a local private filesystem with bounded in-memory downloads.
 - **Exactly-once external email is not guaranteed.** Internal alerts are deduplicated; a provider can accept a message whose acknowledgement is lost. Uncertain sends are reconciled and reported, not hidden.
 - **Audit immutability is limited.** Application sessions cannot change audit rows, and the hash chain detects changes, but a database superuser can still alter data. Independent checkpoint export is a production requirement.
+- **M6 reporting is bounded.** Seven shared report definitions support scoped drill-down/CSV; exports above 5000 rows are rejected, not truncated. Dashboards poll every 30 seconds. Expiring-document drill-down, historical trends and escalation totals are explicitly unavailable; the underlying Documents/Notifications screens remain available. No load/performance claims have been measured in M6.
 - **Login rate limiting is per API process and in memory.**
 - **Single-region, single-node deployment.** Load results, once measured, apply only to the tested hardware and dataset.
 

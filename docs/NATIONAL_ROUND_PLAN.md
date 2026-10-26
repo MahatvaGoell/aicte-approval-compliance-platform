@@ -2,6 +2,8 @@
 
 Last updated: 26 Oct 2026. **Is file ko sabse pehle padho.** Ye batati hai ki internal round ke baad national round ke liye exactly kya banana hai, kis order me, kaise, aur kaise check karna hai.
 
+**Current handoff:** pehle WORK_LOG.md padho. M1–M6 local checkout me complete hain (**204 tests**); next = **C1 synthetic PDF dataset only** (NEXT_PROMPT.md). Har step par local commit aur report ke baad rukna. User ka standing order: **push nahi**; neeche ke purane push instructions abhi apply nahi. C1–C5 ke baad M7, phir demo prep; M8 AI/load abhi scope me nahi.
+
 Team Infera: Arihant Jain, Yuvika Mittal, Alwaz Alam, Reeshu Singh Rajput, Mahatva Goel.
 
 ---
@@ -23,12 +25,13 @@ Kuch bhi "headline" mat banao jo problem se hat ke ho. Story hamesha same: *"Fil
 | M3 deadlines, reminders 30/7/1, escalation, notifications, email outbox, worker, demo clock | Done (99 tests pass) |
 | M4 EVC queue, conflicts, reservations, visit reports | Done (teammate, 26 Oct) |
 | M5 private documents, obligations, verification, lease renewal | Done (teammate, 26 Oct) — **139 tests pass**. Metadata abhi manual hai, OCR/auto-extraction nahi |
-| M6–M8 | **Baaki** (NEXT_PROMPT.md me M6 ka prompt hai) |
+| M6 dashboards/reports/CSV, audit, mock integration/reconciliation | **Done locally** — 204 tests; B7 closed; M6_ACCEPTANCE.md me evidence/limits |
+| PDF expiry C1–C5 / M7 / demo prep | **Baaki** — NEXT_PROMPT.md me C1 dataset ka prompt hai |
 | Idea PPT (internal round) | Done → `docs/sih/SIH26262-Idea-Presentation.pptx` aur `.pdf` |
 | Internal round | **Select ho gaye** |
 | 8 feature ideas ka "court trial" (jury of Claudes) | Done → `docs/sih/court-verdicts/` |
 
-PPT slide 4 me "8 modules working as one system" likha hai. Ab M1–M5 bane hain; M6–M8 baaki. **National judges code + demo dekhenge, isliye pehla kaam promise poora karna hai.**
+PPT slide 4 me "8 modules working as one system" likha hai. Ab M1–M6 bane hain; PDF extraction, M7 aur demo prep baaki. **National judges code + demo dekhenge; sirf implemented aur measured features ka claim karo.**
 
 ---
 
@@ -59,7 +62,7 @@ Agar time kam pade toh **neeche se kaato, upar se nahi.** BUILD_PLAN §21 ka rul
 |---|---|---|---|
 | ✅ | ~~M4 EVC~~ | **Done** (teammate) | — |
 | ✅ | ~~M5 Documents + obligations~~ | **Done** (teammate) | — |
-| 1 | **M6 Dashboards + audit viewer + reports** (`docs/NEXT_PROMPT.md`) | PPT promise, "pendency visible" | 2 din |
+| ✅ | ~~M6 Dashboards + audit viewer + reports + mock integration~~ | **Done locally**; M6_ACCEPTANCE.md | — |
 | 2 | **PDF expiry-date extraction + highlight** (M5 ke upload/review screen pe) | Wow moment, jury ka sabse kam-negative idea | 2 din |
 | 5 | **M7 Policy impact preview + action/gap panel** | PPT promise, second differentiator | 1–2 din |
 | 6 | **Demo prep**: chaos test, demo script, reset command, 3 full rehearsals | Live demo fail nahi hona chahiye | 1–2 din |
@@ -74,7 +77,7 @@ Agar time kam pade toh **neeche se kaato, upar se nahi.** BUILD_PLAN §21 ka rul
 ## 4. Har kaam step-by-step
 
 Har milestone ka pattern same hai (AGENTS.md ke rules follow karo):
-**migration (`server/migrations/00N_*.sql`) → service/command (`POST /applications/:id/commands`) → API → web page → tests (`server/test/mN-*.test.ts`) → `npm run typecheck && npm test` → PROGRESS.md update → commit + push.**
+**migration (if needed) → service/command → API/web (if in that step) → tests → typecheck/test/build/diff check → PROGRESS + WORK_LOG update → one local commit → report and stop.** Push remains paused. Current migrations are 001–007; next schema change must use 008 or later.
 
 ### 4.1 M4 — EVC scheduling ✅ DONE (teammate)
 Ban chuka hai (PROGRESS.md dekho). Sirf **demo climax check** karo: point 9 neeche. Reference ke liye purane steps:
@@ -112,7 +115,8 @@ Jury ki condition: *offline method naam se batao, scan PDFs bhi, aur accuracy nu
 6. **Accuracy napo:** 20–30 synthetic PDFs banao (lease deed, fire NOC; clean text, scan, do dates wala, date missing wala). Script `npm run evaluate:extraction` → table: kitne sahi, kitne galat, kitne abstain. **Yahi number judges ko dikhana hai** ("27 me se 24 sahi, 2 abstain, 1 galat — aur galat wala officer ne confirm screen pe pakda").
 7. LLM optional hai; core rule-based + OCR se hi chalna chahiye (PPT me "runs offline, no paid services" likha hai).
 
-### 4.4 M6 — Dashboards, reports, audit viewer
+### 4.4 M6 — Dashboards, reports, audit viewer ✅ DONE LOCALLY
+Acceptance and limitations: M6_ACCEPTANCE.md. B2–B7 are complete, 204 tests pass. Expiring-document drill-down, historical trends and escalation totals remain explicitly unavailable; no live portal connector exists. The following list is retained as the original scope reference.
 1. Role dashboards: region/stage-wise pending, overdue, due-this-week. **Har number pe click → wahi filtered list** (same scope rules).
 2. CSV export.
 3. Audit viewer page: filter by case/actor/date + **"Verify integrity"** button (existing `POST /audit/verify`).
@@ -147,11 +151,11 @@ npm install
 cp .env.example .env
 npm run db:start        # alag terminal, chalta rehne do (embedded PostgreSQL :54329)
 npm run db:reset
-npm test                # sab pass hone chahiye (abhi 139)
+npm test                # current local M6 baseline: 204 passing
 npm run dev:api         # :4000
 npm run dev:worker      # reminders/alerts
 npm run dev:web         # http://localhost:5180
-npm run demo:scenarios  # 6 demo cases (API chalte hue)
+npm run demo:scenarios  # 9 demo cases; once after reset, with API running
 ```
 Login: login page pe kisi bhi role card pe click. Password (demo only): README me.
 DB WIN1252 error aaye toh `var/pgdata` delete karke `db:start` dobara.
@@ -173,7 +177,7 @@ Claude ko ye rules hamesha batao (HANDOFF.md me bhi hain):
 - **Commits/docs me koi AI/Claude attribution nahi** (no `Co-Authored-By`).
 - Hinglish me short baat.
 - System kabhi approve/reject nahi karta; har rule pe label (`APH_CLAUSE` / `ADMIN_INSTRUCTION` / `DEMO_ASSUMPTION`); sab data synthetic; real email/real service kabhi nahi.
-- Har milestone ke baad `npm run typecheck && npm test`, PROGRESS.md update, commit + push to `main`.
+- Har step ke baad typecheck/test/build/diff check, PROGRESS + WORK_LOG update, ek local commit aur report; **push nahi**, next step user ke kehne par.
 
 ---
 
@@ -188,8 +192,8 @@ Rules: commits/docs me koi AI ya Claude attribution mat daalna (no Co-Authored-B
 
 Kaam:
 1. Setup chala (NATIONAL_ROUND_PLAN section 5), npm test pass karwa.
-2. NATIONAL_ROUND_PLAN section 3 ke order me kaam kar (M4 aur M5 ho chuke hain): pehle M6 (docs/NEXT_PROMPT.md follow kar), phir PDF date extraction (section 4.3), phir M7, phir demo prep.
-3. Har milestone ke baad typecheck + test, PROGRESS.md update, commit + push, aur NEXT_PROMPT.md agle milestone ke liye update.
+2. M1-M6 local checkout me complete hain. Ab NEXT_PROMPT.md ke hisaab se C1 dataset only; phir user ke next kehne par C2 parser, C3 OCR, C4 existing review/highlight, C5 evaluation, phir M7, phir demo prep.
+3. Har step ke baad typecheck + test + build + diff check, PROGRESS/WORK_LOG update, ek local commit (push nahi), aur NEXT_PROMPT.md agle step ke liye update. Report karke rukna.
 4. Har step ke baad mujhe batana kya hua aur browser me kya click karke check karu.
 ```
 
@@ -228,7 +232,7 @@ Ek hi file pe do log ek saath kaam na karein; har feature apni branch me, merge 
 ## 10. Files ka map
 
 - Plan (ye file): `docs/NATIONAL_ROUND_PLAN.md`
-- Agla milestone ka prompt: `docs/NEXT_PROMPT.md` (M6)
+- Agla step ka prompt: `docs/NEXT_PROMPT.md` (C1 synthetic PDF dataset)
 - Poora spec: `docs/BUILD_PLAN.md` (§11 anchor, §12 EVC/docs, §16 AI, §19 demo, §20 tests, §21 milestones)
 - Kya bana hai: `docs/PROGRESS.md`
 - Reusable modules: `docs/FOUNDATIONS.md`

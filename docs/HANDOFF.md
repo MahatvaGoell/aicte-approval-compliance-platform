@@ -1,8 +1,8 @@
 # Handoff: continuing on another laptop
 
-> **National round (26 Oct 2026): the team cleared the internal round. Read [NATIONAL_ROUND_PLAN.md](NATIONAL_ROUND_PLAN.md) first** — it has the build order, step-by-step plan, skills to use and the prompt to paste.
+> **National round (26 Oct 2026): M1–M6 are complete locally. Read [WORK_LOG.md](WORK_LOG.md) first**, then AGENTS/PROGRESS/NEXT_PROMPT. Next step is C1, the labelled synthetic PDF dataset. Stop after each step. Pushing remains paused under the user's standing instruction.
 
-Everything for this project is in this GitHub repository: <https://github.com/MahatvaGoell/aicte-approval-compliance-platform>. Read this file next, then [PROGRESS.md](PROGRESS.md) (what exists) and [NEXT_PROMPT.md](NEXT_PROMPT.md) (the next milestone's prompt).
+Project repository: <https://github.com/MahatvaGoell/aicte-approval-compliance-platform>. **Recent B5–B7 changes are local and not yet pushed**, so a fresh GitHub clone will not contain the complete M6 closure. Preserve the current checkout and commits; do not reset it to remote main. Read [PROGRESS.md](PROGRESS.md) for actual local status and [NEXT_PROMPT.md](NEXT_PROMPT.md) for the next step.
 
 ## The goal
 
@@ -13,7 +13,7 @@ The coding agent builds the whole platform, milestone by milestone, from [BUILD_
 ## Rules the user set (follow always)
 
 - **No AI or Claude attribution anywhere**: no `Co-Authored-By`, no "Generated with" lines in commits, PRs or docs. Commit under the user's own git identity.
-- Commit and push to `main` when a milestone or a clear chunk is done and tests pass.
+- One step = one tested local commit; update WORK_LOG with 3–5 lines and report back before starting the next step. **Do not push** until the user explicitly lifts the current no-push instruction. This overrides older commit-and-push text.
 - Talk to the user in Hinglish, short and direct. They check the UI themselves; tell them what to click.
 - Never present a demo rule or timeline as an official AICTE rule (provenance labels: `APH_CLAUSE`, `ADMIN_INSTRUCTION`, `DEMO_ASSUMPTION`).
 - All data is synthetic. Never send real emails or call real external services.
@@ -27,7 +27,9 @@ The coding agent builds the whole platform, milestone by milestone, from [BUILD_
 | M3 — deadlines, escalation ladder, notifications, email outbox, worker, demo clock | Done (99 tests passing). Remaining small gaps are listed in PROGRESS.md "Known gaps" |
 | M4 — EVC readiness, conflicts, reservations, reports | Done; see PROGRESS.md for acceptance checks and limitations |
 | M5 — private documents, obligations, evidence receipts, verification and lease renewal | Done; 139 tests passing; browser journey verified |
-| M6–M8 | Not started; NEXT_PROMPT.md starts M6 |
+| M6 — dashboards, reports/CSV, scoped audit, mock integration/reconciliation | Done locally; **204 tests**, typecheck/build/whitespace and browser/API acceptance pass; see [M6_ACCEPTANCE.md](M6_ACCEPTANCE.md) |
+| C — offline PDF expiry extraction | Not started; NEXT_PROMPT.md starts **C1 dataset only**, then C2 parser, C3 offline OCR, C4 existing M5 review/highlight, C5 evaluation |
+| M7 / demo prep | Not started; follow after PDF feature; no M8 AI/load work is authorised by the national step plan |
 | UI | Redesigned (warm light/dark themes, motion). Per-page layout brief for a designer: [UI_PAGES.md](UI_PAGES.md) |
 | SIH idea PPT | Done: [sih/SIH26262-Idea-Presentation.pptx](sih/SIH26262-Idea-Presentation.pptx) (and `.pdf`). Internal round cleared |
 | National round | Plan in [NATIONAL_ROUND_PLAN.md](NATIONAL_ROUND_PLAN.md); feature verdicts in [sih/court-verdicts/](sih/court-verdicts/) |
@@ -59,9 +61,9 @@ Notes:
 - Port 5173 was taken on the first laptop, so the web app uses 5180.
 - `var/` (database files, email outbox, uploads) is local and not in git.
 
-## Pending: the SIH presentation
+## SIH presentation reference (already delivered)
 
-The user wants the best possible idea PPT, **in the official SIH 2026 template**: [sih/SIH2026-IDEA-Presentation-Format.pptx](sih/SIH2026-IDEA-Presentation-Format.pptx).
+The internal-round idea deck is already delivered. The following is the original template brief for future deck edits; it is **not the next build step**. Official template: [sih/SIH2026-IDEA-Presentation-Format.pptx](sih/SIH2026-IDEA-Presentation-Format.pptx).
 
 Template rules (from its last slide): **at most 6 slides including the title slide**; points, diagrams and infographics, no paragraphs. Delete the instructions slide (slide 7) in the final file.
 
@@ -83,15 +85,13 @@ Copy everything inside the block into Claude Code, opened in the cloned reposito
 ```text
 Main is project continue kar raha hoon from another laptop. Repo: AICTE Approval & Compliance Platform (SIH 2026, PS SIH26262).
 
-Pehle ye files padh: docs/HANDOFF.md (sabse pehle), AGENTS.md, docs/PROGRESS.md, docs/NEXT_PROMPT.md, docs/BUILD_PLAN.md (zarurat ke hisaab se).
+Pehle ye files padh: docs/WORK_LOG.md (sabse pehle), AGENTS.md, docs/PROGRESS.md, docs/NEXT_PROMPT.md, docs/NATIONAL_ROUND_PLAN.md section 4.3. M1-M6 local checkout me complete hain (204 tests); fresh GitHub clone abhi behind ho sakta hai.
 
 Rules: commits/docs me koi AI ya Claude attribution mat daalna (no Co-Authored-By). Mujhse Hinglish me short baat kar.
 
-Kaam is order me:
-1. HANDOFF.md ke "Set up on the new laptop" steps chala (npm install, .env, db:start background me, db:reset, npm test). Kuch fail ho toh fix kar.
-2. PROGRESS.md ke "Known gaps" dekh; jo chhota fix turant ho sakta hai woh kar, tests pass karwa, commit + push.
-3. SIH idea PPT bana docs/sih/SIH2026-IDEA-Presentation-Format.pptx template me, HANDOFF.md ke "Pending: the SIH presentation" table ke hisaab se: max 6 slides, flowcharts aur diagrams editable shapes me, har slide render karke check kar. Output docs/sih/SIH26262-Idea-Presentation.pptx me save kar aur mujhe bata kaha hai.
-4. Phir docs/NEXT_PROMPT.md ke hisaab se agla milestone (M6) shuru kar.
+Kaam: NEXT_PROMPT.md ka C1 step only — 20-30 labelled synthetic text/scanned PDFs, reproducible generator aur expected.json. Extractor/OCR/API/UI/M7 abhi mat banao. Existing services reuse karo; .env overwrite ya prepared development DB reset mat karo jab tak zarurat na ho. Baseline npm test 204 pass hona chahiye.
+
+End: typecheck + test + build + diff check, PROGRESS/WORK_LOG update, NEXT_PROMPT ko C2 ke liye replace, ek local commit. Push nahi. C1 ke baad ruk ke bata.
 
 Har step ke baad mujhe batana kya hua aur kya click karke check karu.
 ```

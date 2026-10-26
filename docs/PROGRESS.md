@@ -9,9 +9,18 @@ Last updated: 26 Oct 2026 · Specification: [BUILD_PLAN.md](BUILD_PLAN.md) · Ag
 | M3 — Deadlines, worker, notifications, escalation, demo clock | **Done** |
 | M4 — EVC queue, scheduling, conflicts, reports | **Done** — EVC queue → accepted report → next stage, browser verified |
 | M5 — Documents, obligations, verification, lease renewal | **Done** — 139 tests passing; lease renewal browser verified |
-| M6 — Dashboards, reports, audit viewer, mock integration | **In progress** — B2–B6b complete (204 tests); B7 milestone closure pending |
+| M6 — Dashboards, reports, audit viewer, mock integration | **Done locally** — B2–B7 complete; 204 tests, typecheck/build and browser/API acceptance pass; not pushed |
+| C — Offline PDF expiry extraction | Not started — next step C1: synthetic labelled PDF dataset |
 | M7 — Differentiators (action/gap panel, priority queue, consistency, readiness, preview) | Not started |
 | M8 — Optional AI, load/recovery tests, docs, evaluation, rehearsal | Not started |
+
+## M6 — B7 closure
+
+M6 is complete within the B1 agreed scope: role dashboards/region-stage pendency, seven shared report definitions with safe CSV, scoped audit filters/detail/integrity checks, and mock source imports with reasoned reconciliation. Acceptance mapping, reproducible checks and explicit limitations are in [M6_ACCEPTANCE.md](M6_ACCEPTANCE.md). README/HANDOFF/NATIONAL_ROUND_PLAN now describe M1–M6 and the next C1 dataset step; NEXT_PROMPT contains the staged PDF handoff. No new product feature or schema was added in B7.
+
+Closure checks: `npm run typecheck`, `npm test` (**204/204**, 16 files), `npm run build`, `git diff --check`. The 65 M6 tests cover R01, CSV safety/bounds, scope/revocation, source ordering/immutability, review versions/idempotency/concurrency, rollback and local-state isolation. Full output: `var/b7-full-tests.log` (local/ignored). The existing scenario command successfully prepared nine synthetic cases without resetting retained integration history. Browser: West dashboard **6** -> same-filter report **6** -> successful CSV download. Live API checked all six exported case IDs against the report, institution-safe columns, institution integration rejection, retained resolved/dismissed queue states and global audit integrity (**179 events at verification time**). Evidence: `var/b7-closure-evidence.json`, `var/b7-pending-west.csv`, `var/b7-demo-scenarios.log` (local/ignored). No browser console errors occurred.
+
+Limits: no expiring-document drill-down report, historical trends or escalation totals; those figures are explicitly unavailable and link to existing document/notification screens. CSV is bounded to 5000 rows; reports poll every 30 seconds. Audit lacks independent protected checkpoints; mock integration has no live connector/writeback/scheduler. Metadata remains manual, with no PDF/OCR extraction yet. M7 and demo-prep work remain pending. B7 ends with one local commit and no push, preserving the standing user instruction.
 
 ## M6 — B6b reconciliation and integration workspace
 
@@ -21,7 +30,7 @@ Corrections retain original raw JSON, source identity, pinned mapping and histor
 
 Web `/integration` includes synthetic fixture sync, historical run counts, scoped queue filters/paging, raw record/hash/validation, current mirror, reviewed correction/retry/dismissal and attempt history. Mock/disconnected/demo labels remain explicit. Auditor/authority views are read-only; loading, empty, failed/stale refresh, retry and mutation errors are displayed. Recoverable mutation failures retain entered review fields.
 
-Baseline **186/186**, 18 new reconciliation tests, final **204/204**; typecheck, production build and whitespace checks pass. Tests cover concurrency/idempotency, stale item/cursor, changed/revoked grants, cross-region reads/mutations, rollback including outbox failure and local-state isolation. Browser verified West import -> blocked retry -> reviewed correction -> resolved; older revision dismissal; repeat import -> 8 duplicates without reopening items; auditor read-only view. A second-tab import caused an expected stale-cursor 409 and entered review reason/title survived refresh. No unexpected browser console errors occurred. Full outputs remain local under `var/b6b-*-tests.log`. B6b is complete locally; B7 closure, PDF extraction and M7 remain pending. No push was performed.
+Baseline **186/186**, 18 new reconciliation tests, final **204/204**; typecheck, production build and whitespace checks pass. Tests cover concurrency/idempotency, stale item/cursor, changed/revoked grants, cross-region reads/mutations, rollback including outbox failure and local-state isolation. Browser verified West import -> blocked retry -> reviewed correction -> resolved; older revision dismissal; repeat import -> 8 duplicates without reopening items; auditor read-only view. A second-tab import caused an expected stale-cursor 409 and entered review reason/title survived refresh. No unexpected browser console errors occurred. Full outputs remain local under `var/b6b-*-tests.log`. B7 closure is now recorded above; PDF extraction and M7 remain pending. No push was performed.
 
 ## M6 — B6a mock import backend
 
@@ -29,13 +38,13 @@ Migration `006_integration.sql` adds pinned immutable mapping versions, per-regi
 
 Contract and field-authority matrix: [INTEGRATION_CONTRACT.md](INTEGRATION_CONTRACT.md). All mappings are `DEMO_ASSUMPTION`; API labels explicitly state mock/synthetic/disconnected from AICTE/NSWS. Fresh West fixture: 8 records = **2 accepted, 1 duplicate, 2 invalid, 3 reconciliation**; a new-key identical retry reports **8 duplicates** and preserves the mirror/queue. Live local API import/replay/retry was verified. Sixteen new integration tests cover these counts plus scoping, revoked/expired grants, concurrency, immutable history, atomic outbox-failure rollback and local-state isolation. Baseline **170/170**, final **186/186**; typecheck, build and whitespace checks pass. Full test outputs remain local under `var/`.
 
-B6a delivered the server importer; queue/read/detail/resolve APIs and the Integration web page are now delivered in B6b above. No production connector, background import scheduler, writeback, real portal request or email was added. B7 milestone closure remains pending.
+B6a delivered the server importer; queue/read/detail/resolve APIs and the Integration web page are now delivered in B6b above. No production connector, background import scheduler, writeback, real portal request or email was added. B7 milestone closure is recorded above.
 
 ## M6 — B5 audit viewer
 
 B2–B4 dashboards, reports and CSV work is recorded in WORK_LOG.md. B5 adds a paged audit API with exact case ID/number, action, entity, actor and inclusive Asia/Kolkata date filters; scoped totals/facets; detail fetched only on expansion; and integrity verification timestamps/limits. Regional audit grants see only events on visible cases, excluding application-less system/export events. Missing internal-note capability restricts list, facets and detail to institution-visible events. Scoped integrity results omit global counts and broken-event IDs. Full before/after state is absent from list rows and available only through the independently scoped detail endpoint.
 
-The web viewer keeps applied filters/page in the URL, restores actor selection after facets load, displays scoped totals/refresh time, and supports paging, case links, detail expansion, integrity verification, loading/empty/failure/retry states. Browser verification covered these flows without console errors. Thirteen B5 tests bring the full suite from **157 to 170 passing**; typecheck, production build and whitespace checks pass. Saved full test outputs are local under `var/`. B6b reconciliation/web is now complete; B7 closure remains pending and M6 is not yet marked complete.
+The web viewer keeps applied filters/page in the URL, restores actor selection after facets load, displays scoped totals/refresh time, and supports paging, case links, detail expansion, integrity verification, loading/empty/failure/retry states. Browser verification covered these flows without console errors. Thirteen B5 tests bring the full suite from **157 to 170 passing**; typecheck, production build and whitespace checks pass. Saved full test outputs are local under `var/`. B6b and B7 are now complete; see the closure section above.
 
 ## M5 — what was built
 
@@ -54,7 +63,7 @@ Baseline: installed dependencies, reset the disposable synthetic database and co
 - **20 new M5 integration tests** cover O01–O03, S01–S03, validity midnight, extension generations, partial closure, immutable histories, cross-case links, revoked/unassigned scopes, internal clocks, storage and post-promotion DB failures, orphan cleanup, corruption, concurrent/stale edits and M2/EVC attachment freezing. Existing calendar tests cover month-end/holidays. Final **139/139** tests, typecheck, production build and whitespace checks passed.
 - Browser verified: prepared approval/obligation/receipt → document and evidence rejection → reminder/overdue processing → corrected synthetic PDF upload → separate receipt → confirmed metadata → accepted renewal → explicit fulfilment. Old expired/rejected versions remain; first receipt remains **On time / REJECT**, later correction **Late / ACCEPT**. Approval remains unchanged; browser console errors were empty.
 
-M5 limits: local private filesystem with bounded in-memory downloads; heuristic header/PDF checks, not malware scanning, full rendering validation or authenticity verification. Metadata is manual. No automatic obligation templates, digest grouping, production object storage, external integration/email or OCR. M6–M8 remain unimplemented.
+M5 limits: local private filesystem with bounded in-memory downloads; heuristic header/PDF checks, not malware scanning, full rendering validation or authenticity verification. Metadata is manual. No automatic obligation templates, digest grouping, production object storage, external integration/email or OCR. M6 is now complete; PDF extraction, M7 and later demo work remain pending.
 
 ## M4 — what was built
 

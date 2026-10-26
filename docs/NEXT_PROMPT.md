@@ -1,62 +1,62 @@
-# Prompt for the next session — Milestone 6
+# Prompt for the next session — C1: synthetic PDF expiry dataset
 
 Copy everything below the line into the coding session.
 
 ---
 
-You are continuing the **AICTE Approval & Compliance Platform** (SIH 2026, SIH26262). M1–M5 are complete. Implement **Milestone 6 only**: role dashboards, reconciled reports/CSV exports, audit viewer improvements and mock integration with reconciliation.
+Continue the **AICTE Approval & Compliance Platform** (SIH 2026, SIH26262, Team Infera). **M1–M6 are complete locally, with 204 tests passing. Implement C1 only**: a reproducible labelled synthetic PDF dataset for the later offline expiry-date feature. Do not start C2–C5, M7 or demo preparation. Report after one tested local commit and stop. **Do not push**; the standing user no-push instruction overrides older milestone push text.
 
 ## Read first
 
-1. AGENTS.md — product and engineering rules.
-2. docs/BUILD_PLAN.md — §14 dashboards/screens, §17 integration, §18 audit/security, §20 R01/security tests, §21 milestone boundary.
-3. docs/PROGRESS.md — M4/M5 details and limitations; docs/FOUNDATIONS.md — reusable modules.
-4. Existing application list/view, permission scopes, compliance/status.ts and routes.ts, deadlines/engine.ts and scheduler.ts, notifications/worker.ts, audit routes/hash chain, web/src/pages/Home.tsx, Compliance.tsx, Audit.tsx, App.tsx and shared UI/api/session helpers.
-5. server/test/helpers.ts and M1–M5 tests for scope, versions, idempotency and rollback.
+1. docs/WORK_LOG.md, AGENTS.md, docs/PROGRESS.md — current state, product/engineering rules and local unpushed work.
+2. docs/NATIONAL_ROUND_PLAN.md §4.3 — offline text/OCR extraction, human confirmation and measured evaluation; the user-approved staged order below is the scope boundary.
+3. docs/BUILD_PLAN.md §12 documents, §16 extraction guardrails, §20 A01/A02; docs/FOUNDATIONS.md and docs/LIMITATIONS.md.
+4. Existing server document storage/upload/schema/metadata-review modules, server/test/helpers.ts, package scripts and .gitignore. M6 acceptance is recorded in docs/M6_ACCEPTANCE.md.
+5. Use the PDF skill if available for PDF generation, rendering and visual inspection. Avoid introducing an unrelated framework or paid service.
 
-## Setup
+## Setup and baseline
+
+Use the active checkout; do not reset it to remote main or discard unpushed B5–B7 commits. Preserve existing user changes. Reuse healthy PostgreSQL/API/web services; .env is local and must not be overwritten.
 
 ```bash
-npm install
-cp .env.example .env              # only if missing
-npm run db:start                  # separate terminal, UTF8 PostgreSQL / 54329
-npm run db:reset                  # disposable synthetic local database only
-npm test                         # baseline: 139 passing
-npm run dev:api                   # API 4000; separate terminal: npm run dev:web (5180)
-npm run dev:worker                # separate terminal; local outbox only
-npm run demo:scenarios            # nine cases, including obligation and expired lease renewal
+npm install                   # only if dependencies need installation
+cp .env.example .env          # only if .env is missing
+npm run db:start              # separate terminal only if PostgreSQL :54329 is not running
+npm test                      # baseline: 204 tests in the current local checkout
 ```
 
-## Existing M5 boundary
+PostgreSQL must be UTF8. Tests reset only the isolated aicte_test database; do not reset the prepared development database unnecessarily. API/web/worker are not required for a dataset-only change. If UI inspection becomes necessary, use existing localhost API :4000/web :5180 and the local outbox only. On Windows use npm.cmd where PowerShell blocks npm.ps1. Keep full test outputs in ignored var/ files; diagnose failures before retrying.
 
-Private uploads/immutable versions, manual metadata/document verdicts, exact evidence receipts, condition obligations and separate submission/verification/validity clocks work. Upload ≠ document acceptance ≠ obligation fulfilment. A pending renewal leaves the old expired verified version current. Receipt timeliness is immutable. Case/application lists derive compliance status at read time. Attachments link exact versions to current finding responses/EVC reports before review. Optional pinned compliance config is absent on older published policies; never rewrite those policies. Preserve these behaviours and scope checks.
+## Existing boundary to preserve
 
-## Milestone 6 scope
+- Only a user with DECISION_RECORD records a regulatory decision; escalation only notifies. Approval outcome, compliance and lifecycle are independent.
+- Upload, metadata confirmation, document acceptance, evidence receipt and obligation fulfilment remain separate. M5 metadata review is manual; extraction must later produce suggestions only.
+- Every rule carries APH_CLAUSE / ADMIN_INSTRUCTION / DEMO_ASSUMPTION provenance; synthetic document text is not an official AICTE rule or instruction.
+- All source data is synthetic. No real institution/person/document, real email, external service call, paid AI, portal connection or production upload.
+- Existing case transitions stay behind application commands; mutations require current scope/capabilities, versions, idempotency, same-transaction audit and outbox. Business logic uses now(). Schema changes require a new migration after 007; **C1 needs no schema change**.
+- M6 reports/CSV, audit and source mirrors/reconciliation remain unchanged. Do not treat external/mock status as approval.
 
-Build vertical slices: numbered migration if needed → scoped read model/API → web → tests.
+## C1 scope — dataset only
 
-1. **Role dashboards**: institution next actions/applications/findings/upcoming visits/obligations/expiring documents; officer due-soon/overdue work, verification backlog, EVC and escalations; management region × stage pendency/ageing, workload, visit readiness/scheduling and renewal backlog. Reuse current state/clock definitions. Submission lateness and officer verification waiting stay separate. Show unavailable information honestly.
-2. **Reconciled reports**: common validated filters and authorised query definitions for summary, drill-down and CSV. R01: totals, record identities and filters reconcile, including pagination/empty results. Show owner, pending action, due date/rule, overdue duration and waiting reason when available. Define denominators and ageing anchors. Every dashboard shows last refresh, polling interval, loading/stale/failed/empty/retry states. No invented official timelines or performance figures.
-3. **CSV**: server-side capability/current scope, identical filters, safe quoting and spreadsheet-formula injection protection, bounded export size. Institutions receive no internal notes or hidden document/visit data. Recheck access independently; never trust unscoped client record IDs.
-4. **Audit viewer**: reuse existing append-only hash chain/integrity endpoint; add useful actor/action/date/case filtering, paging, scoped totals and record links using shared theme. Explain integrity limits; no absolute immutability claim or audit rewriting.
-5. **Mock integration**: document source contract, mapping version and field-authority matrix. Import checked-in synthetic fixtures containing valid, changed, duplicate, invalid, unknown-code and out-of-order events. Retain raw events and run outcomes. Idempotency by source system + external ID + event ID/revision; retries and older revisions never overwrite newer mirror data.
-6. **Reconciliation queue**: unknown mappings and invalid/conflicting/out-of-order events retain reason, source identifiers and run; never coerce codes. Authorised resolution/retry needs reason, versions, idempotency and audit. Start read-only shadow reconciliation: update mirror fields only, never authority decisions, frozen snapshots, pinned policies or case lifecycle. Any necessary case mutation must use a permitted import command through the case command boundary.
-7. **Web/demo**: role-aware nav/section labels, dashboard drill-down/report/export and integration run/reconciliation UI. Demonstrate accurate accepted/duplicate/invalid/reconciliation run counts. Clearly label the adapter mock, synthetic and disconnected from AICTE/NSWS. No scraping or real external service/email calls.
+1. Add a documented local generator and a checked-in corpus of **20–30 valid synthetic certificate/lease/fire-NOC PDFs**, with `expected.json` as independent ground truth. Choose a consistent dataset directory, for example `server/fixtures/extraction/`; keep rendered QA images/temp files under ignored var/. Use an existing suitable dependency/runtime where possible; any added generator dependency must be recorded and reproducible.
+2. Include actual **text PDFs and scanned/image-only PDFs**. Scanned fixtures must contain raster page images without an embedded selectable-text layer; a rotated or faint scan is useful. Some examples should put expiry on page 2 or later. All names/addresses/identifiers must be obviously fictional and visibly labelled synthetic.
+3. Cover expiry phrases `valid till`, `valid up to`, `expires on`, `expiry date`; formats such as `31/03/2027`, `31-Mar-2027`, `March 31 2027`, `31.03.2027`, and day/month-name/year. Include issue/execution dates alongside expiry, no-expiry documents, invalid dates, conflicting expiry candidates and ambiguous numeric dates. Include instruction-like document text as inert source content, never executable instructions.
+4. Define a stable manifest schema with fixture ID/path, text/scan kind, template family/split, page count, expected expiry (`YYYY-MM-DD` or null), expected result state (unambiguous / ambiguous / not found), and labelled candidate dates with role/page/source excerpt. Keep issue dates distinct from expiry. Add known source rectangles/coordinate conventions where practical for later highlight evaluation. Ground truth comes from fixture definitions, not from the future extractor's own output.
+5. Make generation deterministic in content, stable IDs/names and expected labels: fixed fixture dates/seed, no current-date-dependent labels, no network assets/fonts/data. Explain any unavoidable PDF-byte metadata variability. Avoid overwriting unrelated files; clean/rebuild only the exact dataset output directory after verifying its resolved path.
+6. Render and visually inspect the generated PDFs; validate readable pages, intended scan/text distinction, page counts and manifest/file alignment. Check at least each template family and tricky case, including page-2 expiry, conflicting dates, absent expiry and image-only scans. Fix malformed PDFs; do not reuse the intentionally minimal upload-test PDF bytes as the evaluation corpus.
+7. Document the generator command, dataset coverage, label definitions, coordinate system, regeneration and QA checks. This step establishes fixtures only: **do not claim extraction accuracy**, implement date parsing/OCR, run fake evaluation, add API/UI/review/deadline logic, or upload the corpus to user cases.
 
-## Tests required
+## Later steps — context only, not authorised in this turn
 
-- R01 summary/drill-down/export reconcile under identical filters, pagination, empty results and elapsed demo time.
-- Cross-institution/region, unassigned/revoked/expired grants and read-only roles cannot leak dashboard counts, audit rows, exports or integration data. Institutions cannot see internal attachments/notes/clocks.
-- On-time evidence awaiting late review stays on time; a pending renewal leaves expired verified-document counts unchanged.
-- CSV escaping/formula injection, invalid filters and export bounds.
-- Import retry/duplicate idempotency, changed/older revisions, unknown/invalid codes, raw records/mapping versions/run totals, resolution concurrency and atomic state/audit/outbox rollback.
-- Mock events cannot approve/reject, fulfil obligations, bypass capabilities or rewrite snapshots/policies.
-- Existing **139 tests** pass. Fixed business clock, real local PostgreSQL, synthetic fixtures and local outbox only.
+- C2: pdfjs-dist text/positions and deterministic date-role rules; source-backed candidates `{field,value,page,excerpt,bbox,method:'text'|'ocr',ambiguous}`; abstain when uncertain.
+- C3: isolated, bounded tesseract.js OCR fallback with locally available language data; no runtime network dependency.
+- C4: suggestions and source highlight in the existing M5 review screen. Officer confirms/edits through existing audited commands; extraction never silently changes live deadlines.
+- C5: real `npm run evaluate:extraction` results with per-PDF/total and text-versus-scan correct/wrong/abstain metrics; then prompt for M7.
 
 ## Definition of done
 
-- npm run typecheck, npm test, npm run build and git diff --check pass.
-- Browser: dashboard → filtered drill-down → matching safe CSV; scoped audit integrity result; mock import → reconciliation → reasoned resolution/retry with accurate run counts.
-- Update PROGRESS.md with actual test counts/features/limitations; update README/HANDOFF as needed.
-- Replace NEXT_PROMPT.md with an M7 prompt based on BUILD_PLAN. Do not implement M7 priority/scoring/consistency/readiness/policy-impact differentiators, M8 AI or separately proposed national-level additions.
-- Commit and push tested work to GitHub main as authorised. No AI-tool attribution in commits, PRs or docs.
+- 20–30 valid synthetic PDFs and expected.json match a reproducible generator, with text and genuinely image-only cases and honest labels.
+- Generator/manifest checks and render/visual QA complete. Add focused tests only for substantive new generator/manifest behaviour; preserve all existing 204 tests. No implementation-mirroring tests or invented extraction metrics.
+- `npm run typecheck`, `npm test`, `npm run build`, `git diff --check` pass; save full output if anything fails.
+- Update PROGRESS.md with actual counts/coverage/limitations and WORK_LOG.md with 3–5 lines. Replace NEXT_PROMPT.md with a standalone **C2-only** prompt in this style, keeping C3–C5 separate.
+- Make **one local commit**, no AI-tool attribution, **no push**. Tell the user what was generated, how it was checked, the command/path to inspect it, and that C2 is next. Stop before C2.
