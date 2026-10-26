@@ -9,9 +9,15 @@ Last updated: 26 Oct 2026 · Specification: [BUILD_PLAN.md](BUILD_PLAN.md) · Ag
 | M3 — Deadlines, worker, notifications, escalation, demo clock | **Done** |
 | M4 — EVC queue, scheduling, conflicts, reports | **Done** — EVC queue → accepted report → next stage, browser verified |
 | M5 — Documents, obligations, verification, lease renewal | **Done** — 139 tests passing; lease renewal browser verified |
-| M6 — Dashboards, reports, audit viewer, mock integration | **Next** — prompt in [NEXT_PROMPT.md](NEXT_PROMPT.md) |
+| M6 — Dashboards, reports, audit viewer, mock integration | **In progress** — B2–B5 complete (170 tests); mock integration B6 pending |
 | M7 — Differentiators (action/gap panel, priority queue, consistency, readiness, preview) | Not started |
 | M8 — Optional AI, load/recovery tests, docs, evaluation, rehearsal | Not started |
+
+## M6 — B5 audit viewer
+
+B2–B4 dashboards, reports and CSV work is recorded in WORK_LOG.md. B5 adds a paged audit API with exact case ID/number, action, entity, actor and inclusive Asia/Kolkata date filters; scoped totals/facets; detail fetched only on expansion; and integrity verification timestamps/limits. Regional audit grants see only events on visible cases, excluding application-less system/export events. Missing internal-note capability restricts list, facets and detail to institution-visible events. Scoped integrity results omit global counts and broken-event IDs. Full before/after state is absent from list rows and available only through the independently scoped detail endpoint.
+
+The web viewer keeps applied filters/page in the URL, restores actor selection after facets load, displays scoped totals/refresh time, and supports paging, case links, detail expansion, integrity verification, loading/empty/failure/retry states. Browser verification covered these flows without console errors. Thirteen B5 tests bring the full suite from **157 to 170 passing**; typecheck, production build and whitespace checks pass. Saved full test outputs are local under `var/`. B6 integration and B7 closure remain pending; M6 is not complete.
 
 ## M5 — what was built
 
