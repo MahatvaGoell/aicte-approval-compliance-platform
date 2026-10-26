@@ -17,6 +17,7 @@ import { referenceRoutes } from './modules/reference/routes.js';
 import { evcRoutes } from './modules/evc/routes.js';
 import { documentRoutes } from './modules/documents/routes.js';
 import { complianceRoutes } from './modules/compliance/routes.js';
+import { reportRoutes } from './modules/reports/routes.js';
 
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 export const CSRF_HEADER = 'x-requested-with';
@@ -108,6 +109,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(evcRoutes, { prefix: '/api/v1' });
   await app.register(documentRoutes, { prefix: '/api/v1' });
   await app.register(complianceRoutes, { prefix: '/api/v1' });
+  await app.register(reportRoutes, { prefix: '/api/v1' });
 
   app.setNotFoundHandler((req, reply) => {
     reply.status(404).send({ error: { code: 'NOT_FOUND', message: 'No such endpoint', details: null, correlationId: req.correlationId } });
