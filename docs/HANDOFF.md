@@ -1,6 +1,8 @@
 # Handoff: continuing on another laptop
 
-Everything for this project is in this GitHub repository: <https://github.com/MahatvaGoell/aicte-approval-compliance-platform>. Read this file first, then [PROGRESS.md](PROGRESS.md) (what exists) and [NEXT_PROMPT.md](NEXT_PROMPT.md) (the next milestone's prompt).
+> **National round (26 Oct 2026): the team cleared the internal round. Read [NATIONAL_ROUND_PLAN.md](NATIONAL_ROUND_PLAN.md) first** — it has the build order, step-by-step plan, skills to use and the prompt to paste.
+
+Everything for this project is in this GitHub repository: <https://github.com/MahatvaGoell/aicte-approval-compliance-platform>. Read this file next, then [PROGRESS.md](PROGRESS.md) (what exists) and [NEXT_PROMPT.md](NEXT_PROMPT.md) (the next milestone's prompt).
 
 ## The goal
 
@@ -27,7 +29,8 @@ The coding agent builds the whole platform, milestone by milestone, from [BUILD_
 | M5 — private documents, obligations, evidence receipts, verification and lease renewal | Done; 139 tests passing; browser journey verified |
 | M6–M8 | Not started; NEXT_PROMPT.md starts M6 |
 | UI | Redesigned (warm light/dark themes, motion). Per-page layout brief for a designer: [UI_PAGES.md](UI_PAGES.md) |
-| SIH idea PPT | Not made yet — see "Pending: the SIH presentation" below |
+| SIH idea PPT | Done: [sih/SIH26262-Idea-Presentation.pptx](sih/SIH26262-Idea-Presentation.pptx) (and `.pdf`). Internal round cleared |
+| National round | Plan in [NATIONAL_ROUND_PLAN.md](NATIONAL_ROUND_PLAN.md); feature verdicts in [sih/court-verdicts/](sih/court-verdicts/) |
 
 Other useful docs: [FOUNDATIONS.md](FOUNDATIONS.md) (tested deadline calendar, email adapters, upload checks, storage), [PITCH.md](PITCH.md), [LIMITATIONS.md](LIMITATIONS.md), [win-plan.html](win-plan.html), [sih/SIH26262_Research_and_Build_Blueprint.md](sih/SIH26262_Research_and_Build_Blueprint.md).
 
