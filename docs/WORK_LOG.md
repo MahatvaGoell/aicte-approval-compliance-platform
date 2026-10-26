@@ -4,7 +4,7 @@ Chat-by-chat notes. Plan: `../STEP_PLAN.md` (outer folder, not in this repo). Pe
 
 ## Project kya hai
 AICTE approval workflow + compliance + alert system (PS SIH26262). Route -> Clock -> Escalate -> Watch -> Prove. **System kabhi approve/reject nahi karta**; sirf `DECISION_RECORD` wala user karta hai. Sab data synthetic, real email/service nahi. Har rule pe label `APH_CLAUSE` / `ADMIN_INSTRUCTION` / `DEMO_ASSUMPTION`. Approval outcome, compliance, lifecycle alag fields; upload != verification != closure; case apni policy version pe rehta hai.
-Status: M1-M6 + C1-C2 done locally (226 tests); push nahi. C1 = 24 labelled PDFs / 32 pages; C2 = bounded offline text suggestions/abstention/CLI. Next = C3 offline OCR only (NEXT_PROMPT). C4-C5 review/highlight/evaluation, M7, demo prep baaki. M8 (AI/load) national plan me nahi.
+Status: M1-M6 + C1-C2 done (226 tests). User ne 26 Oct 2026 ko **"push everything on github"** authorize kiya: B5-B7/C1-C2 + current publication docs are the GitHub main publication batch. Neeche ke old no-push log entries historical hain. C1 = 24 labelled PDFs / 32 pages; C2 = bounded offline text suggestions/abstention/CLI. Next = C3 offline OCR only; C4-C5/M7/demo baaki. This publication does not start C3.
 
 ## Folder structure
 - `server/src/modules/`: applications (commands.ts, commands-m2.ts, command-kit.ts), audit, compliance (status.ts, routes.ts), deadlines (engine.ts, scheduler.ts, calendar.ts), documents, evc, identity (permissions.ts), notifications (worker.ts), ops, outbox, policy, reference, workflow
@@ -34,8 +34,8 @@ Status: M1-M6 + C1-C2 done locally (226 tests); push nahi. C1 = 24 labelled PDFs
 **Demo** (4.6, BUILD_PLAN 19): DEMO_SCRIPT.md (7 min), reset = `db:reset && demo:scenarios`, chaos test 20-30 kill/restart (0 duplicate, 0 missing, audit verify pass), 3 rehearsals. EVC climax = conflicted expert blocked.
 
 ## STEP_PLAN.md se alag / dhyan do
-- Current active checkout: managed `milestone-4/SIH-2026` worktree, branch `codex/pdf-c2`. Original `SIH_FINAL/aicte-approval-compliance-platform/` path is historical; use the active checkout, preserve its unpushed B5–B7/C1-C2 commits. Referenced outer STEP_PLAN.md is absent here; staged instructions were also supplied in the user's pasted national-step plan.
-- STEP_PLAN "Commit + push" likhta hai, par abhi **push nahi** (user ka order). NEXT_PROMPT "push to main authorised" bhi abhi lagu nahi.
+- Current active checkout: managed `milestone-4/SIH-2026` worktree, branch `codex/pdf-c2`. Original `SIH_FINAL/aicte-approval-compliance-platform/` path is historical; use the active checkout and preserve its history. Referenced outer STEP_PLAN.md is absent here; staged instructions were also supplied in the user's pasted national-step plan.
+- Latest user instruction authorises publishing all completed work through C2 to GitHub main. Earlier no-push instructions are superseded for this batch. Future feature steps remain separate: finish one tested commit, report and stop; publish new work when requested.
 - NEXT_PROMPT M6 bada hai (raw events, run outcomes, reconciliation resolution, idempotency by source+external id+revision, institution data hiding). STEP_PLAN B6 sirf "mock integration + tests" kehta hai: B1 me sub-tasks me todna.
 - M7 priority/scoring/readiness/policy-impact M6 me mat banao. National step order = B7 -> C1-C5 PDF -> D M7 -> E demo. C1-C2 complete; NEXT_PROMPT now covers C3 only.
 - NEXT_PROMPT DoD me `npm run build` + `git diff --check` bhi hai; STEP_PLAN me nahi.
@@ -66,6 +66,9 @@ Row: `id, appNo, institution, region, stage, stageState, owner, pendingAction, d
 **STEP_PLAN me sudhaar (suggest, file nahi badli)**: B5 me "Verify integrity" button + date/actor/action filter jodo. B6 bada hai: do chats karo (6a: contract + fixtures + migration + import + run counts, 6b: reconciliation queue + resolve + web). B7 me `npm run build` + `git diff --check` jodo. B2/B3/B4 ke "Common rules" same.
 
 ## Log
+- Publication (26 Oct): user explicitly requested all completed work on GitHub. Fetched origin/main: 0 remote-only / 6 local-only commits, so B5-B7/C1-C2 can fast-forward without overwriting teammate work. Working tree was clean.
+  Existing C2 code checks remain **226/226**, typecheck/build pass; this publication changes documentation only. Current handoff/status updated; older per-step no-push notes are historical. No C3 implementation started.
+  Commit this publication record and push HEAD to origin/main without force, then compare the remote main SHA with local HEAD.
 - C2 done: `documents/extraction/` me PDF.js 6.4.299 bytes-only worker + text/source positions + date-role/abstention rules; npm `extract:pdf -- <local synthetic PDF>`. `PDF_TEXT_EXTRACTION.md` me contract/limits. All results unconfirmed; text-item rectangles coarse hain, glyph-tight nahi.
   Baseline **209/209**, 17 new `c2-text-extraction.test.ts` -> **226/226**; typecheck/build/diff pass. Real development PDFs, page-2/3 evidence, split items, roles/dates, ambiguity/chronology, instructions, all 8 scans OCR-required, encryption/malformed/budgets, transforms, timeout/cancel/capacity recovery checked; logs `var/c2-*-tests.log`.
   No gold answers at runtime, external service/network, API/UI/OCR, schema/case/deadline writes. Two workers, bounded bytes/pages/items/text/candidates/time + V8 caps/cleanup; no OS/native-memory sandbox or accuracy claim. Existing unrelated dependency advisories recorded, no forced upgrades.

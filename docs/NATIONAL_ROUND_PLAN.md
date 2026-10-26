@@ -4,6 +4,8 @@ Last updated: 26 Oct 2026. **Is file ko sabse pehle padho.** Ye batati hai ki in
 
 **Current handoff:** pehle WORK_LOG.md padho. M1–M6 aur C1–C2 local checkout me complete hain (**226 tests**); C1 corpus ready, C2 bounded text suggestions/abstention/CLI ready (PDF_TEXT_EXTRACTION.md). Next = **C3 offline OCR only** (NEXT_PROMPT.md). Har step par local commit aur report ke baad rukna. User ka standing order: **push nahi**; neeche ke purane push instructions abhi apply nahi. C3–C5 ke baad M7, phir demo prep; M8 AI/load abhi scope me nahi.
 
+**Publication update (26 Oct):** user ne completed work through C2 ko GitHub par push karna explicitly authorise kiya. Is publication batch ke liye old no-push instructions superseded hain; B5–B7/C1–C2 main par included hain. Historical step notes ko current no-push order mat samajhna. C3 is a separate next request.
+
 Team Infera: Arihant Jain, Yuvika Mittal, Alwaz Alam, Reeshu Singh Rajput, Mahatva Goel.
 
 ---

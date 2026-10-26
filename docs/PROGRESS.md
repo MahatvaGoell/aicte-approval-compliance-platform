@@ -2,6 +2,8 @@
 
 Last updated: 26 Oct 2026 · Specification: [BUILD_PLAN.md](BUILD_PLAN.md) · Agent rules: [../AGENTS.md](../AGENTS.md)
 
+Publication update: the user authorised **"push everything on github"** on 26 Oct. This main-branch batch includes all completed B5–B7/C1–C2 commits plus publication documentation. Earlier no-push/local-only statements below record the original step completion, not the current publication instruction. C3 remains the next separate step.
+
 | Milestone | Status |
 |---|---|
 | M1 — Auth, scopes, records, one complete workflow | **Done** (web screens checked in the browser) |
@@ -9,8 +11,8 @@ Last updated: 26 Oct 2026 · Specification: [BUILD_PLAN.md](BUILD_PLAN.md) · Ag
 | M3 — Deadlines, worker, notifications, escalation, demo clock | **Done** |
 | M4 — EVC queue, scheduling, conflicts, reports | **Done** — EVC queue → accepted report → next stage, browser verified |
 | M5 — Documents, obligations, verification, lease renewal | **Done** — 139 tests passing; lease renewal browser verified |
-| M6 — Dashboards, reports, audit viewer, mock integration | **Done locally** — B2–B7 complete; 204 tests, typecheck/build and browser/API acceptance pass; not pushed |
-| C — Offline PDF expiry extraction | **C1–C2 done locally** — corpus + bounded text extraction/abstention/CLI, 226 tests; next C3 offline OCR |
+| M6 — Dashboards, reports, audit viewer, mock integration | **Done** — B2–B7 complete; included in main publication; 204 tests at closure |
+| C — Offline PDF expiry extraction | **C1–C2 done** — included in main publication; corpus + bounded text extraction/abstention/CLI, 226 tests; next C3 offline OCR |
 | M7 — Differentiators (action/gap panel, priority queue, consistency, readiness, preview) | Not started |
 | M8 — Optional AI, load/recovery tests, docs, evaluation, rehearsal | Not started |
 

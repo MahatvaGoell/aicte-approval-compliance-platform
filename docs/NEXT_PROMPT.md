@@ -4,7 +4,7 @@ Copy everything below the line into the coding session.
 
 ---
 
-Continue the **AICTE Approval & Compliance Platform** (SIH 2026, SIH26262, Team Infera). **M1–M6 and C1–C2 are complete locally; 226 tests pass. Implement C3 only**: bounded isolated offline OCR for pages without usable text, reusing the C2 date-role/source-evidence contract. No API/UI, metadata confirmation, live deadline, C4/C5/M7 or demo-prep work. One tested local commit, report and stop. **Do not push** under the standing user instruction.
+Continue the **AICTE Approval & Compliance Platform** (SIH 2026, SIH26262, Team Infera). **M1–M6 and C1–C2 are complete; 226 tests pass and the user authorised publishing that completed batch to GitHub main. Implement C3 only**: bounded isolated offline OCR for pages without usable text, reusing the C2 date-role/source-evidence contract. No API/UI, metadata confirmation, live deadline, C4/C5/M7 or demo-prep work. One tested local commit, report and stop. The completed-work publication does not itself request a future C3 push; publish new C3 work when requested.
 
 ## Read first
 

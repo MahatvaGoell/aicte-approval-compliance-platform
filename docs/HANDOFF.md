@@ -1,8 +1,8 @@
 # Handoff: continuing on another laptop
 
-> **National round (26 Oct 2026): M1–M6 and C1–C2 are complete locally (226 tests). Read [WORK_LOG.md](WORK_LOG.md) first**, then AGENTS/PROGRESS/NEXT_PROMPT. Next step is C3, isolated offline OCR fallback only. Stop after each step. Pushing remains paused under the user's standing instruction.
+> **National round (26 Oct 2026): M1–M6 and C1–C2 are complete (226 tests). Read [WORK_LOG.md](WORK_LOG.md) first**, then AGENTS/PROGRESS/NEXT_PROMPT. The user authorised publishing all completed work through C2 to GitHub main on 26 Oct. Next step remains C3, isolated offline OCR fallback only; stop after each step.
 
-Project repository: <https://github.com/MahatvaGoell/aicte-approval-compliance-platform>. **Recent B5–B7/C1–C2 changes are local and not yet pushed**, so a fresh GitHub clone will not contain the complete M6 closure, corpus or text extractor. Preserve the current checkout and commits; do not reset it to remote main. Read [PROGRESS.md](PROGRESS.md) for actual local status and [NEXT_PROMPT.md](NEXT_PROMPT.md) for the next step.
+Project repository: <https://github.com/MahatvaGoell/aicte-approval-compliance-platform>. This main-branch publication includes **B5–B7/C1–C2**, the complete M6 closure, corpus and text extractor. Preserve existing checkouts/user changes when updating. Read [PROGRESS.md](PROGRESS.md) for actual status and [NEXT_PROMPT.md](NEXT_PROMPT.md) for C3.
 
 ## The goal
 
@@ -13,7 +13,7 @@ The coding agent builds the whole platform, milestone by milestone, from [BUILD_
 ## Rules the user set (follow always)
 
 - **No AI or Claude attribution anywhere**: no `Co-Authored-By`, no "Generated with" lines in commits, PRs or docs. Commit under the user's own git identity.
-- One step = one tested local commit; update WORK_LOG with 3–5 lines and report back before starting the next step. **Do not push** until the user explicitly lifts the current no-push instruction. This overrides older commit-and-push text.
+- One step = one tested commit; update WORK_LOG with 3–5 lines and report back before starting the next step. The user has explicitly authorised the current publication through C2. Future feature work/pushes remain separate requests; do not start C3 as part of publishing.
 - Talk to the user in Hinglish, short and direct. They check the UI themselves; tell them what to click.
 - Never present a demo rule or timeline as an official AICTE rule (provenance labels: `APH_CLAUSE`, `ADMIN_INSTRUCTION`, `DEMO_ASSUMPTION`).
 - All data is synthetic. Never send real emails or call real external services.
