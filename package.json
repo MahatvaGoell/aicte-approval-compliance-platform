@@ -22,6 +22,7 @@
     "fixtures:extraction": "node server/scripts/extraction/run.mjs generate",
     "fixtures:extraction:check": "node server/scripts/extraction/run.mjs check",
     "fixtures:extraction:verify": "node server/scripts/extraction/run.mjs verify",
-    "fixtures:extraction:qa": "node server/scripts/extraction/run.mjs qa"
+    "fixtures:extraction:qa": "node server/scripts/extraction/run.mjs qa",
+    "extract:pdf": "tsx server/scripts/extract-pdf.ts"
   }
 }

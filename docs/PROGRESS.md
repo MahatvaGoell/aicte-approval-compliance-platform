@@ -10,9 +10,17 @@ Last updated: 26 Oct 2026 · Specification: [BUILD_PLAN.md](BUILD_PLAN.md) · Ag
 | M4 — EVC queue, scheduling, conflicts, reports | **Done** — EVC queue → accepted report → next stage, browser verified |
 | M5 — Documents, obligations, verification, lease renewal | **Done** — 139 tests passing; lease renewal browser verified |
 | M6 — Dashboards, reports, audit viewer, mock integration | **Done locally** — B2–B7 complete; 204 tests, typecheck/build and browser/API acceptance pass; not pushed |
-| C — Offline PDF expiry extraction | **C1 done locally** — 24 labelled PDFs / 32 pages, generator/QA, 209 tests; next C2 text extraction |
+| C — Offline PDF expiry extraction | **C1–C2 done locally** — corpus + bounded text extraction/abstention/CLI, 226 tests; next C3 offline OCR |
 | M7 — Differentiators (action/gap panel, priority queue, consistency, readiness, preview) | Not started |
 | M8 — Optional AI, load/recovery tests, docs, evaluation, rehearsal | Not started |
+
+## C2 — text-layer expiry suggestions
+
+Pinned `pdfjs-dist` 6.4.299 (Node 22.13+/24+, tested 26.3.0). `documents/extraction/{text,types,lines,rules}.ts` plus fixed `pdf-worker.mjs` provide a bytes-only offline internal primitive and `npm run extract:pdf -- <local synthetic PDF>`. It streams actual PDF text/positions, reconstructs source lines/split items, maps displayed page rotation/CropBox/UserUnit coordinates and retains typed role/date candidates, raw excerpts, role evidence and honest text-item precision rectangles. No fixture labels supply runtime answers. Results are always unconfirmed suggestions; case/document metadata, policy, obligations and deadlines are untouched.
+
+Calendar validation avoids rollover; numeric date order, conflicts, uncertain issue dates and expiry-before-issue abstain. Issue/execution/registration/reference dates never replace absent expiry. Image-only/partial/unsupported text is OCR-required, without guessed dates or fabricated scan evidence. Input/page/item/text/candidate/time budgets, two-worker capacity, V8 heap limits, cancellation and full cleanup bound work. Network/resource loading is disabled except fixed local dependency standard fonts; document actions/instructions are never executed. No API/UI, OCR, rasterisation, DB migration or confirmation wiring was added.
+
+Baseline **209/209**, **17 new tests**, final **226/226**; typecheck/build/diff checks pass. Tests cover real development corpus PDFs, source/page rectangles and split lines, roles/date formats/calendar/ambiguity/chronology, instruction-like text/PDF JavaScript, all actual scan PDFs, malformed/encrypted/bounded inputs, transforms, timeout/cancellation and concurrent-capacity recovery. C1 labels/PDF hashes remain unchanged. Full logs `var/c2-*-tests.log` (ignored); [PDF_TEXT_EXTRACTION.md](PDF_TEXT_EXTRACTION.md) documents CLI/result/limits/primary references. Coarse text-item boxes and English horizontal-layout rules are explicit limits; V8 caps are not an OS/native-memory sandbox. No accuracy/performance figure was measured; C5 remains pending. Existing dependency advisories outside PDF.js were not force-upgraded. NEXT_PROMPT = **C3 only**; one local commit, no push.
 
 ## C1 — synthetic PDF expiry dataset
 

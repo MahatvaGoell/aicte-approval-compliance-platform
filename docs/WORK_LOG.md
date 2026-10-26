@@ -4,7 +4,7 @@ Chat-by-chat notes. Plan: `../STEP_PLAN.md` (outer folder, not in this repo). Pe
 
 ## Project kya hai
 AICTE approval workflow + compliance + alert system (PS SIH26262). Route -> Clock -> Escalate -> Watch -> Prove. **System kabhi approve/reject nahi karta**; sirf `DECISION_RECORD` wala user karta hai. Sab data synthetic, real email/service nahi. Har rule pe label `APH_CLAUSE` / `ADMIN_INSTRUCTION` / `DEMO_ASSUMPTION`. Approval outcome, compliance, lifecycle alag fields; upload != verification != closure; case apni policy version pe rehta hai.
-Status: M1-M6 + C1 done locally (209 tests); push nahi. C1 = 24 labelled PDFs / 32 pages (16 text, 8 scan). Next = C2 text extraction only (NEXT_PROMPT). C3-C5 OCR/review/evaluation, M7, demo prep baaki. M8 (AI/load) national plan me nahi.
+Status: M1-M6 + C1-C2 done locally (226 tests); push nahi. C1 = 24 labelled PDFs / 32 pages; C2 = bounded offline text suggestions/abstention/CLI. Next = C3 offline OCR only (NEXT_PROMPT). C4-C5 review/highlight/evaluation, M7, demo prep baaki. M8 (AI/load) national plan me nahi.
 
 ## Folder structure
 - `server/src/modules/`: applications (commands.ts, commands-m2.ts, command-kit.ts), audit, compliance (status.ts, routes.ts), deadlines (engine.ts, scheduler.ts, calendar.ts), documents, evc, identity (permissions.ts), notifications (worker.ts), ops, outbox, policy, reference, workflow
@@ -34,10 +34,10 @@ Status: M1-M6 + C1 done locally (209 tests); push nahi. C1 = 24 labelled PDFs / 
 **Demo** (4.6, BUILD_PLAN 19): DEMO_SCRIPT.md (7 min), reset = `db:reset && demo:scenarios`, chaos test 20-30 kill/restart (0 duplicate, 0 missing, audit verify pass), 3 rehearsals. EVC climax = conflicted expert blocked.
 
 ## STEP_PLAN.md se alag / dhyan do
-- Current active checkout: managed `milestone-4/SIH-2026` worktree, branch `codex/pdf-c1`. Original `SIH_FINAL/aicte-approval-compliance-platform/` path is historical; use the active checkout, preserve its unpushed B5–B7/C1 commits. Referenced outer STEP_PLAN.md is absent here; staged instructions were also supplied in the user's pasted national-step plan.
+- Current active checkout: managed `milestone-4/SIH-2026` worktree, branch `codex/pdf-c2`. Original `SIH_FINAL/aicte-approval-compliance-platform/` path is historical; use the active checkout, preserve its unpushed B5–B7/C1-C2 commits. Referenced outer STEP_PLAN.md is absent here; staged instructions were also supplied in the user's pasted national-step plan.
 - STEP_PLAN "Commit + push" likhta hai, par abhi **push nahi** (user ka order). NEXT_PROMPT "push to main authorised" bhi abhi lagu nahi.
 - NEXT_PROMPT M6 bada hai (raw events, run outcomes, reconciliation resolution, idempotency by source+external id+revision, institution data hiding). STEP_PLAN B6 sirf "mock integration + tests" kehta hai: B1 me sub-tasks me todna.
-- M7 priority/scoring/readiness/policy-impact M6 me mat banao. National step order = B7 -> C1-C5 PDF -> D M7 -> E demo. C1 complete; NEXT_PROMPT now covers C2 only.
+- M7 priority/scoring/readiness/policy-impact M6 me mat banao. National step order = B7 -> C1-C5 PDF -> D M7 -> E demo. C1-C2 complete; NEXT_PROMPT now covers C3 only.
 - NEXT_PROMPT DoD me `npm run build` + `git diff --check` bhi hai; STEP_PLAN me nahi.
 - NATIONAL_ROUND_PLAN 4.4 R01 test + "Verify integrity" button; STEP_PLAN B5 me button ka zikr nahi.
 - Dashboards pe "invented official timeline/performance figure" nahi.
@@ -66,6 +66,10 @@ Row: `id, appNo, institution, region, stage, stageState, owner, pendingAction, d
 **STEP_PLAN me sudhaar (suggest, file nahi badli)**: B5 me "Verify integrity" button + date/actor/action filter jodo. B6 bada hai: do chats karo (6a: contract + fixtures + migration + import + run counts, 6b: reconciliation queue + resolve + web). B7 me `npm run build` + `git diff --check` jodo. B2/B3/B4 ke "Common rules" same.
 
 ## Log
+- C2 done: `documents/extraction/` me PDF.js 6.4.299 bytes-only worker + text/source positions + date-role/abstention rules; npm `extract:pdf -- <local synthetic PDF>`. `PDF_TEXT_EXTRACTION.md` me contract/limits. All results unconfirmed; text-item rectangles coarse hain, glyph-tight nahi.
+  Baseline **209/209**, 17 new `c2-text-extraction.test.ts` -> **226/226**; typecheck/build/diff pass. Real development PDFs, page-2/3 evidence, split items, roles/dates, ambiguity/chronology, instructions, all 8 scans OCR-required, encryption/malformed/budgets, transforms, timeout/cancel/capacity recovery checked; logs `var/c2-*-tests.log`.
+  No gold answers at runtime, external service/network, API/UI/OCR, schema/case/deadline writes. Two workers, bounded bytes/pages/items/text/candidates/time + V8 caps/cleanup; no OS/native-memory sandbox or accuracy claim. Existing unrelated dependency advisories recorded, no forced upgrades.
+  Docs/handoff current; NEXT_PROMPT = **C3 only**. One local commit, **push nahi**. C3 se pehle rukna.
 - C1 done: `server/fixtures/extraction/` me **24 PDFs / 32 pages** (16 text, 8 image-only scans) + independent `expected.json`; scripts/extraction me definitions/generator/requirements/manifest validator. npm `fixtures:extraction[:check/:verify/:qa]`; setup/details `EXTRACTION_DATASET.md`.
   Coverage: formats/issue-execution-registration roles, page-2/3 expiry, invalid/missing/conflicting/ambiguous dates, inert source instructions, faint rotated scan; 8 families, 15 development / 9 heldout docs. Gold 15 unambiguous / 4 ambiguous / 5 not found; **accuracy measure nahi hui**.
   Baseline **204/204**, 5 new corpus tests -> **209/209**; typecheck/build/diff pass. All 32 pages rendered/visually checked; strict PDF/text/scan/rectangle checks + byte-for-byte regeneration pass. Logs `var/c1-*-tests.log`; QA images `var/extraction-qa/` (ignored).

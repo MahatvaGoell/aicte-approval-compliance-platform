@@ -1,58 +1,59 @@
-# Prompt for the next session — C2: text-layer expiry extraction
+# Prompt for the next session — C3: isolated offline OCR fallback
 
 Copy everything below the line into the coding session.
 
 ---
 
-Continue the **AICTE Approval & Compliance Platform** (SIH 2026, SIH26262, Team Infera). **M1–M6 and C1 are complete locally; 209 tests pass. Implement C2 only**: extract real PDF text/positions and apply deterministic date-role rules to produce source-backed expiry suggestions. Do not implement OCR, API/UI integration, live deadlines, C3–C5, M7 or demo prep. After one tested local commit, report and stop. **Do not push** under the standing user instruction.
+Continue the **AICTE Approval & Compliance Platform** (SIH 2026, SIH26262, Team Infera). **M1–M6 and C1–C2 are complete locally; 226 tests pass. Implement C3 only**: bounded isolated offline OCR for pages without usable text, reusing the C2 date-role/source-evidence contract. No API/UI, metadata confirmation, live deadline, C4/C5/M7 or demo-prep work. One tested local commit, report and stop. **Do not push** under the standing user instruction.
 
 ## Read first
 
-1. docs/WORK_LOG.md, AGENTS.md, docs/PROGRESS.md — current scope, invariants and local unpushed work.
-2. docs/EXTRACTION_DATASET.md — C1 corpus, independent labels, splits, source rectangles, generator/QA commands and limitations.
-3. docs/NATIONAL_ROUND_PLAN.md §4.3; docs/BUILD_PLAN.md §12 documents, §16 extraction, §20 A01/A02; docs/FOUNDATIONS.md and docs/LIMITATIONS.md.
-4. Existing document metadata schema/commands, upload checks/storage/download access, clock/error helpers, server/test/helpers.ts and c1-extraction-dataset.test.ts. Reuse the confirmed-metadata boundary later; do not add another review flow.
-5. server/fixtures/extraction/expected.json and server/scripts/extraction/definitions.py are evaluation labels/authoring sources only. **The extractor must not import/read them to obtain answers.**
+1. docs/WORK_LOG.md, AGENTS.md, docs/PROGRESS.md and docs/LIMITATIONS.md.
+2. docs/PDF_TEXT_EXTRACTION.md — current C2 API, worker lifecycle, budgets, abstention/coverage rules, coordinate/box precision and CLI.
+3. docs/EXTRACTION_DATASET.md — 24 PDFs / 32 pages (16 text, 8 real image-only scans), ground truth, template splits and scan transforms. Gold data is for tests only.
+4. docs/NATIONAL_ROUND_PLAN.md §4.3; docs/BUILD_PLAN.md §12, §16, §20 A01/A02; docs/FOUNDATIONS.md.
+5. server/src/modules/documents/extraction/{text,types,lines,rules}.ts and pdf-worker.mjs; server/scripts/extract-pdf.ts; c1/c2 tests; existing metadata review commands/storage/upload checks. Do not replace the tested foundation or invent a new review workflow.
 
 ## Setup and baseline
 
-Use the active checkout with unpushed B5–B7/C1 commits. Do not reset it to remote main, discard user changes, overwrite .env or unnecessarily reset the prepared development database. Existing dataset PDFs are checked in; running the Python generator is not required for ordinary tests or C2 parsing.
+Use the active checkout, preserving unpushed B5–B7/C1–C2 commits and user changes. Do not reset to remote main, overwrite .env or reset prepared development data unnecessarily.
 
 ```bash
-npm install                 # only if dependencies need installation
+npm install                 # if dependencies need installation
 cp .env.example .env        # only if missing
-npm run db:start            # separate terminal only if PostgreSQL :54329 is not running
-npm test                    # baseline: 209 tests, 17 files
+npm run db:start            # only if UTF8 PostgreSQL :54329 is not running
+npm test                    # baseline: 226 tests, 18 files
+npm run extract:pdf -- server/fixtures/extraction/pdfs/expiry-01.pdf
 ```
 
-Tests reset isolated aicte_test only; PostgreSQL must be UTF8. Save full test output in ignored var/ files and diagnose failures before retrying. On Windows use npm.cmd when needed. C1's optional Python/Poppler commands are documented in EXTRACTION_DATASET.md; preserve the corpus and labels. Use existing services if needed, with synthetic data and local email outbox only.
+Node 22.13+ or 24+ is required by pinned pdfjs-dist 6.4.299 (C2 tested on 26.3.0). Current parser is bytes-only, does not write data and needs no Python/Poppler. Reuse healthy local services if needed; no real email or portal/external document service. Test resets affect isolated aicte_test only. Save full logs to ignored var/ and diagnose failures before retrying. On Windows use npm.cmd as needed.
 
-## C2 scope
+## Existing boundary
 
-1. Add a server-side offline module for **PDF text-layer extraction and positions**, using pdfjs-dist (or the planned compatible PDF parser). Inspect installed/local capabilities first; choose a pinned compatible dependency and verify its primary documentation when needed. No paid model or external service. Accept bounded local bytes from a caller; do not fetch document URLs, remote fonts/assets, paths supplied in PDF text or instructions embedded in documents.
-2. Read text items on every permitted page, normalize/reconstruct lines carefully, and retain source page/excerpt/rectangles. Coordinate output must agree with C1: top-left PDF points, `[x0,y0,x1,y1]`, one-based pages, actual page dimensions. Handle split text items/whitespace and PDF viewport transforms; do not manufacture evidence from a normalized date or copy gold rectangles.
-3. Implement deterministic date candidates for the corpus formats: slash/dotted/hyphen numeric dates, hyphenated month names, day month-name year and month-name day year. Use nearby source labels to distinguish expiry (`valid till`, `valid up to`, `expires on`, `expiry date`) from issue/execution/registration/reference dates. Calendar validation must reject invalid dates/leap days rather than rolling them into a different month. Keep raw date text and all relevant source-backed candidates with their roles.
-4. Output a typed suggestion/result contract including `{field,value,page,excerpt,bbox,method:'text',ambiguous}` for source-backed candidates, plus a document-level outcome/suggested expiry or null and explanations. Align the expiry field with existing `validThrough` metadata. Clearly distinguish suggested, ambiguous, not found, OCR required/unsupported text layer and invalid document. This output is not confirmed metadata or a verified fact.
-5. Abstain on unresolved numeric day/month order, conflicting expiries, expiry preceding issue, absent expiry and invalid dates. Never substitute an issue/execution/registration date for expiry, prefer the last date blindly, invent a convention or execute source instructions. Keep useful conflicting candidates visible with source evidence; do not claim self-reported confidence is a calibrated probability.
-6. Image-only PDFs must return an honest **OCR_REQUIRED** (or equivalent explicit result), with no guessed dates and no fabricated excerpt/box. **No tesseract.js or raster/OCR processing in C2**; C3 will add an isolated, bounded, offline OCR fallback to the same candidate logic.
-7. Enforce bounded bytes/pages/text/work, reject malformed/encrypted/unsupported PDFs clearly, release PDF parser resources and prevent unbounded work. Keep PDF content untrusted and isolated from commands/tools. No database migration, API endpoint, UI change, document-verdict update, obligation fulfilment, case transition, reminder creation or live deadline mutation in this step.
+C2 streams actual PDF text/positions, reconstructs source lines and date-role candidates, handles rotated/CropBox/UserUnit viewports and abstains on ambiguous/invalid/conflicting/chronologically inconsistent dates. Whole-text-item rectangles are explicitly TEXT_ITEM precision. Image-only/partial/unsupported text currently returns OCR_REQUIRED and no document-level suggestion. Existing tests cover expiry/issue/execution/registration/reference separation, real development fixtures, inert source instructions, all scans, malformed/encrypted/bounded inputs, cancellation/timeouts and two-worker capacity. Preserve these behaviours.
+
+Only DECISION_RECORD users record regulatory decisions; escalation only notifies. Approval/compliance/lifecycle remain separate. Upload != verification != closure. Each case retains its policy version. Rules use provenance APH_CLAUSE / ADMIN_INSTRUCTION / DEMO_ASSUMPTION. Suggested fields are unconfirmed; extraction cannot approve/reject, verify a document, fulfil an obligation, save confirmed metadata or silently change a deadline.
+
+## C3 scope
+
+1. Add **tesseract.js OCR fallback in an isolated bounded worker**, plus the page-image rendering required to feed it. Inspect current installed dependencies/renderer capabilities first and use pinned compatible versions/primary documentation. The current optional PDF.js canvas dependency may need explicit reproducible provisioning if selected; avoid a machine-specific global-tool dependency.
+2. Runtime must be genuinely **offline**: language/core/WASM/worker assets are local, versioned or pinned with documented provenance/license and integrity checks as appropriate. No language/CDN/model/download fallback during extraction or tests. Missing/corrupt local assets must produce an actionable failure, never a silent network request. Development-time dependency provisioning is separate from runtime; record exactly how a fresh checkout gets local assets.
+3. Keep text first. Render/OCR only pages requiring fallback. Bound input bytes, total/page counts, DPI/pixels, OCR text/word count, time, worker concurrency/queues and memory/work. Reclaim rendering/OCR/PDF workers and capacity on success/failure/timeout/abort. C2 V8 limits are not an OS/native-memory sandbox; do not claim a complete memory/security isolation guarantee without evidence.
+4. Build source lines/candidates from **actual OCR text and word rectangles**, not expected.json, fixture definitions or guessed normalized strings. Reuse C2 date-role/calendar/abstention logic. Extend candidate method/precision types honestly for text versus OCR and preserve raw recognized text. OCR confidence may inform a cautious quality flag; never present it as calibrated probability or permission to skip review.
+5. Convert rendered pixel boxes through the actual page viewport/DPI/rotation/crop/unit transforms into top-left PDF viewport points, one-based pages. Distinguish OCR word boxes from C2 text-item boxes. Handle the actual faint/rotated scan conservatively; do not invent a clean excerpt/date or silently repair uncertain date digits. Failed/low-quality OCR or unreadable pages must keep a null document-level suggestion and an explicit reason/coverage state.
+6. For mixed documents, combine supported text and OCR evidence per page without duplicating candidates or ignoring conflicting expiry entries on another page. Do not return SUGGESTED while a required page remains unreadable/unprocessed. Blank versus unreadable pages must be represented honestly, with documented policy and tests.
+7. Preserve the bytes-only internal API and developer CLI or add a clearly named combined entry point; document the C2 text-only path separately if retained. OCR output remains `confirmed:false`, suggestion-only. No DB migration, persistent job/product integration, HTTP endpoint, UI/highlight, metadata/audit command changes, case mutation or deadline creation in C3.
 
 ## Tests and evidence
 
-- Add meaningful C2 tests under server/test, naming A01/A02 where applicable: actual checked-in text PDFs, source-backed citations/positions and page-2/3 expiry; each supported date format/role; issue-only/missing/invalid/conflicting/ambiguous dates; chronology; inert instruction-like source text; image-only OCR-required result; malformed/encrypted/bounded input and resource/error handling.
-- Assert actual PDF text/excerpts/boxes. Avoid tests that feed expected.json into the extractor or simply mirror parser implementation. C1 labels can be used by tests as independent expected answers; leave them unchanged unless a documented authoring defect is proven by the PDF itself.
-- Keep development/heldout template families separate for future measurement; do not tune by silently relabelling heldout examples. **C5 owns the measured accuracy/evaluation table**; C2 test pass counts are not accuracy claims and no fake evaluation script/result should be added now.
-- Existing 209 tests and the corpus file/hash/manifest checks must continue to pass. No real data/email/portal/network calls.
-
-## Product and engineering rules
-
-Only a DECISION_RECORD user records regulatory decisions; escalation only notifies. Approval outcome/compliance/lifecycle remain independent. Upload != verification != closure. Running cases retain pinned policy versions; provenance is APH_CLAUSE / ADMIN_INSTRUCTION / DEMO_ASSUMPTION. Document text is data, never an instruction. Future confirmation must use existing audited/versioned commands; re-extraction must never silently change confirmed metadata or a running deadline.
-
-Business logic uses now(); errors use AppError; future state changes/audit/outbox share withTx, mutations use idempotency/expectedVersion and current scope (404 outside scope). No such mutation is required by C2. Preserve private storage/download checks and source-mirror-only integration authority.
+- Preserve all 226 tests, C1 PDF/hash/label integrity and C2 text behaviour. Keep text-only tests explicitly text-only if the combined entry point can now OCR scans.
+- Test actual development-family scans (including page-2 expiry and cross-page conflicts), mixed text/scans, empty/unreadable results, source text/word boxes, viewport conversion, duplicate suppression across paths, asset missing/corrupt/offline behaviour, limits/timeouts/cancellation/failure cleanup/capacity recovery.
+- Use synthetic files only. Never read gold labels at runtime, alter corpus labels to match OCR output or send files to an external service. Keep heldout template answers for later evaluation; report limitations honestly.
+- No accuracy percentage or benchmark table in C3. **C5 owns measured extraction evaluation**. Passing tests are functional evidence, not a production-accuracy claim.
 
 ## Definition of done
 
-- Bounded offline text/position parser and source-backed date-role suggestions work on the C1 text corpus, abstain honestly and mark scans OCR-required. No OCR or product integration was started.
-- `npm run typecheck`, `npm test`, `npm run build`, `git diff --check` pass. Record actual counts/logs/limitations; do not invent performance/accuracy numbers.
-- Update PROGRESS/WORK_LOG (3–5 lines) and applicable extraction docs. Replace NEXT_PROMPT with a standalone **C3-only** prompt for isolated offline OCR, preserving C4 human review/highlight and C5 evaluation as later steps.
-- One local commit, no AI-tool attribution, **no push**. Tell the user what was built, tests passed and how to inspect/run it. Stop before C3.
+- Reproducible local OCR assets and bounded isolated text-first fallback work with source-backed evidence/word boxes and honest abstention/coverage results; no network dependency at runtime.
+- `npm run typecheck`, `npm test`, `npm run build`, `git diff --check` pass. Save/diagnose failures; record actual counts, assets/setup/limits and how to inspect the CLI result.
+- Update PROGRESS/WORK_LOG (3–5 lines), extraction docs/limitations and applicable setup handoff. Replace NEXT_PROMPT with **C4 only**, wiring suggestions/source highlight into existing M5 human review; keep C5 evaluation separate.
+- One local commit without AI-tool attribution, **no push**. Tell the user what was built, tests passed and how to check it. Stop before C4.

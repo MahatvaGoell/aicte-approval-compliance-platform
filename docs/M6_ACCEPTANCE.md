@@ -41,6 +41,6 @@ Local evidence (ignored): `var/b7-closure-evidence.json`, `var/b7-pending-west.c
 - Export limit 5000 rows; no streaming/background exports, historical dashboard snapshots or national-scale load claims.
 - Audit is tamper-evident, with application/database-trigger protections; a superuser can bypass them. Independent protected checkpoints remain a production requirement.
 - Mock integration is local, bounded and disconnected; no live connector, writeback or scheduled import. Human correction affects only mirrors and never case approval, compliance, lifecycle, frozen snapshots, pinned policies, obligations or deadlines.
-- Document metadata is manual. No PDF extractor/OCR worker, source highlight or extraction-accuracy result exists yet.
+- Document metadata remains manual in the product. C2 now provides the offline text-extraction primitive/CLI described in PDF_TEXT_EXTRACTION.md; OCR fallback, source highlight/review wiring and measured extraction accuracy remain pending.
 
-B7 handed off C1, the labelled synthetic PDF dataset. **C1 is now complete**; see EXTRACTION_DATASET.md for its 24 PDFs/labels/generator/QA. NEXT_PROMPT now covers C2 text extraction only. Current local commits remain unpushed under the standing no-push instruction.
+B7 handed off C1, the labelled synthetic PDF dataset. **C1–C2 are now complete**; see EXTRACTION_DATASET.md for the corpus and PDF_TEXT_EXTRACTION.md for bounded text-layer suggestions/CLI. NEXT_PROMPT now covers C3 offline OCR only. Current local commits remain unpushed under the standing no-push instruction.
