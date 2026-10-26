@@ -5,3 +5,4 @@ var/
 *.log
 coverage/
 .claude/
+server/scripts/extraction/__pycache__/

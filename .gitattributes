@@ -1,0 +1,3 @@
+# Keep the byte-reproduced manifest stable on Windows and preserve PDF bytes.
+server/fixtures/extraction/expected.json text eol=lf
+server/fixtures/extraction/pdfs/*.pdf binary

@@ -10,7 +10,8 @@ A prototype platform that routes AICTE approval applications through configurabl
 - Build plan: [docs/BUILD_PLAN.md](docs/BUILD_PLAN.md)
 - Progress and what is next: [docs/PROGRESS.md](docs/PROGRESS.md)
 - M6 acceptance checks and limits: [docs/M6_ACCEPTANCE.md](docs/M6_ACCEPTANCE.md)
-- Next authorised step: [docs/NEXT_PROMPT.md](docs/NEXT_PROMPT.md) (C1 synthetic PDF dataset only)
+- Synthetic PDF corpus and generator: [docs/EXTRACTION_DATASET.md](docs/EXTRACTION_DATASET.md)
+- Next authorised step: [docs/NEXT_PROMPT.md](docs/NEXT_PROMPT.md) (C2 text extraction only)
 - Foundation modules for deadlines, email and documents: [docs/FOUNDATIONS.md](docs/FOUNDATIONS.md)
 - Screen-by-screen layout brief: [docs/UI_PAGES.md](docs/UI_PAGES.md)
 - Pitch outline and limitations: [docs/PITCH.md](docs/PITCH.md), [docs/LIMITATIONS.md](docs/LIMITATIONS.md)
@@ -54,13 +55,13 @@ With Docker, create the test database once: `docker compose exec db createdb -U 
 
 ## Demo accounts
 
-Milestones **M1–M6** are implemented locally. M6 adds role dashboards with filtered drill-down, reconciled reports/CSV, scoped audit search/integrity verification and a disconnected mock import/reconciliation workspace. All **204 tests** pass. PDF extraction remains pending; document metadata still needs manual human review. Uploading never fulfils an obligation automatically.
+Milestones **M1–M6** are implemented locally. M6 adds role dashboards with filtered drill-down, reconciled reports/CSV, scoped audit search/integrity verification and a disconnected mock import/reconciliation workspace. C1 adds **24 labelled synthetic PDFs / 32 pages** (16 text, 8 image-only scans), a reproducible generator and dataset QA. All **209 tests** pass. PDF extraction remains pending; document metadata still needs manual human review. Uploading never fulfils an obligation automatically.
 
 For M6, sign in as `ro.west` → **Dashboard** → **management** → select Demo West → **Applications in process** → **Download CSV**. The count, listed case IDs and export use the same filters/scope. Sign in as `auditor` → **Audit log** → **Verify integrity** to inspect the hash chain and its limits. As `ro.west`, **Mock integration** → enter an import reason → **Run mock sync** → **Open review** for an unknown source code. Retry preserves its blocked state; an explicit reviewed correction or dismissal needs a reason. All integration statuses belong to the source mirror; they never decide a local case. See [docs/INTEGRATION_CONTRACT.md](docs/INTEGRATION_CONTRACT.md).
 
 Run `npm run dev:worker` alongside the API/web for reminders, and `npm run demo:scenarios` after a reset to prepare nine synthetic cases. For M5, sign in as `ro.west`, open **Obligations**, then case **01009**: its expired verified lease remains current while a replacement receipt waits for human review. Reject/correct or confirm metadata → accept document → explicitly fulfil the obligation. Case **01006** has a pending obligation for `inst.north` / `ro.north`. Use synthetic PDF/PNG/JPEG files only (default maximum 10 MB); checks do not establish authenticity.
 
-For M4, open **Expert visits** as `ro.west`. Institution acknowledgement uses `inst.west`; appointed members use `evc1` and `evc2`. Advance the demo clock from Operations after confirmations to demonstrate a held visit and report review. PostgreSQL must have the bundled `btree_gist` extension available. Next is **C1, the synthetic PDF dataset**; follow `docs/NEXT_PROMPT.md` and stop after that step. Current work is committed locally; pushing remains paused under the standing user instruction.
+For M4, open **Expert visits** as `ro.west`. Institution acknowledgement uses `inst.west`; appointed members use `evc1` and `evc2`. Advance the demo clock from Operations after confirmations to demonstrate a held visit and report review. PostgreSQL must have the bundled `btree_gist` extension available. Inspect C1 under `server/fixtures/extraction/`; generator/check/verify/QA commands and Python/Poppler setup are in `docs/EXTRACTION_DATASET.md`. Next is **C2, text extraction only**; follow `docs/NEXT_PROMPT.md` and stop after that step. Current work is committed locally; pushing remains paused under the standing user instruction.
 
 All demo accounts share the password **`Demo@2026`** (synthetic, demo mode only). The login page lists them.
 

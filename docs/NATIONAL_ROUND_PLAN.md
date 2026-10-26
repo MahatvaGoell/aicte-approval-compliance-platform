@@ -2,7 +2,7 @@
 
 Last updated: 26 Oct 2026. **Is file ko sabse pehle padho.** Ye batati hai ki internal round ke baad national round ke liye exactly kya banana hai, kis order me, kaise, aur kaise check karna hai.
 
-**Current handoff:** pehle WORK_LOG.md padho. M1–M6 local checkout me complete hain (**204 tests**); next = **C1 synthetic PDF dataset only** (NEXT_PROMPT.md). Har step par local commit aur report ke baad rukna. User ka standing order: **push nahi**; neeche ke purane push instructions abhi apply nahi. C1–C5 ke baad M7, phir demo prep; M8 AI/load abhi scope me nahi.
+**Current handoff:** pehle WORK_LOG.md padho. M1–M6 aur C1 local checkout me complete hain (**209 tests**); C1 = 24 labelled PDFs / 32 pages, generator/QA (EXTRACTION_DATASET.md). Next = **C2 text extraction only** (NEXT_PROMPT.md). Har step par local commit aur report ke baad rukna. User ka standing order: **push nahi**; neeche ke purane push instructions abhi apply nahi. C2–C5 ke baad M7, phir demo prep; M8 AI/load abhi scope me nahi.
 
 Team Infera: Arihant Jain, Yuvika Mittal, Alwaz Alam, Reeshu Singh Rajput, Mahatva Goel.
 
@@ -26,7 +26,8 @@ Kuch bhi "headline" mat banao jo problem se hat ke ho. Story hamesha same: *"Fil
 | M4 EVC queue, conflicts, reservations, visit reports | Done (teammate, 26 Oct) |
 | M5 private documents, obligations, verification, lease renewal | Done (teammate, 26 Oct) — **139 tests pass**. Metadata abhi manual hai, OCR/auto-extraction nahi |
 | M6 dashboards/reports/CSV, audit, mock integration/reconciliation | **Done locally** — 204 tests; B7 closed; M6_ACCEPTANCE.md me evidence/limits |
-| PDF expiry C1–C5 / M7 / demo prep | **Baaki** — NEXT_PROMPT.md me C1 dataset ka prompt hai |
+| PDF expiry C1 | **Done locally** — 24 PDFs (16 text / 8 scans), independent labels, reproducible generator, 209 tests |
+| PDF expiry C2–C5 / M7 / demo prep | **Baaki** — NEXT_PROMPT.md me C2-only prompt hai; extraction accuracy abhi measure nahi hui |
 | Idea PPT (internal round) | Done → `docs/sih/SIH26262-Idea-Presentation.pptx` aur `.pdf` |
 | Internal round | **Select ho gaye** |
 | 8 feature ideas ka "court trial" (jury of Claudes) | Done → `docs/sih/court-verdicts/` |
@@ -105,6 +106,7 @@ BUILD_PLAN §11 aur §12 + `docs/FOUNDATIONS.md` (upload checks aur storage **al
 9. Tests: O01–O03, S03 (BUILD_PLAN §20).
 
 ### 4.3 PDF se expiry date nikaalna (wow feature) — offline, free
+**C1 complete:** corpus/labels/generator ready; EXTRACTION_DATASET.md me coverage, coordinates aur QA. Neeche ka extractor/OCR/review/evaluation kaam abhi pending hai, staged C2–C5 me karna hai.
 M5 me metadata review already hai (uploader suggestion + reviewer-confirmed valid-through, optional page/excerpt). Ye feature **usi suggestion ko automatic bharega**: upload ke baad extractor chale, suggested `valid-through` + page + excerpt bhare, reviewer wahi existing screen pe confirm kare. Naya review flow mat banao.
 Jury ki condition: *offline method naam se batao, scan PDFs bhi, aur accuracy number napo.*
 1. **Text PDF:** `pdfjs-dist` (ya `pdf-parse`) se har page ka text + position nikaalo.
@@ -151,7 +153,7 @@ npm install
 cp .env.example .env
 npm run db:start        # alag terminal, chalta rehne do (embedded PostgreSQL :54329)
 npm run db:reset
-npm test                # current local M6 baseline: 204 passing
+npm test                # current local M6 + C1 baseline: 209 passing
 npm run dev:api         # :4000
 npm run dev:worker      # reminders/alerts
 npm run dev:web         # http://localhost:5180
@@ -192,7 +194,7 @@ Rules: commits/docs me koi AI ya Claude attribution mat daalna (no Co-Authored-B
 
 Kaam:
 1. Setup chala (NATIONAL_ROUND_PLAN section 5), npm test pass karwa.
-2. M1-M6 local checkout me complete hain. Ab NEXT_PROMPT.md ke hisaab se C1 dataset only; phir user ke next kehne par C2 parser, C3 OCR, C4 existing review/highlight, C5 evaluation, phir M7, phir demo prep.
+2. M1-M6 aur C1 local checkout me complete hain. Ab NEXT_PROMPT.md ke hisaab se C2 text parser only; phir user ke next kehne par C3 OCR, C4 existing review/highlight, C5 evaluation, phir M7, phir demo prep.
 3. Har step ke baad typecheck + test + build + diff check, PROGRESS/WORK_LOG update, ek local commit (push nahi), aur NEXT_PROMPT.md agle step ke liye update. Report karke rukna.
 4. Har step ke baad mujhe batana kya hua aur browser me kya click karke check karu.
 ```
@@ -232,7 +234,7 @@ Ek hi file pe do log ek saath kaam na karein; har feature apni branch me, merge 
 ## 10. Files ka map
 
 - Plan (ye file): `docs/NATIONAL_ROUND_PLAN.md`
-- Agla step ka prompt: `docs/NEXT_PROMPT.md` (C1 synthetic PDF dataset)
+- Agla step ka prompt: `docs/NEXT_PROMPT.md` (C2 text extraction only)
 - Poora spec: `docs/BUILD_PLAN.md` (§11 anchor, §12 EVC/docs, §16 AI, §19 demo, §20 tests, §21 milestones)
 - Kya bana hai: `docs/PROGRESS.md`
 - Reusable modules: `docs/FOUNDATIONS.md`

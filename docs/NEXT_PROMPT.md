@@ -1,62 +1,58 @@
-# Prompt for the next session — C1: synthetic PDF expiry dataset
+# Prompt for the next session — C2: text-layer expiry extraction
 
 Copy everything below the line into the coding session.
 
 ---
 
-Continue the **AICTE Approval & Compliance Platform** (SIH 2026, SIH26262, Team Infera). **M1–M6 are complete locally, with 204 tests passing. Implement C1 only**: a reproducible labelled synthetic PDF dataset for the later offline expiry-date feature. Do not start C2–C5, M7 or demo preparation. Report after one tested local commit and stop. **Do not push**; the standing user no-push instruction overrides older milestone push text.
+Continue the **AICTE Approval & Compliance Platform** (SIH 2026, SIH26262, Team Infera). **M1–M6 and C1 are complete locally; 209 tests pass. Implement C2 only**: extract real PDF text/positions and apply deterministic date-role rules to produce source-backed expiry suggestions. Do not implement OCR, API/UI integration, live deadlines, C3–C5, M7 or demo prep. After one tested local commit, report and stop. **Do not push** under the standing user instruction.
 
 ## Read first
 
-1. docs/WORK_LOG.md, AGENTS.md, docs/PROGRESS.md — current state, product/engineering rules and local unpushed work.
-2. docs/NATIONAL_ROUND_PLAN.md §4.3 — offline text/OCR extraction, human confirmation and measured evaluation; the user-approved staged order below is the scope boundary.
-3. docs/BUILD_PLAN.md §12 documents, §16 extraction guardrails, §20 A01/A02; docs/FOUNDATIONS.md and docs/LIMITATIONS.md.
-4. Existing server document storage/upload/schema/metadata-review modules, server/test/helpers.ts, package scripts and .gitignore. M6 acceptance is recorded in docs/M6_ACCEPTANCE.md.
-5. Use the PDF skill if available for PDF generation, rendering and visual inspection. Avoid introducing an unrelated framework or paid service.
+1. docs/WORK_LOG.md, AGENTS.md, docs/PROGRESS.md — current scope, invariants and local unpushed work.
+2. docs/EXTRACTION_DATASET.md — C1 corpus, independent labels, splits, source rectangles, generator/QA commands and limitations.
+3. docs/NATIONAL_ROUND_PLAN.md §4.3; docs/BUILD_PLAN.md §12 documents, §16 extraction, §20 A01/A02; docs/FOUNDATIONS.md and docs/LIMITATIONS.md.
+4. Existing document metadata schema/commands, upload checks/storage/download access, clock/error helpers, server/test/helpers.ts and c1-extraction-dataset.test.ts. Reuse the confirmed-metadata boundary later; do not add another review flow.
+5. server/fixtures/extraction/expected.json and server/scripts/extraction/definitions.py are evaluation labels/authoring sources only. **The extractor must not import/read them to obtain answers.**
 
 ## Setup and baseline
 
-Use the active checkout; do not reset it to remote main or discard unpushed B5–B7 commits. Preserve existing user changes. Reuse healthy PostgreSQL/API/web services; .env is local and must not be overwritten.
+Use the active checkout with unpushed B5–B7/C1 commits. Do not reset it to remote main, discard user changes, overwrite .env or unnecessarily reset the prepared development database. Existing dataset PDFs are checked in; running the Python generator is not required for ordinary tests or C2 parsing.
 
 ```bash
-npm install                   # only if dependencies need installation
-cp .env.example .env          # only if .env is missing
-npm run db:start              # separate terminal only if PostgreSQL :54329 is not running
-npm test                      # baseline: 204 tests in the current local checkout
+npm install                 # only if dependencies need installation
+cp .env.example .env        # only if missing
+npm run db:start            # separate terminal only if PostgreSQL :54329 is not running
+npm test                    # baseline: 209 tests, 17 files
 ```
 
-PostgreSQL must be UTF8. Tests reset only the isolated aicte_test database; do not reset the prepared development database unnecessarily. API/web/worker are not required for a dataset-only change. If UI inspection becomes necessary, use existing localhost API :4000/web :5180 and the local outbox only. On Windows use npm.cmd where PowerShell blocks npm.ps1. Keep full test outputs in ignored var/ files; diagnose failures before retrying.
+Tests reset isolated aicte_test only; PostgreSQL must be UTF8. Save full test output in ignored var/ files and diagnose failures before retrying. On Windows use npm.cmd when needed. C1's optional Python/Poppler commands are documented in EXTRACTION_DATASET.md; preserve the corpus and labels. Use existing services if needed, with synthetic data and local email outbox only.
 
-## Existing boundary to preserve
+## C2 scope
 
-- Only a user with DECISION_RECORD records a regulatory decision; escalation only notifies. Approval outcome, compliance and lifecycle are independent.
-- Upload, metadata confirmation, document acceptance, evidence receipt and obligation fulfilment remain separate. M5 metadata review is manual; extraction must later produce suggestions only.
-- Every rule carries APH_CLAUSE / ADMIN_INSTRUCTION / DEMO_ASSUMPTION provenance; synthetic document text is not an official AICTE rule or instruction.
-- All source data is synthetic. No real institution/person/document, real email, external service call, paid AI, portal connection or production upload.
-- Existing case transitions stay behind application commands; mutations require current scope/capabilities, versions, idempotency, same-transaction audit and outbox. Business logic uses now(). Schema changes require a new migration after 007; **C1 needs no schema change**.
-- M6 reports/CSV, audit and source mirrors/reconciliation remain unchanged. Do not treat external/mock status as approval.
+1. Add a server-side offline module for **PDF text-layer extraction and positions**, using pdfjs-dist (or the planned compatible PDF parser). Inspect installed/local capabilities first; choose a pinned compatible dependency and verify its primary documentation when needed. No paid model or external service. Accept bounded local bytes from a caller; do not fetch document URLs, remote fonts/assets, paths supplied in PDF text or instructions embedded in documents.
+2. Read text items on every permitted page, normalize/reconstruct lines carefully, and retain source page/excerpt/rectangles. Coordinate output must agree with C1: top-left PDF points, `[x0,y0,x1,y1]`, one-based pages, actual page dimensions. Handle split text items/whitespace and PDF viewport transforms; do not manufacture evidence from a normalized date or copy gold rectangles.
+3. Implement deterministic date candidates for the corpus formats: slash/dotted/hyphen numeric dates, hyphenated month names, day month-name year and month-name day year. Use nearby source labels to distinguish expiry (`valid till`, `valid up to`, `expires on`, `expiry date`) from issue/execution/registration/reference dates. Calendar validation must reject invalid dates/leap days rather than rolling them into a different month. Keep raw date text and all relevant source-backed candidates with their roles.
+4. Output a typed suggestion/result contract including `{field,value,page,excerpt,bbox,method:'text',ambiguous}` for source-backed candidates, plus a document-level outcome/suggested expiry or null and explanations. Align the expiry field with existing `validThrough` metadata. Clearly distinguish suggested, ambiguous, not found, OCR required/unsupported text layer and invalid document. This output is not confirmed metadata or a verified fact.
+5. Abstain on unresolved numeric day/month order, conflicting expiries, expiry preceding issue, absent expiry and invalid dates. Never substitute an issue/execution/registration date for expiry, prefer the last date blindly, invent a convention or execute source instructions. Keep useful conflicting candidates visible with source evidence; do not claim self-reported confidence is a calibrated probability.
+6. Image-only PDFs must return an honest **OCR_REQUIRED** (or equivalent explicit result), with no guessed dates and no fabricated excerpt/box. **No tesseract.js or raster/OCR processing in C2**; C3 will add an isolated, bounded, offline OCR fallback to the same candidate logic.
+7. Enforce bounded bytes/pages/text/work, reject malformed/encrypted/unsupported PDFs clearly, release PDF parser resources and prevent unbounded work. Keep PDF content untrusted and isolated from commands/tools. No database migration, API endpoint, UI change, document-verdict update, obligation fulfilment, case transition, reminder creation or live deadline mutation in this step.
 
-## C1 scope — dataset only
+## Tests and evidence
 
-1. Add a documented local generator and a checked-in corpus of **20–30 valid synthetic certificate/lease/fire-NOC PDFs**, with `expected.json` as independent ground truth. Choose a consistent dataset directory, for example `server/fixtures/extraction/`; keep rendered QA images/temp files under ignored var/. Use an existing suitable dependency/runtime where possible; any added generator dependency must be recorded and reproducible.
-2. Include actual **text PDFs and scanned/image-only PDFs**. Scanned fixtures must contain raster page images without an embedded selectable-text layer; a rotated or faint scan is useful. Some examples should put expiry on page 2 or later. All names/addresses/identifiers must be obviously fictional and visibly labelled synthetic.
-3. Cover expiry phrases `valid till`, `valid up to`, `expires on`, `expiry date`; formats such as `31/03/2027`, `31-Mar-2027`, `March 31 2027`, `31.03.2027`, and day/month-name/year. Include issue/execution dates alongside expiry, no-expiry documents, invalid dates, conflicting expiry candidates and ambiguous numeric dates. Include instruction-like document text as inert source content, never executable instructions.
-4. Define a stable manifest schema with fixture ID/path, text/scan kind, template family/split, page count, expected expiry (`YYYY-MM-DD` or null), expected result state (unambiguous / ambiguous / not found), and labelled candidate dates with role/page/source excerpt. Keep issue dates distinct from expiry. Add known source rectangles/coordinate conventions where practical for later highlight evaluation. Ground truth comes from fixture definitions, not from the future extractor's own output.
-5. Make generation deterministic in content, stable IDs/names and expected labels: fixed fixture dates/seed, no current-date-dependent labels, no network assets/fonts/data. Explain any unavoidable PDF-byte metadata variability. Avoid overwriting unrelated files; clean/rebuild only the exact dataset output directory after verifying its resolved path.
-6. Render and visually inspect the generated PDFs; validate readable pages, intended scan/text distinction, page counts and manifest/file alignment. Check at least each template family and tricky case, including page-2 expiry, conflicting dates, absent expiry and image-only scans. Fix malformed PDFs; do not reuse the intentionally minimal upload-test PDF bytes as the evaluation corpus.
-7. Document the generator command, dataset coverage, label definitions, coordinate system, regeneration and QA checks. This step establishes fixtures only: **do not claim extraction accuracy**, implement date parsing/OCR, run fake evaluation, add API/UI/review/deadline logic, or upload the corpus to user cases.
+- Add meaningful C2 tests under server/test, naming A01/A02 where applicable: actual checked-in text PDFs, source-backed citations/positions and page-2/3 expiry; each supported date format/role; issue-only/missing/invalid/conflicting/ambiguous dates; chronology; inert instruction-like source text; image-only OCR-required result; malformed/encrypted/bounded input and resource/error handling.
+- Assert actual PDF text/excerpts/boxes. Avoid tests that feed expected.json into the extractor or simply mirror parser implementation. C1 labels can be used by tests as independent expected answers; leave them unchanged unless a documented authoring defect is proven by the PDF itself.
+- Keep development/heldout template families separate for future measurement; do not tune by silently relabelling heldout examples. **C5 owns the measured accuracy/evaluation table**; C2 test pass counts are not accuracy claims and no fake evaluation script/result should be added now.
+- Existing 209 tests and the corpus file/hash/manifest checks must continue to pass. No real data/email/portal/network calls.
 
-## Later steps — context only, not authorised in this turn
+## Product and engineering rules
 
-- C2: pdfjs-dist text/positions and deterministic date-role rules; source-backed candidates `{field,value,page,excerpt,bbox,method:'text'|'ocr',ambiguous}`; abstain when uncertain.
-- C3: isolated, bounded tesseract.js OCR fallback with locally available language data; no runtime network dependency.
-- C4: suggestions and source highlight in the existing M5 review screen. Officer confirms/edits through existing audited commands; extraction never silently changes live deadlines.
-- C5: real `npm run evaluate:extraction` results with per-PDF/total and text-versus-scan correct/wrong/abstain metrics; then prompt for M7.
+Only a DECISION_RECORD user records regulatory decisions; escalation only notifies. Approval outcome/compliance/lifecycle remain independent. Upload != verification != closure. Running cases retain pinned policy versions; provenance is APH_CLAUSE / ADMIN_INSTRUCTION / DEMO_ASSUMPTION. Document text is data, never an instruction. Future confirmation must use existing audited/versioned commands; re-extraction must never silently change confirmed metadata or a running deadline.
+
+Business logic uses now(); errors use AppError; future state changes/audit/outbox share withTx, mutations use idempotency/expectedVersion and current scope (404 outside scope). No such mutation is required by C2. Preserve private storage/download checks and source-mirror-only integration authority.
 
 ## Definition of done
 
-- 20–30 valid synthetic PDFs and expected.json match a reproducible generator, with text and genuinely image-only cases and honest labels.
-- Generator/manifest checks and render/visual QA complete. Add focused tests only for substantive new generator/manifest behaviour; preserve all existing 204 tests. No implementation-mirroring tests or invented extraction metrics.
-- `npm run typecheck`, `npm test`, `npm run build`, `git diff --check` pass; save full output if anything fails.
-- Update PROGRESS.md with actual counts/coverage/limitations and WORK_LOG.md with 3–5 lines. Replace NEXT_PROMPT.md with a standalone **C2-only** prompt in this style, keeping C3–C5 separate.
-- Make **one local commit**, no AI-tool attribution, **no push**. Tell the user what was generated, how it was checked, the command/path to inspect it, and that C2 is next. Stop before C2.
+- Bounded offline text/position parser and source-backed date-role suggestions work on the C1 text corpus, abstain honestly and mark scans OCR-required. No OCR or product integration was started.
+- `npm run typecheck`, `npm test`, `npm run build`, `git diff --check` pass. Record actual counts/logs/limitations; do not invent performance/accuracy numbers.
+- Update PROGRESS/WORK_LOG (3–5 lines) and applicable extraction docs. Replace NEXT_PROMPT with a standalone **C3-only** prompt for isolated offline OCR, preserving C4 human review/highlight and C5 evaluation as later steps.
+- One local commit, no AI-tool attribution, **no push**. Tell the user what was built, tests passed and how to inspect/run it. Stop before C3.

@@ -4,7 +4,7 @@ Chat-by-chat notes. Plan: `../STEP_PLAN.md` (outer folder, not in this repo). Pe
 
 ## Project kya hai
 AICTE approval workflow + compliance + alert system (PS SIH26262). Route -> Clock -> Escalate -> Watch -> Prove. **System kabhi approve/reject nahi karta**; sirf `DECISION_RECORD` wala user karta hai. Sab data synthetic, real email/service nahi. Har rule pe label `APH_CLAUSE` / `ADMIN_INSTRUCTION` / `DEMO_ASSUMPTION`. Approval outcome, compliance, lifecycle alag fields; upload != verification != closure; case apni policy version pe rehta hai.
-Status: M1-M6 done locally (B2-B7, 204 tests); push nahi. Next = C1 synthetic PDF dataset only (NEXT_PROMPT). C2-C5 extractor/OCR/review/evaluation, M7, demo prep baaki. M8 (AI/load) national plan me nahi.
+Status: M1-M6 + C1 done locally (209 tests); push nahi. C1 = 24 labelled PDFs / 32 pages (16 text, 8 scan). Next = C2 text extraction only (NEXT_PROMPT). C3-C5 OCR/review/evaluation, M7, demo prep baaki. M8 (AI/load) national plan me nahi.
 
 ## Folder structure
 - `server/src/modules/`: applications (commands.ts, commands-m2.ts, command-kit.ts), audit, compliance (status.ts, routes.ts), deadlines (engine.ts, scheduler.ts, calendar.ts), documents, evc, identity (permissions.ts), notifications (worker.ts), ops, outbox, policy, reference, workflow
@@ -34,10 +34,10 @@ Status: M1-M6 done locally (B2-B7, 204 tests); push nahi. Next = C1 synthetic PD
 **Demo** (4.6, BUILD_PLAN 19): DEMO_SCRIPT.md (7 min), reset = `db:reset && demo:scenarios`, chaos test 20-30 kill/restart (0 duplicate, 0 missing, audit verify pass), 3 rehearsals. EVC climax = conflicted expert blocked.
 
 ## STEP_PLAN.md se alag / dhyan do
-- Current active checkout: managed `milestone-4/SIH-2026` worktree, branch `codex/m6-b7`. Original `SIH_FINAL/aicte-approval-compliance-platform/` path is historical; use the active checkout, preserve its unpushed B5–B7 commits. Referenced outer STEP_PLAN.md is absent here; staged instructions were also supplied in the user's pasted national-step plan.
+- Current active checkout: managed `milestone-4/SIH-2026` worktree, branch `codex/pdf-c1`. Original `SIH_FINAL/aicte-approval-compliance-platform/` path is historical; use the active checkout, preserve its unpushed B5–B7/C1 commits. Referenced outer STEP_PLAN.md is absent here; staged instructions were also supplied in the user's pasted national-step plan.
 - STEP_PLAN "Commit + push" likhta hai, par abhi **push nahi** (user ka order). NEXT_PROMPT "push to main authorised" bhi abhi lagu nahi.
 - NEXT_PROMPT M6 bada hai (raw events, run outcomes, reconciliation resolution, idempotency by source+external id+revision, institution data hiding). STEP_PLAN B6 sirf "mock integration + tests" kehta hai: B1 me sub-tasks me todna.
-- M7 priority/scoring/readiness/policy-impact M6 me mat banao. National step order = B7 -> C1-C5 PDF -> D M7 -> E demo. NEXT_PROMPT now covers C1 only.
+- M7 priority/scoring/readiness/policy-impact M6 me mat banao. National step order = B7 -> C1-C5 PDF -> D M7 -> E demo. C1 complete; NEXT_PROMPT now covers C2 only.
 - NEXT_PROMPT DoD me `npm run build` + `git diff --check` bhi hai; STEP_PLAN me nahi.
 - NATIONAL_ROUND_PLAN 4.4 R01 test + "Verify integrity" button; STEP_PLAN B5 me button ka zikr nahi.
 - Dashboards pe "invented official timeline/performance figure" nahi.
@@ -66,6 +66,10 @@ Row: `id, appNo, institution, region, stage, stageState, owner, pendingAction, d
 **STEP_PLAN me sudhaar (suggest, file nahi badli)**: B5 me "Verify integrity" button + date/actor/action filter jodo. B6 bada hai: do chats karo (6a: contract + fixtures + migration + import + run counts, 6b: reconciliation queue + resolve + web). B7 me `npm run build` + `git diff --check` jodo. B2/B3/B4 ke "Common rules" same.
 
 ## Log
+- C1 done: `server/fixtures/extraction/` me **24 PDFs / 32 pages** (16 text, 8 image-only scans) + independent `expected.json`; scripts/extraction me definitions/generator/requirements/manifest validator. npm `fixtures:extraction[:check/:verify/:qa]`; setup/details `EXTRACTION_DATASET.md`.
+  Coverage: formats/issue-execution-registration roles, page-2/3 expiry, invalid/missing/conflicting/ambiguous dates, inert source instructions, faint rotated scan; 8 families, 15 development / 9 heldout docs. Gold 15 unambiguous / 4 ambiguous / 5 not found; **accuracy measure nahi hui**.
+  Baseline **204/204**, 5 new corpus tests -> **209/209**; typecheck/build/diff pass. All 32 pages rendered/visually checked; strict PDF/text/scan/rectangle checks + byte-for-byte regeneration pass. Logs `var/c1-*-tests.log`; QA images `var/extraction-qa/` (ignored).
+  PROGRESS/README/handoff current; NEXT_PROMPT = C2 only. One local commit, **push nahi**. Parser/OCR/API/UI/schema/case/deadline changes nahi; C2 ke liye rukna.
 - B7 done: M6 closed locally; `M6_ACCEPTANCE.md` maps B2–B6 features/tests/limits. README/HANDOFF/NATIONAL_ROUND_PLAN/PROGRESS/LIMITATIONS current; NEXT_PROMPT replaced with C1-only PDF dataset handoff.
   Typecheck, **204/204 tests (16 files)**, build and diff check pass; log `var/b7-full-tests.log` (ignored). No product/schema change or new behaviour test in B7.
   Existing nine demo cases prepared without clearing integration history. Browser/API: West dashboard 6 = report 6 = same six CSV IDs; institution-safe columns and integration 403; auditor chain intact (179 events at check); resolved/dismissed reviews retained. Local evidence `var/b7-closure-evidence.json`, `var/b7-pending-west.csv`, `var/b7-demo-scenarios.log`.

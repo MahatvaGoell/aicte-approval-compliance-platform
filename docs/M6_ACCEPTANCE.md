@@ -43,4 +43,4 @@ Local evidence (ignored): `var/b7-closure-evidence.json`, `var/b7-pending-west.c
 - Mock integration is local, bounded and disconnected; no live connector, writeback or scheduled import. Human correction affects only mirrors and never case approval, compliance, lifecycle, frozen snapshots, pinned policies, obligations or deadlines.
 - Document metadata is manual. No PDF extractor/OCR worker, source highlight or extraction-accuracy result exists yet.
 
-Next: **C1, 20–30 labelled synthetic text/scanned PDFs and a reproducible generator/manifest**. Follow NEXT_PROMPT; stop after C1. Current local commits are not pushed under the standing no-push instruction.
+B7 handed off C1, the labelled synthetic PDF dataset. **C1 is now complete**; see EXTRACTION_DATASET.md for its 24 PDFs/labels/generator/QA. NEXT_PROMPT now covers C2 text extraction only. Current local commits remain unpushed under the standing no-push instruction.

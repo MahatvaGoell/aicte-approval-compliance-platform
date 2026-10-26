@@ -10,9 +10,17 @@ Last updated: 26 Oct 2026 · Specification: [BUILD_PLAN.md](BUILD_PLAN.md) · Ag
 | M4 — EVC queue, scheduling, conflicts, reports | **Done** — EVC queue → accepted report → next stage, browser verified |
 | M5 — Documents, obligations, verification, lease renewal | **Done** — 139 tests passing; lease renewal browser verified |
 | M6 — Dashboards, reports, audit viewer, mock integration | **Done locally** — B2–B7 complete; 204 tests, typecheck/build and browser/API acceptance pass; not pushed |
-| C — Offline PDF expiry extraction | Not started — next step C1: synthetic labelled PDF dataset |
+| C — Offline PDF expiry extraction | **C1 done locally** — 24 labelled PDFs / 32 pages, generator/QA, 209 tests; next C2 text extraction |
 | M7 — Differentiators (action/gap panel, priority queue, consistency, readiness, preview) | Not started |
 | M8 — Optional AI, load/recovery tests, docs, evaluation, rehearsal | Not started |
+
+## C1 — synthetic PDF expiry dataset
+
+Added `server/fixtures/extraction/{pdfs/,expected.json}`: **24 PDFs / 32 pages**, 16 text PDFs and 8 genuinely image-only scans, eight authored template families split 15 development / 9 heldout by family. Gold labels cover expiry formats/roles, page-2/3 expiry, registration/issue/execution distractors, invalid/missing/conflicting/ambiguous dates, past expiry, inert instruction-like source text and a faint rotated scan. Outcomes are 15 unambiguous / 4 ambiguous / 5 not found; these are authored labels, not extraction results.
+
+`server/scripts/extraction/` contains independent fixture definitions, fixed-date/invariant PDF generator, pinned Python requirements, portable npm wrapper and strict Zod manifest contract. Commands `fixtures:extraction`, `:check`, `:verify`, `:qa` generate/check/reproduce/render the corpus; no API/web/runtime dependency changed. SHA-256/size, source excerpts, page and top-left point rectangles are retained. Generator writes only the fixed dataset outputs, rejects symlink output paths and performs no recursive deletion. Actual PDF parsing/text-layer checks prove scan pages have one raster image and zero text; date rectangles are verified against text positions and rendered ink.
+
+Baseline **204/204**, five new `c1-extraction-dataset.test.ts` tests, full suite **209/209**; typecheck/build/diff checks pass. Byte-for-byte regeneration verified on the documented toolchain; all 32 pages rendered and six contact sheets plus selected tricky pages inspected. Final border layout corrected before reproduction/QA. Full logs `var/c1-*-tests.log`, renders `var/extraction-qa/` (ignored). Details/coverage/coordinate conventions/portability limits: [EXTRACTION_DATASET.md](EXTRACTION_DATASET.md). No extraction accuracy claim, parser/OCR, database migration, case/deadline change or UI was added. NEXT_PROMPT now covers **C2 only**; C3–C5/M7 remain pending. One local commit; no push.
 
 ## M6 — B7 closure
 

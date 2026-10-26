@@ -1,8 +1,8 @@
 # Handoff: continuing on another laptop
 
-> **National round (26 Oct 2026): M1–M6 are complete locally. Read [WORK_LOG.md](WORK_LOG.md) first**, then AGENTS/PROGRESS/NEXT_PROMPT. Next step is C1, the labelled synthetic PDF dataset. Stop after each step. Pushing remains paused under the user's standing instruction.
+> **National round (26 Oct 2026): M1–M6 and C1 are complete locally (209 tests). Read [WORK_LOG.md](WORK_LOG.md) first**, then AGENTS/PROGRESS/NEXT_PROMPT. Next step is C2, text-layer extraction/date-role rules only. Stop after each step. Pushing remains paused under the user's standing instruction.
 
-Project repository: <https://github.com/MahatvaGoell/aicte-approval-compliance-platform>. **Recent B5–B7 changes are local and not yet pushed**, so a fresh GitHub clone will not contain the complete M6 closure. Preserve the current checkout and commits; do not reset it to remote main. Read [PROGRESS.md](PROGRESS.md) for actual local status and [NEXT_PROMPT.md](NEXT_PROMPT.md) for the next step.
+Project repository: <https://github.com/MahatvaGoell/aicte-approval-compliance-platform>. **Recent B5–B7/C1 changes are local and not yet pushed**, so a fresh GitHub clone will not contain the complete M6 closure or PDF corpus. Preserve the current checkout and commits; do not reset it to remote main. Read [PROGRESS.md](PROGRESS.md) for actual local status and [NEXT_PROMPT.md](NEXT_PROMPT.md) for the next step.
 
 ## The goal
 
@@ -28,7 +28,7 @@ The coding agent builds the whole platform, milestone by milestone, from [BUILD_
 | M4 — EVC readiness, conflicts, reservations, reports | Done; see PROGRESS.md for acceptance checks and limitations |
 | M5 — private documents, obligations, evidence receipts, verification and lease renewal | Done; 139 tests passing; browser journey verified |
 | M6 — dashboards, reports/CSV, scoped audit, mock integration/reconciliation | Done locally; **204 tests**, typecheck/build/whitespace and browser/API acceptance pass; see [M6_ACCEPTANCE.md](M6_ACCEPTANCE.md) |
-| C — offline PDF expiry extraction | Not started; NEXT_PROMPT.md starts **C1 dataset only**, then C2 parser, C3 offline OCR, C4 existing M5 review/highlight, C5 evaluation |
+| C — offline PDF expiry extraction | **C1 done**: 24 PDFs / 32 pages, labels/generator/QA; 209 tests. [EXTRACTION_DATASET.md](EXTRACTION_DATASET.md). Next **C2 only**, then C3 OCR / C4 review-highlight / C5 evaluation |
 | M7 / demo prep | Not started; follow after PDF feature; no M8 AI/load work is authorised by the national step plan |
 | UI | Redesigned (warm light/dark themes, motion). Per-page layout brief for a designer: [UI_PAGES.md](UI_PAGES.md) |
 | SIH idea PPT | Done: [sih/SIH26262-Idea-Presentation.pptx](sih/SIH26262-Idea-Presentation.pptx) (and `.pdf`). Internal round cleared |
@@ -85,13 +85,13 @@ Copy everything inside the block into Claude Code, opened in the cloned reposito
 ```text
 Main is project continue kar raha hoon from another laptop. Repo: AICTE Approval & Compliance Platform (SIH 2026, PS SIH26262).
 
-Pehle ye files padh: docs/WORK_LOG.md (sabse pehle), AGENTS.md, docs/PROGRESS.md, docs/NEXT_PROMPT.md, docs/NATIONAL_ROUND_PLAN.md section 4.3. M1-M6 local checkout me complete hain (204 tests); fresh GitHub clone abhi behind ho sakta hai.
+Pehle ye files padh: docs/WORK_LOG.md (sabse pehle), AGENTS.md, docs/PROGRESS.md, docs/NEXT_PROMPT.md, docs/EXTRACTION_DATASET.md. M1-M6 aur C1 local checkout me complete hain (209 tests); fresh GitHub clone abhi behind ho sakta hai.
 
 Rules: commits/docs me koi AI ya Claude attribution mat daalna (no Co-Authored-By). Mujhse Hinglish me short baat kar.
 
-Kaam: NEXT_PROMPT.md ka C1 step only — 20-30 labelled synthetic text/scanned PDFs, reproducible generator aur expected.json. Extractor/OCR/API/UI/M7 abhi mat banao. Existing services reuse karo; .env overwrite ya prepared development DB reset mat karo jab tak zarurat na ho. Baseline npm test 204 pass hona chahiye.
+Kaam: NEXT_PROMPT.md ka C2 step only — actual PDF text/positions se expiry candidates aur date-role rules, with source evidence and abstention. expected.json sirf tests ke liye, parser ko gold values mat do. OCR/API/UI/M7 abhi mat banao. Existing services reuse karo; .env overwrite ya prepared development DB reset mat karo jab tak zarurat na ho. Baseline npm test 209 pass hona chahiye.
 
-End: typecheck + test + build + diff check, PROGRESS/WORK_LOG update, NEXT_PROMPT ko C2 ke liye replace, ek local commit. Push nahi. C1 ke baad ruk ke bata.
+End: typecheck + test + build + diff check, PROGRESS/WORK_LOG update, NEXT_PROMPT ko C3 ke liye replace, ek local commit. Push nahi. C2 ke baad ruk ke bata.
 
 Har step ke baad mujhe batana kya hua aur kya click karke check karu.
 ```
