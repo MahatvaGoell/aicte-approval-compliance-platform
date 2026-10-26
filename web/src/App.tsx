@@ -7,6 +7,7 @@ import { ApplicationsPage } from './pages/Applications';
 import { AuditPage } from './pages/Audit';
 import { CasePage } from './pages/Case';
 import { EvcPage } from './pages/Evc';
+import { CompliancePage } from './pages/Compliance';
 import { HomePage } from './pages/Home';
 import { LoginPage } from './pages/Login';
 import { NotificationsPage, useUnreadCount } from './pages/Notifications';
@@ -42,6 +43,8 @@ function sectionFor(path: string): [string, string] {
   if (path.startsWith('/notifications')) return ['06', 'Notifications'];
   if (path.startsWith('/ops')) return ['07', 'Operations'];
   if (path.startsWith('/evc')) return ['08', 'Expert visits'];
+  if (path.startsWith('/documents')) return ['09','Documents'];
+  if (path.startsWith('/obligations')) return ['10','Obligations'];
   return ['00', 'Page'];
 }
 
@@ -83,6 +86,7 @@ function Shell() {
             <NavLink to="/" end><Icon name={me.activeGrant.role === 'INSTITUTION_REP' ? 'home' : 'inbox'} />{me.activeGrant.role === 'INSTITUTION_REP' ? 'Home' : 'My work'}</NavLink>
             {(can('APPLICATION_VIEW_SCOPE') || can('APPLICATION_VIEW_ASSIGNED')) && <NavLink to="/applications" className={() => (inApplications ? 'active' : '')}><Icon name="folder" />Applications</NavLink>}
             {can('APPLICATION_CREATE') && <NavLink to="/applications/new"><Icon name="plus" />New application</NavLink>}
+            {(can('APPLICATION_VIEW_SCOPE')||can('APPLICATION_VIEW_ASSIGNED'))&&<><NavLink to="/documents"><Icon name="folder"/>Documents</NavLink><NavLink to="/obligations"><Icon name="layers"/>Obligations</NavLink></>}
             {can('AUDIT_VIEW') && <NavLink to="/audit"><Icon name="shield" />Audit log</NavLink>}
             {can('POLICY_VIEW') && <NavLink to="/policy"><Icon name="layers" />Policy</NavLink>}
             <NavLink to="/notifications"><Icon name="bell" />Notifications</NavLink>
@@ -112,6 +116,8 @@ function Shell() {
               <Route path="/notifications" element={<NotificationsPage />} />
               <Route path="/ops" element={<OpsPage />} />
               <Route path="/evc" element={<EvcPage />} />
+              <Route path="/documents" element={<CompliancePage kind="documents"/>}/>
+              <Route path="/obligations" element={<CompliancePage kind="obligations"/>}/>
               <Route path="*" element={<div className="card empty">Page not found.</div>} />
             </Routes>
           </div>

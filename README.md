@@ -52,9 +52,11 @@ With Docker, create the test database once: `docker compose exec db createdb -U 
 
 ## Demo accounts
 
-Milestones **M1–M4** are implemented. M4 adds **Expert visits**: readiness queue, conflict/availability suggestions, atomic reservations, rescheduling, acknowledgements and report revisions/acceptance. Reports are structured text; document attachments and post-approval obligations are M5.
+Milestones **M1–M5** are implemented. M5 adds private document versions, manual metadata review, decision-condition obligations, exact evidence receipts, separate verification clocks, lease renewal and M2/EVC attachments. Uploading never fulfils an obligation automatically. All **139 tests** pass.
 
-Run `npm run dev:worker` alongside the API/web for reminders, and `npm run demo:scenarios` to prepare eight synthetic cases, including a ready EVC case and a confirmed visit. Sign in as `ro.west`, open **Expert visits**, then the case. Institution acknowledgement uses `inst.west`; appointed members use `evc1` and `evc2` demo cards. Advance the demo clock from Operations after confirmations to demonstrate a held visit and report review. PostgreSQL must have the bundled `btree_gist` extension available.
+Run `npm run dev:worker` alongside the API/web for reminders, and `npm run demo:scenarios` after a reset to prepare nine synthetic cases. For M5, sign in as `ro.west`, open **Obligations**, then case **01009**: its expired verified lease remains current while a replacement receipt waits for human review. Reject/correct or confirm metadata → accept document → explicitly fulfil the obligation. Case **01006** has a pending obligation for `inst.north` / `ro.north`. Use synthetic PDF/PNG/JPEG files only (default maximum 10 MB); checks do not establish authenticity.
+
+For M4, open **Expert visits** as `ro.west`. Institution acknowledgement uses `inst.west`; appointed members use `evc1` and `evc2`. Advance the demo clock from Operations after confirmations to demonstrate a held visit and report review. PostgreSQL must have the bundled `btree_gist` extension available. M6 is next; see `docs/NEXT_PROMPT.md`.
 
 All demo accounts share the password **`Demo@2026`** (synthetic, demo mode only). The login page lists them.
 

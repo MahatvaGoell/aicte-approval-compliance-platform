@@ -2,6 +2,8 @@
 
 Built in parallel with Milestone 2 on branch `foundations-m3-m5`. They are pure or adapter-level modules with tests and no schema changes, so M3 and M5 can wire them in without redesigning them. Nothing in M1/M2 calls them yet.
 
+Current integration: M3 uses the calendar/email adapters; M5 uses quarantine upload checks and private storage. M5 adds optional inventory for orphan reconciliation, operational-time grace, scoped hash-checked downloads and database-backed immutable versions. See PROGRESS.md for acceptance tests and limitations.
+
 | Module | File | Tests | Used by |
 |---|---|---|---|
 | Deadline calendar | `server/src/modules/deadlines/calendar.ts` | `server/test/calendar.test.ts` (14) | M3 deadline engine, M7 policy preview, ageing in dashboards |
@@ -43,7 +45,7 @@ The calendar comes from the pinned policy version (`policy.doc.calendar`), so a 
 - `ingestUpload(storage, bytes, declaredName, limits)` does quarantine → inspect → promote. Rejected files are deleted and never reach object storage. Returns `storageKey` (random, 32 hex) and `sha256`.
 - Accepted types: PDF, PNG, JPEG, detected from file content. The extension must match. Encrypted, damaged, empty, oversized or very long PDFs are rejected with specific problem codes for the UI.
 - `sanitizeFilename` is for display only. The storage key is never derived from the user's filename.
-- Downloads must go through an API route that re-checks the caller's scope on every request, then streams `storage.read('objects', key)` with `Content-Disposition: attachment` and the detected type.
+- Downloads go through an API route that rechecks the caller's current scope and SHA-256, then returns bounded bytes from `storage.read('objects', key)` with `Content-Disposition: attachment` and the detected type. M5 buffers files within the configured upload bound; it is not a streaming object-storage implementation.
 - The hash proves identical bytes, not authenticity. Document authenticity is out of scope (that is PS 26261).
 - Wire `MAX_UPLOAD_MB` from config into `limits.maxBytes`, and set the Fastify multipart limit to the same value so oversized bodies are cut off before buffering.
 - For deployment, add an S3-compatible `StorageAdapter`; callers only depend on the interface.

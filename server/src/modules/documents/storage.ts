@@ -17,6 +17,7 @@ export interface StorageAdapter {
   read(area: StorageArea, key: string): Promise<Buffer>;
   remove(area: StorageArea, key: string): Promise<void>;
   exists(area: StorageArea, key: string): Promise<boolean>;
+  inventory?(area: StorageArea): Promise<Array<{ key: string; modifiedAt: Date }>>;
 }
 
 const KEY_RE = /^[0-9a-f]{32}$/;
@@ -62,6 +63,18 @@ export class LocalStorageAdapter implements StorageAdapter {
       return false;
     }
   }
+
+  async inventory(area: StorageArea) {
+    const rows: Array<{ key: string; modifiedAt: Date }> = [];
+    const dir = path.join(this.root, area);
+    const prefixes = await fs.readdir(dir, { withFileTypes: true }).catch((e) => { if (e.code === 'ENOENT') return []; throw e; });
+    for (const prefix of prefixes) if (prefix.isDirectory() && /^[0-9a-f]{2}$/.test(prefix.name)) {
+      for (const name of await fs.readdir(path.join(dir, prefix.name))) if (KEY_RE.test(name) && name.startsWith(prefix.name)) {
+        const stat = await fs.stat(this.file(area, name)); if (stat.isFile()) rows.push({ key: name, modifiedAt: stat.mtime });
+      }
+    }
+    return rows;
+  }
 }
 
 export type IngestResult =
@@ -89,6 +102,7 @@ export async function ingestUpload(storage: StorageAdapter, data: Buffer, declar
     return { accepted: true, storageKey: key, sha256: sha256(stored), inspection };
   } catch (err) {
     await storage.remove('quarantine', key).catch(() => undefined);
+    await storage.remove('objects', key).catch(() => undefined);
     throw err;
   }
 }

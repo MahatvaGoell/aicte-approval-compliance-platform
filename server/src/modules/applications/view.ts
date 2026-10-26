@@ -11,6 +11,8 @@ import type { CaseContext } from './commands.js';
 import { loadCaseContext, permittedCommands } from './commands.js';
 import { deadlinesForCase } from '../deadlines/engine.js';
 import { visitViews } from '../evc/service.js';
+import { attachmentsForCase, documentsForCase } from '../documents/service.js';
+import { complianceStatus, obligationsForCase, verifierCandidates } from '../compliance/service.js';
 import { findingsForView } from './commands-m2.js';
 import { submissionProblems } from './forms.js';
 
@@ -131,7 +133,7 @@ export async function caseView(db: Db, actor: Actor, appId: string) {
   return {
     application: {
       id: app.id, appNo: app.app_no, lifecycleState: app.lifecycle_state, lifecycleLabel: STATE_LABELS[app.lifecycle_state],
-      decisionOutcome: app.decision_outcome, complianceStatus: app.compliance_status, cycleCode: app.cycle_code, regionId: app.region_id,
+      decisionOutcome: app.decision_outcome, complianceStatus: await complianceStatus(db,app.id), cycleCode: app.cycle_code, regionId: app.region_id,
       submittedAt: full.submitted_at, createdAt: full.created_at, rowVersion: app.row_version, isSynthetic: full.is_synthetic,
       snapshotSha256: full.snapshot_sha256, formSchemaVersion: full.form_schema_version,
     },
@@ -140,6 +142,10 @@ export async function caseView(db: Db, actor: Actor, appId: string) {
     form: app.lifecycle_state === 'DRAFT' ? app.draft_data : full.submitted_snapshot?.form ?? {},
     findings,
     deadlines,
+    documents: await documentsForCase(db,actor,app.id), attachments:await attachmentsForCase(db,actor,app.id),
+    obligations:await obligationsForCase(db,app.id), documentTypes:c.policy?.doc.compliance?.documentTypes??[],
+    canUploadDocuments:has(actor,'EVIDENCE_UPLOAD') && !!c.policy?.doc.compliance,
+    verifierCandidates:has(actor,'EVIDENCE_VERIFY')?await verifierCandidates(db,app.region_id):[],
     evc: { visits: await visitViews(db, actor, app.id), policy: c.policy?.doc.evc ?? null },
     amendments,
     workflows,

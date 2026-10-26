@@ -127,6 +127,10 @@ export const policyV1: PolicyDocumentInput = {
       { id: 'ESCALATE_SUPERVISOR', offsetDays: 3, kind: 'ESCALATION', recipients: ['SUPERVISOR'], ...demo },
     ],
   },
+  compliance: { documentTypes: [
+    { code: 'LEASE_DEED', name: 'Registered lease deed (demo)', validityRequired: true, ...demo },
+    { code: 'OTHER_EVIDENCE', name: 'Other evidence (demo)', validityRequired: false, ...demo },
+  ], verification: { amount: 3, unit: 'WORKING_DAYS', ...demo }, ...demo },
   evc: {
     minMembers: 2, maxMembers: 3, mandatoryConflicts: ['OWN_INSTITUTION','DECLARED'],
     scheduling: { amount: 7, unit: 'WORKING_DAYS', ...demo },

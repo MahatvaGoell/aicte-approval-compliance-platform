@@ -19,11 +19,11 @@ function newKey() {
 
 async function request<T>(method: string, url: string, body?: unknown, idempotencyKey?: string): Promise<T> {
   const headers: Record<string, string> = { 'x-requested-with': 'aicte-web' };
-  if (body !== undefined) headers['content-type'] = 'application/json';
+  if (body !== undefined && !(body instanceof FormData)) headers['content-type'] = 'application/json';
   if (idempotencyKey) headers['idempotency-key'] = idempotencyKey;
   let res: Response;
   try {
-    res = await fetch(`/api/v1${url}`, { method, headers, body: body === undefined ? undefined : JSON.stringify(body), credentials: 'same-origin' });
+    res = await fetch(`/api/v1${url}`, { method, headers, body: body === undefined ? undefined : body instanceof FormData ? body : JSON.stringify(body), credentials: 'same-origin' });
   } catch {
     throw new ApiError(0, 'NETWORK', 'Cannot reach the server. Check that the API is running and try again.', null, null);
   }
@@ -40,6 +40,7 @@ export const api = {
   get: <T>(url: string) => request<T>('GET', url),
   post: <T>(url: string, body: unknown = {}, key: string = newKey()) => request<T>('POST', url, body, key),
   put: <T>(url: string, body: unknown) => request<T>('PUT', url, body),
+  upload: <T>(url:string,body:FormData,key:string=newKey())=>request<T>('POST',url,body,key),
 };
 
 export function qs(params: Record<string, string | number | boolean | undefined | null>) {

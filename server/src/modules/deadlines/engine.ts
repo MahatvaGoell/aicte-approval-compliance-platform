@@ -20,7 +20,7 @@ export interface DeadlineRow {
   id: string;
   application_id: string;
   workflow_id: string | null;
-  clock_type: 'STAGE_HANDLING' | 'INSTITUTION_RESPONSE' | 'EVC_SCHEDULING' | 'EVC_REPORT';
+  clock_type: 'STAGE_HANDLING' | 'INSTITUTION_RESPONSE' | 'EVC_SCHEDULING' | 'EVC_REPORT' | 'OBLIGATION_SUBMISSION' | 'VERIFICATION' | 'DOCUMENT_VALIDITY';
   subject_id: string;
   stage_key: string | null;
   label: string;
@@ -39,6 +39,7 @@ export interface DeadlineRow {
   policy_version_id: string;
   rule_ref: string;
   provenance: string;
+  visibility: 'INTERNAL' | 'INSTITUTION';
 }
 
 const dateStr = (d: string | Date) => (typeof d === 'string' ? d.slice(0, 10) : localDate(d, 'UTC'));
@@ -64,32 +65,38 @@ export async function insertDeadline(
   ctx: ActionContext,
   input: {
     applicationId: string; workflowId: string; clockType: DeadlineRow['clock_type']; subjectId: string; stageKey: string; label: string;
-    rule: DurationRule & { pauseOnReturn?: boolean; provenance: string }; policy: PolicyVersion; ruleRefPath: string; institutionId: string; anchorAt?: Date;
+    rule: DurationRule & { pauseOnReturn?: boolean; provenance: string }; policy: PolicyVersion; ruleRefPath: string; institutionId: string; anchorAt?: Date; dueDate?: string; visibility?: 'INTERNAL'|'INSTITUTION';
   },
 ) {
   const cal = calendarOf(input.policy.doc);
   const anchorAt = input.anchorAt ?? ctx.at;
   const calc = computeDue(anchorAt, input.rule, cal);
+  if (input.dueDate) {
+    calc.dueDate = input.dueDate;
+    calc.dueAt = endOfLocalDateExclusive(input.dueDate, cal.timezone).toISOString();
+    calc.text = `Explicit confirmed valid-through/due date ${input.dueDate}; expires at next local midnight (${cal.timezone}); ${input.ruleRefPath} (${input.rule.provenance}).`;
+  }
   const ladder = input.policy.doc.deadlines?.ladder ?? [];
   const ref = ruleRef(input.policy.versionNo, input.ruleRefPath);
   const shape = { ladder, current_due_date: calc.dueDate, calendar: cal };
   // A replacement scheduling clock keeps original readiness, including overdue catch-up after cancellation.
-  const generationStart = input.clockType === 'EVC_SCHEDULING' && anchorAt < ctx.at ? anchorAt : ctx.at;
+  const generationStart = ['EVC_SCHEDULING','OBLIGATION_SUBMISSION'].includes(input.clockType) && anchorAt < ctx.at ? anchorAt
+    : input.dueDate && Date.parse(calc.dueAt) <= ctx.at.getTime() ? endOfLocalDateExclusive(input.dueDate, cal.timezone) : ctx.at;
   const row = await one<DeadlineRow>(
     tx,
     `INSERT INTO deadlines (application_id, workflow_id, clock_type, subject_id, stage_key, label, anchor_at, rule, calendar,
        original_due_date, original_due_at, current_due_date, current_due_at, explanation, state, generation, generation_started_at,
-       pause_on_return, ladder, next_step_at, policy_version_id, rule_ref, provenance, created_at)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$10,$11,$12,'ACTIVE',1,$20,$13,$14,$15,$16,$17,$18,$19) RETURNING *`,
+       pause_on_return, ladder, next_step_at, policy_version_id, rule_ref, provenance, created_at, visibility)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$10,$11,$12,'ACTIVE',1,$20,$13,$14,$15,$16,$17,$18,$19,$21) RETURNING *`,
     [input.applicationId, input.workflowId, input.clockType, input.subjectId, input.stageKey, input.label, anchorAt, JSON.stringify(input.rule),
       JSON.stringify(cal), calc.dueDate, calc.dueAt, JSON.stringify(calc), !!input.rule.pauseOnReturn, JSON.stringify(ladder),
-      nextStepAfter(shape, generationStart), input.policy.id, ref, input.rule.provenance, ctx.at, generationStart],
+      nextStepAfter(shape, generationStart), input.policy.id, ref, input.rule.provenance, ctx.at, generationStart, input.visibility??'INSTITUTION'],
   );
   await recordAudit(tx, ctx, {
     entityType: 'deadline', entityId: row.id, action: 'DEADLINE_SET',
     after: { clockType: input.clockType, dueDate: calc.dueDate, rule: { amount: input.rule.amount, unit: input.rule.unit } },
     reason: calc.text, applicationId: input.applicationId, institutionId: input.institutionId, policyVersionId: input.policy.id, ruleRef: ref,
-    visibility: 'INSTITUTION',
+    visibility: input.visibility??'INSTITUTION',
   });
   return row;
 }
@@ -144,7 +151,7 @@ export async function closeDeadlines(
       entityType: 'deadline', entityId: d.id, action: how === 'MET' ? (late ? 'DEADLINE_MET_LATE' : 'DEADLINE_MET') : 'DEADLINE_CANCELLED',
       before: { state: d.state, dueDate: dateStr(d.current_due_date) }, after: { state: how, overdueDays: late ? overdueDays(new Date(d.current_due_at), ctx.at) : 0 },
       reason, applicationId: d.application_id, institutionId: d.institution_id, policyVersionId: d.policy_version_id, ruleRef: d.rule_ref,
-      visibility: 'INSTITUTION',
+      visibility: d.visibility,
     });
   }
   return rows.length;
@@ -200,7 +207,7 @@ async function newGeneration(
     entityType: 'deadline', entityId: d.id, action: kind === 'EXTENSION' ? 'DEADLINE_EXTENDED' : 'DEADLINE_RESUMED',
     before: { dueDate: dateStr(d.current_due_date), generation: d.generation }, after: { dueDate: toDueDate, generation: gen, ...extra },
     reason, applicationId: d.application_id, institutionId: d.institution_id, policyVersionId: d.policy_version_id, ruleRef: d.rule_ref,
-    visibility: 'INSTITUTION',
+    visibility: d.visibility,
   });
 }
 
@@ -246,7 +253,7 @@ export async function extendDeadline(tx: Db, ctx: ActionContext, deadlineId: str
 /** Read model for the case page: every clock with its calculation, pauses, adjustments and alerts. */
 export async function deadlinesForCase(db: Db, applicationId: string, at: Date, internal: boolean) {
   const rows = await q<DeadlineRow & { explanation: any; original_due_at: Date; created_at: Date; closed_at: Date | null; close_reason: string | null; met_late: boolean | null }>(
-    db, 'SELECT * FROM deadlines WHERE application_id = $1 ORDER BY created_at', [applicationId],
+    db, `SELECT * FROM deadlines WHERE application_id = $1 ${internal?'':"AND visibility = 'INSTITUTION'"} ORDER BY created_at`, [applicationId],
   );
   if (!rows.length) return [];
   const ids = rows.map((r) => r.id);

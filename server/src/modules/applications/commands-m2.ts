@@ -397,7 +397,7 @@ export async function findingsForView(db: Db, appId: string, internal: boolean) 
     [appId],
   );
   const responses = rows.length
-    ? await q(db, `SELECT r.*, u.name AS submitted_by_name FROM finding_responses r JOIN users u ON u.id = r.submitted_by WHERE r.finding_id = ANY($1::uuid[]) ORDER BY r.submitted_at`, [rows.map((r) => r.id)])
+    ? await q(db, `SELECT r.*, u.name AS submitted_by_name FROM finding_responses r JOIN users u ON u.id = r.submitted_by WHERE r.finding_id = ANY($1::uuid[]) ORDER BY r.receipt_sequence`, [rows.map((r) => r.id)])
     : [];
   return rows.map((f) => ({
     id: f.id, workflowId: f.workflow_id, stageKey: f.stage_key, attemptNo: f.attempt_no, checklistCode: f.checklist_code, reasonCode: f.reason_code,

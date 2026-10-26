@@ -8,10 +8,29 @@ Last updated: 26 Oct 2026 · Specification: [BUILD_PLAN.md](BUILD_PLAN.md) · Ag
 | M2 — Returns, re-scrutiny, all routes, classification, appeals, policy versioning | **Done** |
 | M3 — Deadlines, worker, notifications, escalation, demo clock | **Done** |
 | M4 — EVC queue, scheduling, conflicts, reports | **Done** — EVC queue → accepted report → next stage, browser verified |
-| M5 — Documents, obligations, verification, lease renewal | **Next** — prompt in [NEXT_PROMPT.md](NEXT_PROMPT.md) |
-| M6 — Dashboards, reports, audit viewer, mock integration | Not started |
+| M5 — Documents, obligations, verification, lease renewal | **Done** — 139 tests passing; lease renewal browser verified |
+| M6 — Dashboards, reports, audit viewer, mock integration | **Next** — prompt in [NEXT_PROMPT.md](NEXT_PROMPT.md) |
 | M7 — Differentiators (action/gap panel, priority queue, consistency, readiness, preview) | Not started |
 | M8 — Optional AI, load/recovery tests, docs, evaluation, rehearsal | Not started |
+
+## M5 — what was built
+
+Baseline: installed dependencies, reset the disposable synthetic database and confirmed **119/119 tests** before implementation on `codex/m5`.
+
+- Migration `005_documents_compliance.sql`: private logical documents; append-only byte versions with predecessor, SHA-256, uploader and receipt; metadata reviews/verdicts; obligations linked to exact decision conditions; ordered evidence receipts and exact-version links; verification results and response/EVC attachments. Composite foreign keys prevent cross-case/version links. Update/delete triggers protect historical versions, reviews, receipts, attachments and finding responses.
+- Multipart uploads reuse quarantine/inspect/promote and `StorageAdapter`. Current scope is checked before buffering and inside the transaction; idempotency includes byte hash; replacements check case/document versions. Post-promotion DB failure rolls back records/audit/outbox and cleans bytes. Shared advisory locking and a 24-hour operational-time grace protect registered/fresh files during orphan reconciliation. Failed cleanup is retained for retry. Private downloads recheck current grants and SHA-256; missing/corrupt files return 503 and cannot fulfil an obligation. Storage keys are absent from public responses.
+- Optional pinned `compliance` policy configuration describes document types, required validity and review duration with provenance. Fresh seed uses only `DEMO_ASSUMPTION`; published historical policies are never rewritten and remain explicitly unconfigured if this section is absent.
+- Commands: `REVIEW_DOCUMENT_METADATA`, `VERIFY_DOCUMENT`, `ATTACH_DOCUMENT`, `CREATE_OBLIGATION`, `SUBMIT_EVIDENCE`, `BEGIN_VERIFICATION`, `VERIFY_EVIDENCE`, `CLOSE_OBLIGATION`. Existing case version/idempotency and relevant document/obligation versions apply; state/audit/outbox commit atomically. An uploader cannot verify their own file. Regional/bureau document review and assigned-verifier evidence review are capability/region scoped.
+- Evidence trail: decision → condition → obligation → pinned rule/deadline → receipt with original timeliness/generation → exact version → metadata/document verdict → explicit fulfilment or authority closure with reason. Rejection preserves receipts/results and reopens the original submission clock in a new generation. Partial fulfilment leaves unrelated conditions open. Approval outcome, compliance and lifecycle remain independent. Case/application-list compliance status is derived at read time, including elapsed overdue clocks.
+- Submission, verification waiting and document validity use separate clocks through the existing calendar/engine/worker. On-time submissions stay on time during late review. Valid-through expires at next local midnight. Upload/rejection of a replacement keeps the old expired verified version current; acceptance switches the pointer and cancels its clock. Authorised extensions retain original due and generation/adjustment history. Internal documents/validity clocks are hidden from institutions.
+- Uploader suggestions and reviewer-confirmed institution/address/land/issue/valid-through metadata are separate; optional page/excerpt and review history are retained. Acceptance requires latest confirmed metadata and required validity. Reviewed metadata is frozen with its verdict. No OCR/AI extraction or authenticity scoring.
+- Exact versions attach to the institution's latest submitted M2 response or an assigned expert's current submitted EVC report/finding before review. Reviewed revisions are frozen; internal finding attachment references remain hidden from institutions.
+- Web: private documents/version register, upload/replacement, metadata and verdict forms; linked condition/evidence register, receipt submission and assigned review; filtered/paged document and obligation queues with scoped totals. Shared navigation/theme, labelled forms and loading/error/empty states. Generic notifications link to authorised cases without document/review content in email.
+- Nine prepared synthetic API scenarios: **01006** has an open lease obligation; **01009** has a verified expired lease and an on-time replacement receipt awaiting review. Reset then rerun scenarios to restore these prepared states.
+- **20 new M5 integration tests** cover O01–O03, S01–S03, validity midnight, extension generations, partial closure, immutable histories, cross-case links, revoked/unassigned scopes, internal clocks, storage and post-promotion DB failures, orphan cleanup, corruption, concurrent/stale edits and M2/EVC attachment freezing. Existing calendar tests cover month-end/holidays. Final **139/139** tests, typecheck, production build and whitespace checks passed.
+- Browser verified: prepared approval/obligation/receipt → document and evidence rejection → reminder/overdue processing → corrected synthetic PDF upload → separate receipt → confirmed metadata → accepted renewal → explicit fulfilment. Old expired/rejected versions remain; first receipt remains **On time / REJECT**, later correction **Late / ACCEPT**. Approval remains unchanged; browser console errors were empty.
+
+M5 limits: local private filesystem with bounded in-memory downloads; heuristic header/PDF checks, not malware scanning, full rendering validation or authenticity verification. Metadata is manual. No automatic obligation templates, digest grouping, production object storage, external integration/email or OCR. M6–M8 remain unimplemented.
 
 ## M4 — what was built
 
@@ -101,7 +120,7 @@ Case page: findings panel (raise, return, respond, amend, resolve / not resolved
 
 ## Known gaps and notes for the next milestones
 
-- Clocks cover stage handling, institution response, EVC scheduling and visit reports. Obligation, verification and document validity clocks remain M5; reuse the deadline engine/calendar.
+- Clocks cover stage handling, institution response, EVC scheduling/reports, obligation submission, verification waiting and document validity.
 - Jumping the demo clock far ahead records the skipped reminder steps as missed by design; reset the database (`npm run db:reset` then `npm run demo:scenarios`) for a clean demo.
 - Heartbeats use real time; the ops page shows "no worker" unless `npm run dev:worker` runs (the "Run scheduler now" button works without it in demo mode).
 - Digests and grouping of repeated reminders are not built.

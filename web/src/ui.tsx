@@ -6,6 +6,8 @@ const TONE: Record<string, string> = {
   DECISION_RECORDED: 'ok', CLOSED: 'neutral', WITHDRAWN: 'neutral',
   QUEUED: 'warn', ASSIGNED: 'accent', IN_PROGRESS: 'accent', AWAITING_RESPONSE: 'warn', COMPLETED: 'ok', CANCELLED: 'neutral',
   NOT_STARTED: 'neutral',
+  VALID:'ok', EXPIRED:'bad', NOT_VERIFIED:'warn', VALIDITY_UNAVAILABLE:'neutral', PENDING_VERIFICATION:'warn', ACCEPT:'ok', REJECT:'bad',
+  EVIDENCE_SUBMITTED:'warn', UNDER_VERIFICATION:'accent', FULFILLED:'ok', CLOSED_WITH_AUTHORISED_REASON:'neutral',
   WAITING: 'warn', PROPOSED: 'warn', CONFIRMED: 'info', HELD: 'accent', REPORT_SUBMITTED: 'warn', REPORT_ACCEPTED: 'ok', RESCHEDULED: 'neutral', INTERNAL: 'neutral', INSTITUTION: 'info',
   APPROVED: 'ok', APPROVED_WITH_CONDITIONS: 'ok', REJECTED: 'bad', DEFERRED: 'warn',
   NONE: 'neutral', OPEN: 'warn', OVERDUE: 'bad', ALL_FULFILLED: 'ok',

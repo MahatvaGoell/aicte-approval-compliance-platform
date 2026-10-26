@@ -31,6 +31,26 @@ async function handleEvent(tx: Db, e: any, at: Date): Promise<number> {
   };
   const app = appId ? await maybe<{ institution_id: string; region_id: string }>(tx, 'SELECT institution_id, region_id FROM applications WHERE id = $1', [appId]) : null;
   switch (e.event_type) {
+    case 'OBLIGATION_CREATED':
+    case 'EVIDENCE_REJECTED':
+    case 'OBLIGATION_FULFILLED':
+    case 'OBLIGATION_CLOSED_WITH_REASON':
+      if (!app) return 0;
+      return send(await institutionUsers(tx,app.institution_id,at), 'Approval condition update', 'An obligation on your authorised case was updated. Open the case to view the current action and receipt history.',true);
+    case 'EVIDENCE_SUBMITTED': {
+      if(!app) return 0;
+      const users = await q<{id:string}>(tx,`SELECT DISTINCT u.id FROM obligations o JOIN users u ON u.id = o.verifier_user_id
+        JOIN capability_grants g ON g.user_id = u.id WHERE o.id = $1 AND u.is_active AND g.revoked_at IS NULL
+        AND g.role IN ('REGIONAL_OFFICER','BUREAU_OFFICER') AND g.valid_from <= $2 AND (g.valid_to IS NULL OR g.valid_to > $2)
+        AND (g.scope_all OR $3 = ANY(g.region_ids))`,[p.obligationId,at,app.region_id]);
+      return send(users,'Evidence awaits your verification','An institution submitted evidence for an assigned obligation. Open your authorised case to review it; no documents are attached.',true);
+    }
+    case 'DOCUMENT_UPLOADED':
+      if(!app || p.visibility==='INTERNAL') return 0;
+      return send(await usersCoveringRegion(tx,'REGIONAL_OFFICER',app.region_id,at),'Document awaits review','A document version was uploaded. Open your authorised case for metadata review and verification.');
+    case 'DOCUMENT_REVIEWED':
+      if(!app || p.visibility==='INTERNAL') return 0;
+      return send(await institutionUsers(tx,app.institution_id,at),'Document review recorded','A document review result is available in your authorised case.',true);
     case 'EVC_VISIT_CONFIRMED':
     case 'EVC_VISIT_CANCELLED':
     case 'EVC_REPORT_SUBMITTED':

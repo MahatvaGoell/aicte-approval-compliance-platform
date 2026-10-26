@@ -1,3 +1,9 @@
+/* M5 evidence register: safe wrapping for immutable version and receipt identifiers. */
+.evidence-record { padding: 16px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--raised); scroll-margin-top: 85px; }
+.evidence-record .mono, .evidence-record li { overflow-wrap: anywhere; }
+.evidence-record input[type='checkbox'] { width: 18px; height: 18px; flex: 0 0 auto; }
+.evidence-record details > summary { overflow-wrap: anywhere; }
+
 /* M4: visit planning and reservations, using shared theme tokens. */
 .evc-calendar { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; }
 .evc-calendar-item, .evc-visit-detail { padding: 16px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--raised); }

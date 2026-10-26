@@ -7,6 +7,7 @@ import { Empty, ErrorState, formatDate, humanise, Loading, MutationError, Proven
 import { Amendments, AppealForm, ClassifyForm, FindingsPanel, WorkflowHistory } from './CaseM2';
 import { DeadlinesCard, DueLine } from './CaseM3';
 import { EvcCaseCard } from './CaseM4';
+import { DocumentsCard,ObligationsCard } from './CaseM5';
 
 type View = any;
 
@@ -47,6 +48,8 @@ export function CasePage() {
           <FindingsPanel v={v} />
           <DeadlinesCard v={v} />
           <EvcCaseCard v={v} />
+          <DocumentsCard v={v}/>
+          <ObligationsCard v={v}/>
           {v.canEditDraft && <DraftActions v={v} />}
           {(allowed('SAVE_CHECKLIST') || allowed('RECORD_RECOMMENDATION') || allowed('COMPLETE_STAGE')) && <StageWork key={v.currentStageId} v={v} />}
           {allowed('RECORD_DECISION') && <DecisionForm v={v} />}

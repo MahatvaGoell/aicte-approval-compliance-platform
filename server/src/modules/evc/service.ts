@@ -124,7 +124,7 @@ export async function visitViews(db: Db, actor: Actor, applicationId: string) {
   for (const v of visits) {
     v.members = await q(db, `SELECT m.expert_user_id AS id, u.name, m.confirmed_at FROM visit_members m JOIN users u ON u.id = m.expert_user_id WHERE m.visit_id = $1 ORDER BY u.name`, [v.id]);
     v.reports = await q(db, 'SELECT id, revision, submitted_at' + (internal ? ', summary, submitted_by' : '') + ' FROM visit_reports WHERE visit_id = $1 ORDER BY revision', [v.id]);
-    for (const r of v.reports) r.findings = await q(db, `SELECT requirement, observation, visibility FROM visit_findings WHERE report_id = $1 ${internal ? '' : "AND visibility = 'INSTITUTION'"} ORDER BY id`, [r.id]);
+    for (const r of v.reports) r.findings = await q(db, `SELECT id, requirement, observation, visibility FROM visit_findings WHERE report_id = $1 ${internal ? '' : "AND visibility = 'INSTITUTION'"} ORDER BY id`, [r.id]);
     v.history = internal ? await q(db, 'SELECT action, reason, data, at FROM visit_events WHERE visit_id = $1 ORDER BY id', [v.id]) : [];
   }
   return visits;

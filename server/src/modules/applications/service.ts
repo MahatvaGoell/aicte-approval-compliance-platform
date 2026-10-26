@@ -12,6 +12,7 @@ import type { AppRow } from '../workflow/workflow.js';
 import { setApplicationState, startWorkflow } from '../workflow/workflow.js';
 import type { z } from 'zod';
 import { FORM_SCHEMA_VERSION, createApplicationSchema, submissionProblems, updateDraftSchema } from './forms.js';
+import { complianceStatus } from '../compliance/status.js';
 
 /**
  * Loads an application the actor may see. A case outside the actor's scope is reported as not found,
@@ -210,6 +211,7 @@ export async function listApplications(db: Db, actor: Actor, f: ListFilters) {
       LIMIT ${pageSize} OFFSET ${(page - 1) * pageSize}`,
     params,
   );
+  for (const row of rows) row.compliance_status = await complianceStatus(db, row.id);
   return { total: total.n, page, pageSize, rows };
 }
 

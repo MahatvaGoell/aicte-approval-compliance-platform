@@ -4,7 +4,7 @@ import { canonicalJson } from '../../lib/crypto.js';
 // policy screens and tests. Works on raw documents so a draft that does not validate can still be compared.
 
 export interface PolicyChange {
-  section: 'meta' | 'calendar' | 'holidays' | 'categories' | 'classification' | 'routes' | 'stages' | 'checklist' | 'decision' | 'appeal' | 'evc';
+  section: 'meta' | 'calendar' | 'holidays' | 'categories' | 'classification' | 'routes' | 'stages' | 'checklist' | 'decision' | 'appeal' | 'evc' | 'compliance';
   key: string;
   change: 'added' | 'removed' | 'changed';
   summary: string;
@@ -92,6 +92,8 @@ export function diffPolicies(before: any, after: any): PolicyChange[] {
     if (ap.length) out.push({ section: 'appeal', key: 'appeal', change: 'changed', summary: `Appeal: ${describe(ap)}`, fields: ap });
   }
   const evc = fieldChanges(before?.evc ?? {}, after?.evc ?? {});
+  const compliance = fieldChanges(before?.compliance ?? {}, after?.compliance ?? {});
+  if (compliance.length) out.push({ section: 'compliance', key: 'compliance', change: 'changed', summary: `Compliance: ${describe(compliance)}`, fields: compliance });
   if (evc.length) out.push({ section: 'evc', key: 'evc', change: 'changed', summary: `EVC: ${describe(evc)}`, fields: evc });
   return out;
 }

@@ -81,6 +81,11 @@ export const policyDocumentSchema = z.object({
     ...ruleMeta,
   }),
   // Clocks and the escalation ladder. Absent = no deadlines are tracked for cases on this version.
+  compliance: z.object({
+    documentTypes: z.array(z.object({ code: z.string().regex(/^[A-Z0-9_]{2,60}$/), name: z.string().min(3), validityRequired: z.boolean(), ...ruleMeta })).min(1),
+    verification: z.object({ amount: z.number().int().min(1).max(366), unit: z.enum(['WORKING_DAYS','CALENDAR_DAYS','CALENDAR_MONTHS']), ...ruleMeta }),
+    ...ruleMeta,
+  }).optional(),
   evc: z.object({
     minMembers: z.number().int().min(1).max(10),
     maxMembers: z.number().int().min(1).max(10),
@@ -151,6 +156,7 @@ export function validatePolicy(raw: unknown): { doc: PolicyDocument | null; issu
   const warn = (path: string, message: string) => issues.push({ level: 'warning', path, message });
 
   const categoryCodes = new Set(doc.categories.map((c) => c.code));
+  if (doc.compliance && new Set(doc.compliance.documentTypes.map((t) => t.code)).size !== doc.compliance.documentTypes.length) err('compliance.documentTypes', 'Document type codes must be unique');
   if (doc.evc && doc.evc.minMembers > doc.evc.maxMembers) err('evc.maxMembers', 'Maximum members must cover the minimum composition');
   if (categoryCodes.size !== doc.categories.length) err('categories', 'Category codes must be unique');
 

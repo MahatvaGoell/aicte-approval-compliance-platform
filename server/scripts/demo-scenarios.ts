@@ -28,6 +28,14 @@ class Session {
     return data;
   }
   get(url: string) { return this.call('GET', url); }
+  async upload(id: string, metadata: Record<string, unknown>, bytes: string, filename: string) {
+    const v = await this.get(`/applications/${id}`);
+    const form = new FormData();
+    form.append('metadata', JSON.stringify({expectedVersion:v.application.rowVersion,...metadata}));
+    form.append('file', new Blob([bytes],{type:'application/pdf'}),filename);
+    const res = await fetch(`${BASE}/applications/${id}/documents/uploads`,{method:'POST',headers:{cookie:this.cookie,'x-requested-with':'aicte-web','idempotency-key':'demo-'+crypto.randomUUID()},body:form});
+    const data = await res.json(); if(!res.ok) throw new Error(`Synthetic upload failed: ${res.status} ${JSON.stringify(data)}`); return data;
+  }
   async command(id: string, command: string, payload: Record<string, unknown> = {}) {
     const v = await this.get(`/applications/${id}`);
     return this.call('POST', `/applications/${id}/commands`, { command, expectedVersion: v.application.rowVersion, ...payload });
@@ -127,7 +135,9 @@ async function main() {
     outcome: 'APPROVED_WITH_CONDITIONS', reason: 'Approved subject to a renewed lease deed.',
     conditions: [{ text: 'Submit a renewed registered lease deed for the campus', dueInDays: 60 }],
   });
-  await label(f, 'Lucknow · extension · approved with conditions');
+  const northVerifier = await as('ro.north');
+  await northVerifier.command(f,'CREATE_OBLIGATION',{conditionIndex:0,requiredDocumentType:'LEASE_DEED',verifierUserId:(await northVerifier.get('/me')).user.id,reason:'Track the recorded synthetic approval condition for evidence review.'});
+  await label(f, 'Lucknow · approved with conditions · open lease obligation (institution submits evidence)');
 
   // 7. Ready EVC queue, no inspection proposal yet.
   const g = await submit('inst.west', 'CHANGE_OF_SITE', { proposedSiteAddress: '44 Synthetic Campus Road, Pune' });
@@ -148,6 +158,24 @@ async function main() {
   const visit = hv.evc.visits[0];
   await scheduler.command(h, 'CONFIRM_VISIT', { visitId: visit.id, visitExpectedVersion: visit.row_version, reason: 'Confirm synthetic expert reservations for the M4 demonstration.' });
   await label(h, 'Pune · confirmed EVC visit · institution acknowledges, evc1/evc2 confirm participation');
+
+  // 9. A verified expired lease remains current while its renewal waits for human verification.
+  const i = await submit('inst.west','EXTENSION_OF_APPROVAL');
+  await scrutinise(i,'RECOMMEND_APPROVAL_WITH_CONDITIONS');
+  await (await as('authority')).command(i,'RECORD_DECISION',{outcome:'APPROVED_WITH_CONDITIONS',reason:'Synthetic approval subject to a reviewed registered lease renewal.',conditions:[{text:'Submit a renewed synthetic campus lease deed',dueInDays:3}]});
+  const institution = await as('inst.west'), reviewer = await as('ro.west');
+  const verifierId = (await reviewer.get('/me')).user.id;
+  const obligation = await reviewer.command(i,'CREATE_OBLIGATION',{conditionIndex:0,requiredDocumentType:'LEASE_DEED',verifierUserId:verifierId,reason:'Track the exact recorded renewal condition for the M5 demonstration.'});
+  const syntheticPdf = (text:string) => `%PDF-1.4\n1 0 obj << /Type /Page >> endobj\n% ${text}\ntrailer << >>\n%%EOF\n`;
+  const old = await institution.upload(i,{title:'Synthetic campus lease deed',documentType:'LEASE_DEED',visibility:'INSTITUTION'},syntheticPdf('Expired synthetic lease; no real institution data'),'synthetic-expired-lease.pdf');
+  const previousDay = new Date(Date.parse(meta.businessTime)-86400_000).toISOString().slice(0,10);
+  const review = await reviewer.command(i,'REVIEW_DOCUMENT_METADATA',{versionId:old.versionId,values:{institutionName:'Synthetic Pune institution',validThrough:previousDay,page:1,excerpt:'Synthetic expired validity date'},reason:'Confirmed the synthetic expired date against the demonstration document.'});
+  await reviewer.command(i,'VERIFY_DOCUMENT',{versionId:old.versionId,outcome:'ACCEPT',metadataReviewId:review.result.metadataReviewId,reason:'Record the previously verified expired synthetic lease in its history.'});
+  let iv = await institution.get(`/applications/${i}`);
+  const replacement = await institution.upload(i,{documentId:old.documentId,documentExpectedVersion:iv.documents[0].row_version,title:'Synthetic campus lease deed',documentType:'LEASE_DEED',visibility:'INSTITUTION'},syntheticPdf('Synthetic replacement awaiting human metadata review'),'synthetic-lease-renewal.pdf');
+  iv = await institution.get(`/applications/${i}`);
+  await institution.command(i,'SUBMIT_EVIDENCE',{obligationId:obligation.result.obligationId,obligationExpectedVersion:iv.obligations[0].row_version,versionIds:[replacement.versionId],reason:'Submit this exact synthetic replacement version against the renewal condition.'});
+  await label(i,'Pune · M5 renewal · expired verified lease + on-time replacement receipt awaiting review (ro.west)');
 
   console.log('Demo cases created:\n  ' + made.join('\n  '));
 }

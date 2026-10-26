@@ -1,4 +1,5 @@
 import cookie from '@fastify/cookie';
+import multipart from '@fastify/multipart';
 import Fastify, { type FastifyInstance } from 'fastify';
 import { ZodError } from 'zod';
 import { config } from './config.js';
@@ -14,6 +15,8 @@ import { opsRoutes } from './modules/ops/routes.js';
 import { policyRoutes } from './modules/policy/routes.js';
 import { referenceRoutes } from './modules/reference/routes.js';
 import { evcRoutes } from './modules/evc/routes.js';
+import { documentRoutes } from './modules/documents/routes.js';
+import { complianceRoutes } from './modules/compliance/routes.js';
 
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 export const CSRF_HEADER = 'x-requested-with';
@@ -26,6 +29,7 @@ export async function buildApp(): Promise<FastifyInstance> {
     trustProxy: false,
   });
   await app.register(cookie);
+  await app.register(multipart,{limits:{fileSize:config.maxUploadBytes,files:1,fields:1,parts:2}});
   app.decorateRequest('actor', null);
   app.decorateRequest('correlationId', '');
   app.decorateRequest('sessionToken', null);
@@ -102,6 +106,8 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(notificationRoutes, { prefix: '/api/v1' });
   await app.register(opsRoutes, { prefix: '/api/v1' });
   await app.register(evcRoutes, { prefix: '/api/v1' });
+  await app.register(documentRoutes, { prefix: '/api/v1' });
+  await app.register(complianceRoutes, { prefix: '/api/v1' });
 
   app.setNotFoundHandler((req, reply) => {
     reply.status(404).send({ error: { code: 'NOT_FOUND', message: 'No such endpoint', details: null, correlationId: req.correlationId } });

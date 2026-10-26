@@ -25,7 +25,12 @@ const RECIPIENT_TEXT: Record<string, string> = { OWNER: 'the responsible person'
 
 async function recipientsFor(db: Db, d: DeadlineRow & { region_id: string; institution_id: string }, rule: string, at: Date) {
   if (rule === 'OWNER') {
-    if (d.clock_type === 'INSTITUTION_RESPONSE') return institutionUsers(db, d.institution_id, at);
+    if (d.clock_type==='DOCUMENT_VALIDITY' && d.visibility==='INTERNAL') return usersCoveringRegion(db,'REGIONAL_OFFICER',d.region_id,at);
+    if (['INSTITUTION_RESPONSE','OBLIGATION_SUBMISSION','DOCUMENT_VALIDITY'].includes(d.clock_type)) return institutionUsers(db, d.institution_id, at);
+    if (d.clock_type === 'VERIFICATION') return q<{id:string;name:string}>(db,`SELECT DISTINCT u.id,u.name FROM evidence_submissions s JOIN obligations o ON o.id = s.obligation_id
+      JOIN users u ON u.id = o.verifier_user_id JOIN capability_grants g ON g.user_id = u.id WHERE s.id = $1 AND u.is_active
+      AND g.role IN ('REGIONAL_OFFICER','BUREAU_OFFICER') AND g.revoked_at IS NULL AND g.valid_from <= $2 AND (g.valid_to IS NULL OR g.valid_to > $2)
+      AND (g.scope_all OR $3 = ANY(g.region_ids))`,[d.subject_id,at,d.region_id]);
     if (d.clock_type === 'EVC_REPORT') return q<{ id: string; name: string }>(db, `SELECT DISTINCT u.id, u.name FROM visit_members m
       JOIN users u ON u.id = m.expert_user_id JOIN capability_grants g ON g.user_id = u.id AND g.committee_id = m.committee_id
       JOIN committees cm ON cm.id = g.committee_id WHERE m.visit_id = $1 AND u.is_active AND cm.kind = 'EVC'

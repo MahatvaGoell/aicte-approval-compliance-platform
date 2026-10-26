@@ -6,6 +6,7 @@ import { reconcileDeadlines, scanDeadlines } from '../modules/deadlines/schedule
 import type { EmailAdapter } from '../modules/notifications/email.js';
 import { createEmailAdapter } from '../modules/notifications/email.js';
 import { deliverEmails, processOutbox } from '../modules/notifications/worker.js';
+import { reconcileDocumentStorage } from '../modules/documents/service.js';
 
 // One pass of background work. The worker process runs it in a loop; demo mode can also trigger it from the
 // operations screen so a presentation does not depend on timing.
@@ -38,7 +39,8 @@ export async function runTick(workerId = defaultWorkerId(), opts: { reconcile?: 
   const outbox2 = await processOutbox(at);
   const delivery = await deliverEmails(emailAdapter(), at, workerId);
   const reconcile = opts.reconcile ? await reconcileDeadlines(at) : null;
+  const storage = opts.reconcile ? await reconcileDocumentStorage() : null;
   await withTx((tx) => tx.query(`INSERT INTO system_settings (key, value) VALUES ('scheduler_last_run_at', $1)
     ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`, [JSON.stringify(at.toISOString())]));
-  return { at, outbox: { events: outbox.events + outbox2.events, notified: outbox.notified + outbox2.notified }, scan, delivery, reconcile };
+  return { at, outbox: { events: outbox.events + outbox2.events, notified: outbox.notified + outbox2.notified }, scan, delivery, reconcile, storage };
 }

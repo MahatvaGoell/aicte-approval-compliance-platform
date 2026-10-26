@@ -6,9 +6,9 @@ Keep this file current at the end of every milestone.
 
 - **Rules are demonstration rules.** Every route, checklist item, timeline and escalation interval is labelled `DEMO_ASSUMPTION`. None has been verified against the Approval Process Handbook 2024-27 or its amendments. A domain reviewer must confirm each rule before it is labelled `APH_CLAUSE`.
 - **Synthetic data only.** Institutions, people, documents and addresses are fictional.
-- **No live AICTE integration.** The integration adapter is a mock. Real integration needs an authorised API contract, identity federation and agreement on which system owns each field.
+- **No live AICTE integration.** The mock adapter is planned for M6 and is not implemented yet. Real integration needs an authorised API contract, identity federation and agreement on which system owns each field.
 - **No real notifications.** The demo email adapter writes local files. SMS and WhatsApp are not implemented.
-- **Document authenticity is not verified.** Upload checks confirm file type and integrity; a hash proves identical bytes only. Issuer or registry verification is out of scope (PS 26261).
+- **Document authenticity is not verified.** Upload checks inspect size, headers/extensions, encryption markers and rough PDF structure/page count; they are heuristic, not malware scanning or full parsing/render validation. SHA-256 checks byte integrity only. Metadata is manually confirmed. Issuer/registry verification is out of scope (PS 26261). Storage is a local private filesystem with bounded in-memory downloads.
 - **Exactly-once external email is not guaranteed.** Internal alerts are deduplicated; a provider can accept a message whose acknowledgement is lost. Uncertain sends are reconciled and reported, not hidden.
 - **Audit immutability is limited.** Application sessions cannot change audit rows, and the hash chain detects changes, but a database superuser can still alter data. Independent checkpoint export is a production requirement.
 - **Login rate limiting is per API process and in memory.**

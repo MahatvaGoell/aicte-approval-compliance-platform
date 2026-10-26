@@ -39,6 +39,9 @@ export function now(): Date {
   return new Date(Date.now() + (config.demoMode ? cachedOffsetMs : 0));
 }
 
+/** Operational file lease/mtime clock; independent of demo business-time jumps. */
+export function realNow(): Date { return new Date(); }
+
 export function demoOffsetMs() {
   return config.demoMode && !testNow ? cachedOffsetMs : 0;
 }
