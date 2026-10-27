@@ -1,3 +1,4 @@
+import {custodyForCase} from '../custody/service.js';
 import type { Db } from '../../db.js';
 import { AppError, NotFoundError, one, q } from '../../db.js';
 import { now } from '../../lib/clock.js';
@@ -44,7 +45,8 @@ function buildQuery(actor: Actor, def: ReportDef, f: ReportFilters, at: Date) {
 
   if (def.entity === 'application') {
     if (f.stageKey) where.push(f.stageKey === 'NONE' ? 'si.id IS NULL' : `si.stage_key = ${p(f.stageKey)}`);
-    where.push(`a.lifecycle_state = ANY(${p(PENDING_LIFECYCLE)}::text[])`);
+    if(def.name==='returns-and-holding')where.push('a.submitted_at IS NOT NULL');
+    else where.push(`a.lifecycle_state = ANY(${p(PENDING_LIFECYCLE)}::text[])`);
     const extra: Partial<Record<ReportName, () => string>> = {
       overdue: () => `dl.current_due_at <= ${nowP()}`,
       'due-soon': () => `dl.current_due_at > ${nowP()} AND dl.current_due_at <= ${p(new Date(at.getTime() + DUE_SOON_DAYS * DAY_MS))}`,
@@ -180,7 +182,7 @@ export async function runReport(db: Db, actor: Actor, def: ReportDef, f: ReportF
   const rows = await q(db, `SELECT ${b.select} ${b.from} ORDER BY ${b.order} LIMIT ${pageSize} OFFSET ${(page - 1) * pageSize}`, b.params);
   return {
     name: def.name, label: def.label, entity: def.entity, filters: f, total: total.n, page, pageSize,
-    rows: rows.map((r) => mapRow(def, r, actor, at)),
+    rows:await Promise.all(rows.map(async r=>({...mapRow(def,r,actor,at),...(def.name==='returns-and-holding'?{accountability:await custodyForCase(db,r.id,at)}:{})}))),
     definition: { denominator: def.denominator, ageingAnchor: def.ageingAnchor },
     refreshedAt: at,
   };
@@ -198,9 +200,11 @@ export async function exportReportCsv(db: Db, actor: Actor, def: ReportDef, f: R
   if (rows.length > maxRows) {
     throw new AppError(422, 'EXPORT_TOO_LARGE', `This export would exceed ${maxRows} rows. Narrow the filters and try again.`, { maxRows });
   }
+  if(def.name==='returns-and-holding')for(const row of rows)row.accountability=await custodyForCase(db,row.id,at);
   const office = !isInstitutionActor(actor);
   const obligation = def.entity === 'obligation';
   const cols: Array<[string, (r: any) => unknown]> = [
+    ...(def.name==='returns-and-holding'?(['totalDays','institutionDays','officeDays','authorityDays','returns','historyIncomplete'] as const).map(k=>[k,(r:any)=>r.accountability.recorded?r.accountability[k]:'Not recorded'] as [string,(r:any)=>unknown]):[]),
     ['Application number', (r) => r.appNo],
     ['Institution', (r) => r.institution],
     ['Region', (r) => r.regionId],

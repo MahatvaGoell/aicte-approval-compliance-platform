@@ -13,7 +13,8 @@
     "test": "vitest run",
     "evaluate": "tsx scripts/evaluate.ts",
     "typecheck": "tsc --noEmit",
-    "demo:scenarios": "tsx scripts/demo-scenarios.ts"
+    "demo:scenarios": "tsx scripts/demo-scenarios.ts",
+    "backfill:custody": "tsx scripts/backfill-custody.ts"
   },
   "dependencies": {
     "@fastify/cookie": "11.0.2",

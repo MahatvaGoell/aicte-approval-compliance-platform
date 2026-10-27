@@ -1,3 +1,4 @@
+import {moveCustody} from '../custody/service.js';
 import { z } from 'zod';
 import type { Db } from '../../db.js';
 import { AppError, ValidationError, one, q } from '../../db.js';
@@ -43,6 +44,8 @@ const raiseFinding: CommandDef<z.ZodObject<any>> = {
     requestedEvidence: z.string().trim().max(1000).optional(),
     visibility: z.enum(['INSTITUTION', 'INTERNAL']),
     requestsAmendment: z.boolean().default(false),
+    earlierFindingId:z.string().uuid().optional(),
+    newObjectionJustification:z.string().trim().max(4000).optional(),
   }),
   guard(c) {
     if (!has(c.actor, 'FINDING_RAISE')) return deny(403, 'MISSING_CAPABILITY', 'Your role cannot raise findings');
@@ -56,6 +59,12 @@ const raiseFinding: CommandDef<z.ZodObject<any>> = {
     if (input.requestsAmendment && input.visibility !== 'INSTITUTION') {
       throw new ValidationError('Only an institution-visible finding can ask for an amendment', [{ field: 'requestsAmendment', message: 'Make the finding visible to the institution' }]);
     }
+    // DEMO_ASSUMPTION: new objections in re-scrutiny require recorded justification.
+    if(input.earlierFindingId){
+      const prior=(await q(tx,`SELECT f.id FROM findings f JOIN stage_instances s ON s.id=f.stage_instance_id WHERE f.id=$1 AND f.workflow_id=$2 AND f.stage_key=$3 AND s.attempt_no<$4`,[input.earlierFindingId,c.workflow!.id,stage.stage_key,stage.attempt_no]))[0];
+      if(!prior)throw new ValidationError('Link a finding from an earlier attempt of this stage');
+    }
+    if(stage.attempt_no>1&&!input.earlierFindingId&&(input.newObjectionJustification?.length??0)<20)throw new AppError(409,'NEW_OBJECTION_NEEDS_JUSTIFICATION','A new objection needs at least 20 characters of justification (DEMO_ASSUMPTION)');
     const f = await one(
       tx,
       `INSERT INTO findings (application_id, workflow_id, stage_instance_id, stage_key, checklist_code, reason_code, explanation,
@@ -65,10 +74,11 @@ const raiseFinding: CommandDef<z.ZodObject<any>> = {
         input.requestedEvidence ?? null, input.visibility === 'INSTITUTION' ? 'INSTITUTION' : 'OFFICE', input.visibility,
         input.requestsAmendment, ctx.actor!.userId, ctx.at],
     );
+    await tx.query('UPDATE findings SET raised_in_attempt=$2,new_objection_justification=$3,earlier_finding_id=$4 WHERE id=$1',[f.id,stage.attempt_no,input.newObjectionJustification??null,input.earlierFindingId??null]);
     await markStarted(tx, c, ctx);
     await recordAudit(tx, ctx, {
       entityType: 'finding', entityId: f.id, action: 'FINDING_RAISED',
-      after: { reasonCode: input.reasonCode, checklistCode: input.checklistCode ?? null, visibility: input.visibility, requestsAmendment: input.requestsAmendment },
+      after: {raisedInAttempt:stage.attempt_no,newObjectionJustification:input.newObjectionJustification??null,earlierFindingId:input.earlierFindingId??null,provenance:'DEMO_ASSUMPTION',reasonCode: input.reasonCode, checklistCode: input.checklistCode ?? null, visibility: input.visibility, requestsAmendment: input.requestsAmendment },
       reason: input.explanation, applicationId: c.app.id, institutionId: c.app.institution_id, policyVersionId: c.policy!.id, ruleRef: stage.rule_ref,
     });
     return { findingId: f.id };
@@ -101,6 +111,7 @@ const returnToInstitution: CommandDef<z.ZodObject<any>> = {
     );
     const from = stage.state;
     await setStageState(tx, stage, 'AWAITING_RESPONSE');
+    await moveCustody(tx,ctx,c.app,'INSTITUTION',stage.stage_key,'RETURN_TO_INSTITUTION',input.reason);
     await pauseForReturn(tx, ctx, stage.id, `Returned to the institution: ${input.reason}`);
     await openResponseDeadline(tx, ctx, c.app, c.workflow!.id, c.policy!, stage, c.stageDef!.name);
     await recordAudit(tx, ctx, {
@@ -404,7 +415,7 @@ export async function findingsForView(db: Db, appId: string, internal: boolean) 
     explanation: f.explanation, requestedEvidence: f.requested_evidence, responsibleParty: f.responsible_party, visibility: f.visibility,
     requestsAmendment: f.requests_amendment, state: f.state, raisedAt: f.raised_at, raisedBy: internal ? f.raised_by_name : null,
     returnedAt: f.returned_at, responseDueNote: f.response_due_note, closedAt: f.closed_at, closedBy: internal ? f.closed_by_name : null,
-    closureNote: f.closure_note,
+    closureNote:f.closure_note,raisedInAttempt:f.raised_in_attempt,newObjectionJustification:f.new_objection_justification,earlierFindingId:f.earlier_finding_id,
     responses: responses.filter((r) => r.finding_id === f.id).map((r) => ({ id: r.id, text: r.text, submittedAt: r.submitted_at, submittedBy: r.submitted_by_name })),
   }));
 }

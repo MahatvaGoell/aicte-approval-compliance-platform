@@ -1,3 +1,4 @@
+import {moveCustody} from '../custody/service.js';
 import type { Db } from '../../db.js';
 import { one, q } from '../../db.js';
 import type { ActionContext } from '../audit/audit.js';
@@ -66,6 +67,7 @@ export async function setApplicationState(tx: Db, ctx: ActionContext, app: AppRo
     before: { lifecycleState: app.lifecycle_state }, after: { lifecycleState: to }, reason,
     applicationId: app.id, institutionId: app.institution_id, visibility: 'INSTITUTION',
   });
+  if(['DECISION_RECORDED','CLOSED','WITHDRAWN'].includes(to))await moveCustody(tx,ctx,app,null,null,to,reason);
   app.lifecycle_state = to;
 }
 
@@ -191,6 +193,7 @@ export async function enterStage(
   await tx.query('UPDATE workflow_instances SET current_stage_id = $2 WHERE id = $1', [workflow.id, stage.id]);
   workflow.current_stage_id = stage.id;
   await readiness(tx, ctx, app, workflow.id, policy, stage);
+  await moveCustody(tx,ctx,app,def.kind==='DECISION'?'AUTHORITY':'OFFICE',key,'ENTER_STAGE',reason);
 
   await recordTransition(tx, ctx, {
     applicationId: app.id, workflowId: workflow.id, command: 'ENTER_STAGE', toStage: key, toState: stage.state,

@@ -70,6 +70,7 @@ function FindingItem({ v, f }: { v: View; f: any }) {
         <span className="small muted">{f.stageKey} · attempt {f.attemptNo}{f.checklistCode ? ` · ${f.checklistCode}` : ''}</span>
       </div>
       <p>{f.explanation}</p>
+      {f.newObjectionJustification&&<p className="small"><strong>New objection justification:</strong> {f.newObjectionJustification} <Provenance value="DEMO_ASSUMPTION"/></p>}
       {f.requestedEvidence && <p className="small"><strong>Requested:</strong> {f.requestedEvidence}</p>}
       <p className="small muted">
         Raised {formatDate(f.raisedAt)}{f.raisedBy ? ` by ${f.raisedBy}` : ''}
@@ -107,11 +108,12 @@ function FindingItem({ v, f }: { v: View; f: any }) {
 function RaiseFinding({ v }: { v: View }) {
   const cmd = useCommand(v);
   const stage = v.stages.find((s: any) => s.id === v.currentStageId);
-  const empty = { checklistCode: '', reasonCode: 'MISSING_DOCUMENT', explanation: '', requestedEvidence: '', visibility: 'INSTITUTION', requestsAmendment: false };
+  const empty = { checklistCode: '', reasonCode: 'MISSING_DOCUMENT', explanation: '', requestedEvidence: '', visibility: 'INSTITUTION', requestsAmendment:false,earlierFindingId:'',newObjectionJustification:'' };
   const [f, setF] = useState(empty);
   async function submit(e: FormEvent) {
     e.preventDefault();
     const ok = await cmd.run('RAISE_FINDING', {
+      ...(f.earlierFindingId?{earlierFindingId:f.earlierFindingId}:{}),...(f.newObjectionJustification?{newObjectionJustification:f.newObjectionJustification}:{}),
       reasonCode: f.reasonCode, explanation: f.explanation, visibility: f.visibility, requestsAmendment: f.requestsAmendment,
       ...(f.checklistCode ? { checklistCode: f.checklistCode } : {}), ...(f.requestedEvidence ? { requestedEvidence: f.requestedEvidence } : {}),
     });
@@ -121,6 +123,10 @@ function RaiseFinding({ v }: { v: View }) {
     <details className="pw">
       <summary>Raise a finding</summary>
       <form className="stack" onSubmit={submit}>
+        {stage?.attemptNo>1&&<div className="stack">
+          <label>Earlier objection<select value={f.earlierFindingId} onChange={e=>setF({...f,earlierFindingId:e.target.value})}><option value="">New objection</option>{v.findings.filter((x:any)=>x.stageKey===stage.stageKey&&x.attemptNo<stage.attemptNo).map((x:any)=><option key={x.id} value={x.id}>Attempt {x.attemptNo}: {x.explanation}</option>)}</select></label>
+          {!f.earlierFindingId&&<label>Justification for a new objection <Provenance value="DEMO_ASSUMPTION"/><textarea required minLength={20} maxLength={4000} value={f.newObjectionJustification} onChange={e=>setF({...f,newObjectionJustification:e.target.value})}/></label>}
+        </div>}
         <div className="form-grid">
           <label>Reason<select value={f.reasonCode} onChange={(e) => setF({ ...f, reasonCode: e.target.value })}>{REASONS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></label>
           <label>Checklist item <span className="hint">optional</span>

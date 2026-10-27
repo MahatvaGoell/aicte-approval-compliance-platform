@@ -15,6 +15,7 @@ export const OFFICE_CLOCKS = ['STAGE_HANDLING', 'INSTITUTION_RESPONSE', 'EVC_SCH
 export const INSTITUTION_CLOCKS = ['INSTITUTION_RESPONSE'];
 
 export type ReportName =
+  | 'returns-and-holding'
   | 'pending'
   | 'overdue'
   | 'due-soon'
@@ -38,6 +39,7 @@ const APP_FILTERS = FILTER_KEYS;
 const OBLIGATION_FILTERS = FILTER_KEYS.filter((k) => k !== 'stageKey');
 
 export const REPORTS: readonly ReportDef[] = [
+  {name:'returns-and-holding',label:'Returns and holding',entity:'application',audience:'BOTH',denominator:'Submitted cases and recorded custody periods; missing history disclosed. DEMO_ASSUMPTION accounting.',ageingAnchor:'Calendar days in Asia/Kolkata including every recorded return.',supports:APP_FILTERS},
   {
     name: 'pending', label: 'Applications in process', entity: 'application', audience: 'BOTH',
     denominator: 'Applications submitted and not yet decided, withdrawn or closed (lifecycle SUBMITTED, AWAITING_CLASSIFICATION, IN_PROCESS, AWAITING_DECISION). Counts, not percentages.',

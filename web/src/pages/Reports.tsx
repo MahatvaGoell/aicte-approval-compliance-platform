@@ -211,7 +211,7 @@ function ReportDetail({ name }: { name: string }) {
                         <td>{r.dueAt ? <>{formatDate(r.dueAt)}<div className="small muted">{r.dueBasis}</div></> : <span className="muted">No running clock</span>}</td>
                         <td className="num">{r.overdue ? <span className="chip bad">{r.overdueDays} d overdue</span> : <span className="muted">—</span>}</td>
                         <td>{r.waitingReason ? WAITING[r.waitingReason] ?? humanise(r.waitingReason) : <span className="muted">Not shown</span>}</td>
-                        <td className="num">{r.ageingDays === null ? '—' : `${r.ageingDays} d`}</td>
+                        <td className="num">{r.accountability&&!r.accountability.recorded&&<div>Not recorded · Custody history incomplete</div>}{r.accountability?.recorded&&<div className="small">Total {r.accountability.totalDays} · institution {r.accountability.institutionDays} · office {r.accountability.officeDays} · authority {r.accountability.authorityDays} · returns {r.accountability.returns}{r.accountability.historyIncomplete?" · Custody history incomplete":""}</div>}{r.ageingDays === null ? '—' : `${r.ageingDays} d`}</td>
                       </tr>
                     ))}
                   </tbody>

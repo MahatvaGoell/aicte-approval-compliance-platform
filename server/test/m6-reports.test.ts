@@ -191,7 +191,7 @@ describe('M6 reports and dashboards (server)', () => {
     for (const name of ['overdue', 'due-soon', 'evc-unscheduled', 'evidence-backlog']) {
       expect((await report(pune, name)).statusCode, name).toBe(404);
     }
-    expect((await pune.get('/api/v1/reports')).json().reports.map((r: any) => r.name)).toEqual(['pending', 'awaiting-institution', 'obligations-overdue']);
+    expect((await pune.get('/api/v1/reports')).json().reports.map((r: any) => r.name)).toEqual(['returns-and-holding', 'pending', 'awaiting-institution', 'obligations-overdue']);
     expect((await report(pune, 'pending', `institutionId=${refs.institutions.nagpur}`)).json().total).toBe(0);
     const nagpurOwn = (await report(nagpur, 'awaiting-institution')).json();
     expect(nagpurOwn.rows).toHaveLength(1);

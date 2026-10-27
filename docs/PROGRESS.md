@@ -1,6 +1,6 @@
 # Progress
 
-Last updated: 26 Oct 2026 · Specification: [BUILD_PLAN.md](BUILD_PLAN.md) · Agent rules: [../AGENTS.md](../AGENTS.md)
+Last updated: 27 Oct 2026 · Specification: [BUILD_PLAN.md](BUILD_PLAN.md) · Agent rules: [../AGENTS.md](../AGENTS.md)
 
 Publication update: the user authorised **"push everything on github"** on 26 Oct. This main-branch batch includes all completed B5–B7/C1–C2 commits plus publication documentation. Earlier no-push/local-only statements below record the original step completion, not the current publication instruction. C3 remains the next separate step.
 
@@ -182,3 +182,9 @@ Case page: findings panel (raise, return, respond, amend, resolve / not resolved
 - `docker-compose.yml` is provided but was not tested; the embedded PostgreSQL path was.
 - Port 5173 was occupied on the original dev machine, so the web app uses 5180.
 - `DEBUG_ERRORS=true` prints unhandled server errors to the console (useful in tests).
+
+## Finale A — custody accounting
+
+Migration 008 adds custody segments, incomplete-history disclosure and recorded re-scrutiny justification. Submission, returns, new attempts, decision-stage entry and decision closure update custody and audit together; deadline calculations remain unchanged. The scoped case strip and returns-and-holding JSON/CSV report expose recorded calendar-day accounting in Asia/Kolkata. `npm run backfill:custody` uses stored transitions and refuses to attribute uncertain history. New objections after attempt 1 require a 20-character justification or a validated earlier-finding link (DEMO_ASSUMPTION).
+
+Baseline 226/226; AC01–AC05 plus M3 targeted checks: 19/19. Typecheck and production build pass; full suite 231/231; browser response → attempt 2 and scoped report verified without console errors. Roadmap only: Evidence Recall Network, Document Contradiction Finder, Queue Fairness Proof, Policy Impact Simulator, Decision Proof Compiler. Dropped features remain unimplemented.

@@ -9,6 +9,7 @@ import { Empty, ErrorState, formatDate, humanise, Loading, MutationError, Proven
 import { Amendments, AppealForm, ClassifyForm, FindingsPanel, WorkflowHistory } from './CaseM2';
 import { DeadlinesCard } from './CaseM3';
 import { EvcCaseCard } from './CaseM4';
+import {AccountabilityStrip} from './CaseAccountability';
 import { DocumentsCard,ObligationsCard } from './CaseM5';
 
 type View = any;
@@ -55,6 +56,7 @@ export function CasePage() {
         {v.workflow && <><div className="perf" aria-hidden="true" /><RouteCard v={v} /></>}
       </section>
 
+      <AccountabilityStrip v={v}/>
       <ActionPanel panel={v.actionPanel} jump={jumpFor(allowed)} />
       <div className="grid-2 case-workspace">
         <div className="stack case-main">
