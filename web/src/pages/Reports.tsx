@@ -2,6 +2,7 @@ import { keepPreviousData, useMutation, useQuery } from '@tanstack/react-query';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { api, download, qs } from '../api';
 import { useSession } from '../session';
+import { Icon } from '../motion';
 import { Empty, ErrorState, formatDate, humanise, Loading, MutationError, Status } from '../ui';
 
 export const FILTER_KEYS = ['regionId', 'institutionId', 'categoryCode', 'stageKey', 'submittedFrom', 'submittedTo'] as const;
@@ -96,15 +97,22 @@ function ReportIndex() {
       {cat.isLoading ? <div className="card"><Loading /></div> : cat.error ? <ErrorState error={cat.error} onRetry={() => cat.refetch()} />
         : cat.data.reports.length === 0 ? <div className="card"><Empty>Your active role has no reports.</Empty></div>
         : (
-          <div className="stack">
-            {cat.data.reports.map((r: any) => (
-              <section key={r.name} className="card stack">
-                <h2><Link to={`/reports/${r.name}`}>{r.label}</Link></h2>
-                <p className="small">{r.denominator}</p>
-                <p className="small muted">{r.ageingAnchor}</p>
-              </section>
-            ))}
-          </div>
+          <section className="report-index" aria-label="Report register">
+            <div className="register-letterhead"><span>Report register</span><span>{cat.data.reports.length} {cat.data.reports.length === 1 ? 'report' : 'reports'}</span></div>
+            <ol>
+              {cat.data.reports.map((r: any, i: number) => (
+                <li key={r.name}>
+                  <span className="report-no" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
+                  <div className="report-text">
+                    <h2><Link to={`/reports/${r.name}`}>{r.label}</Link></h2>
+                    <p className="small">{r.denominator}</p>
+                    <p className="small muted">{r.ageingAnchor}</p>
+                  </div>
+                  <Link className="report-open small" to={`/reports/${r.name}`} aria-label={`Open ${r.label}`}>Open list <Icon name="arrow" /></Link>
+                </li>
+              ))}
+            </ol>
+          </section>
         )}
     </>
   );
@@ -185,7 +193,8 @@ function ReportDetail({ name }: { name: string }) {
               {data.total} {data.total === 1 ? 'record' : 'records'} · last refreshed {formatDate(data.refreshedAt)} · polls every 30 s{q.isFetching && ' · refreshing…'}
             </p>
             {data.rows.length === 0 ? <Empty>No records match these filters in your active scope.</Empty> : (
-              <div className="table-wrap">
+              <div className="table-wrap register">
+                <div className="register-letterhead"><span>{data.label ?? def?.label ?? humanise(name)}</span><span>{data.total} {data.total === 1 ? 'entry' : 'entries'} · page {page} of {pages}</span></div>
                 <table>
                   <thead>
                     <tr>
@@ -195,7 +204,7 @@ function ReportDetail({ name }: { name: string }) {
                   </thead>
                   <tbody>
                     {data.rows.map((r: any) => (
-                      <tr key={r.id}>
+                      <tr key={r.id} className={r.overdue ? 'late' : undefined}>
                         <td><Link to={`/applications/${r.applicationId}`}>{r.appNo}</Link><div className="small muted">{r.institution} · {r.regionId}</div></td>
                         <td>
                           {isObligation ? <>{r.condition}<div className="small"><Status value={r.obligationState} /></div></>
