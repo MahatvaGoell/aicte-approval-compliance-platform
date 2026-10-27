@@ -1,0 +1,60 @@
+{
+  "scope": "Presentation-only redesign on ui-redesign; no backend changes or new dependencies.",
+  "checks": {
+    "typecheck": "passed",
+    "build": "passed",
+    "existing_tests": {
+      "passed": 226,
+      "files": 18
+    },
+    "layouts": {
+      "passed": 72,
+      "widths": [
+        1440,
+        1024,
+        768,
+        390
+      ],
+      "themes": [
+        "light",
+        "dark"
+      ],
+      "page_overflow": 0
+    },
+    "contrast_pairs": {
+      "passed": 99,
+      "method": "WCAG relative luminance for declared text/semantic/control token pairs; translucent status surfaces blended over their surface token"
+    },
+    "browser_console_errors": 0
+  },
+  "browser_interactions": [
+    "Workspace selection and demo sign-in",
+    "Institution form local edits and entered-field summary without submission",
+    "Institution finding response form present; decision control absent",
+    "Officer classification and document metadata review forms present; decision control absent",
+    "Authority decision form present on awaiting-decision fixture",
+    "Bureau management dashboard to existing filtered report",
+    "Mobile menu opens, navigates and closes",
+    "Keyboard Enter opens advanced filters; visible focus outline",
+    "Empty application search feedback",
+    "Reduced-motion emulation suppresses transition/animation",
+    "Sign-out returns to login"
+  ],
+  "secondary_pages": [
+    "Reports",
+    "Notifications",
+    "Audit",
+    "Policy list and detail",
+    "Operations",
+    "Mock integration"
+  ],
+  "limits": [
+    "Browser QA did not submit applications or execute regulatory/document/visit commands; existing backend suite covers those behaviours.",
+    "Contrast check covers declared token pairs, not an independent full WCAG conformance audit."
+  ],
+  "review": {
+    "disposition": "ship",
+    "scope": "Final desktop/mobile theme contact sheets and sampled implementation against the latest user-pinned simplicity direction",
+    "material_fixes": 0
+  }
+}
