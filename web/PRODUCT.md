@@ -20,7 +20,7 @@ Existing React, TypeScript, Vite and TanStack Query frontend. Preserve routes, A
 
 ## Brand Commitments
 
-The user replaced the initial cool palette with an old-money palette: warm ivory, forest green and restrained brass. The strongest requirement is simplicity: a clear main task, visible labels and named groups for secondary actions, without displaying every option at once. The supplied references guide composition, subject to these newer instructions and product constraints.
+The user requires bright off-white beige and its near-black dark counterpart, with no green, blue or metallic accents. Compact warning/error sections use natural red without borders. The strongest requirement is simplicity: a clear main task, visible labels and named groups for secondary actions, without displaying every option at once. The supplied references guide composition, subject to these newer instructions and product constraints.
 
 ## Evidence on Hand
 

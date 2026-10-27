@@ -1,63 +1,63 @@
 ---
 name: "AICTE Approval & Compliance Platform"
-description: "Ivory, forest and brass with a quiet operational hierarchy."
+description: "Beige and warm black with borderless natural-red warnings."
 colors:
-  "bg": "#f6f4ed"
-  "surface": "#fffdf8"
-  "surface-2": "#efeee5"
-  "raised": "#fffdf8"
-  "ink": "#293b31"
-  "ink-2": "#4d5c50"
-  "muted": "#61695b"
-  "line": "#d8dccf"
-  "line-2": "#e7e8de"
-  "accent": "#2f5140"
-  "accent-2": "#233f31"
-  "accent-soft": "#e9ede2"
-  "accent-ink": "#fffdf8"
-  "ok": "#3c5b3c"
-  "ok-soft": "rgba(47, 93, 70, 0.1)"
-  "warn": "#795b26"
-  "warn-soft": "rgba(154, 106, 31, 0.12)"
-  "bad": "#a73432"
-  "bad-soft": "rgba(163, 39, 31, 0.09)"
-  "info": "#5c654d"
-  "info-soft": "#eceee3"
-  "demo": "#5c654d"
-  "demo-soft": "#eceee3"
-  "focus": "#2f5140"
-  "brass": "#806332"
-  "control-line": "#85907d"
-  "hero": "#e7eadd"
-  "hero-ink": "#314b38"
-  "dark-bg": "#171f19"
-  "dark-surface": "#202b23"
-  "dark-surface-2": "#2c392f"
-  "dark-raised": "#253128"
-  "dark-ink": "#eeeede"
-  "dark-ink-2": "#c8cdbd"
-  "dark-muted": "#afb9a6"
-  "dark-line": "#4a5848"
-  "dark-line-2": "#2c392f"
-  "dark-accent": "#c0cfad"
-  "dark-accent-2": "#d8dfca"
-  "dark-accent-soft": "#354632"
-  "dark-accent-ink": "#20311e"
-  "dark-ok": "#b8cda7"
-  "dark-ok-soft": "rgba(121, 179, 148, 0.13)"
-  "dark-warn": "#e2c88e"
-  "dark-warn-soft": "rgba(215, 168, 90, 0.13)"
-  "dark-bad": "#f1a69d"
-  "dark-bad-soft": "rgba(229, 138, 127, 0.13)"
-  "dark-info": "#c5cbae"
-  "dark-info-soft": "#35422f"
-  "dark-demo": "#c5cbae"
-  "dark-demo-soft": "#35422f"
-  "dark-focus": "#e2c88e"
-  "dark-brass": "#dcc18d"
-  "dark-control-line": "#829279"
-  "dark-hero": "#2e3e2d"
-  "dark-hero-ink": "#e5ead9"
+  "bg": "#faf7f2"
+  "surface": "#fffdf9"
+  "surface-2": "#f3ede4"
+  "raised": "#fffefb"
+  "ink": "#2c2722"
+  "ink-2": "#554c43"
+  "muted": "#6b5f53"
+  "line": "#e3d8ca"
+  "line-2": "#eee5d9"
+  "accent": "#302a24"
+  "accent-2": "#4a3f34"
+  "accent-soft": "#f0e5d6"
+  "accent-ink": "#faf4e9"
+  "ok": "#5d5145"
+  "ok-soft": "#f2eade"
+  "warn": "#963d34"
+  "warn-soft": "#f3dfd8"
+  "bad": "#963d34"
+  "bad-soft": "#f3dfd8"
+  "info": "#65584b"
+  "info-soft": "#f2eade"
+  "demo": "#65584b"
+  "demo-soft": "#f2eade"
+  "focus": "#6a5744"
+  "detail": "#75614d"
+  "control-line": "#91806d"
+  "hero": "#f1e6d6"
+  "hero-ink": "#3d3228"
+  "dark-bg": "#080706"
+  "dark-surface": "#11100e"
+  "dark-surface-2": "#211d18"
+  "dark-raised": "#171512"
+  "dark-ink": "#f6eddf"
+  "dark-ink-2": "#d0c3b2"
+  "dark-muted": "#c3b4a1"
+  "dark-line": "#393129"
+  "dark-line-2": "#2a241d"
+  "dark-accent": "#e2d1b9"
+  "dark-accent-2": "#f2e4d0"
+  "dark-accent-soft": "#2a221a"
+  "dark-accent-ink": "#241e17"
+  "dark-ok": "#cfc0aa"
+  "dark-ok-soft": "#292119"
+  "dark-warn": "#e8a397"
+  "dark-warn-soft": "#3b2521"
+  "dark-bad": "#e8a397"
+  "dark-bad-soft": "#3b2521"
+  "dark-info": "#c5b6a2"
+  "dark-info-soft": "#292119"
+  "dark-demo": "#c5b6a2"
+  "dark-demo-soft": "#292119"
+  "dark-focus": "#dfc8a9"
+  "dark-detail": "#c4ad90"
+  "dark-control-line": "#a18d76"
+  "dark-hero": "#1d1812"
+  "dark-hero-ink": "#e9dac5"
 typography:
   headline:
     fontFamily: "Inter, Segoe UI, system-ui, sans-serif"
@@ -138,38 +138,38 @@ components:
 
 ## Overview
 
-**Creative North Star: "Old-money simplicity"**
+**Creative North Star: "Beige simplicity"**
 
-The user-pinned old-money direction is expressed through warm ivory surfaces, forest-green actions and restrained brass details. The interface stays operational: clear labels, low ornament and a small number of immediately visible choices.
+The user-pinned palette uses beige, taupe and warm black. Warning and error sections alone use natural red without borders. The interface stays operational: clear labels, low ornament and a small number of immediately visible choices.
 
-Supporting controls live in named disclosures and secondary navigation. Surface tone, borders and spacing establish hierarchy; the palette remains quiet in both themes. This replaces the earlier teal direction.
+Supporting controls live in named disclosures and secondary navigation. Surface tone, borders and spacing establish hierarchy; the palette remains quiet in both themes. This replaces the earlier teal and forest palettes.
 
 **Key Characteristics:**
-- Warm neutrals with a restrained forest accent.
+- Beige neutrals and warm-black contrast, with natural red reserved for warnings.
 - Named groups expose secondary options without overwhelming the main task.
 - Locally bundled sans-serif typography and text-labelled semantic status.
 - Responsive controls, visible focus and reduced-motion support.
 
 ## Colors
 
-The palette combines ivory paper tones, forest green, olive neutrals and restrained brass. The frontmatter records the exact light and explicit dark token values; automatic dark uses the same values as explicit dark.
+The palette combines beige paper tones, taupe neutrals and warm black. Green, blue and metallic accents are excluded. The frontmatter records the exact light and explicit dark token values; automatic dark uses the same values as explicit dark.
 
 ### Primary
 
-- **Forest:** action fill, active navigation, links and selected state.
-- **Soft forest:** selection and low-emphasis action surfaces.
-- **Brass:** a small supporting detail on document, trust and calendar marks.
+- **Warm black / beige:** action fill, active navigation, links and selected state.
+- **Soft beige:** selection and low-emphasis action surfaces.
+- **Taupe detail:** monochromatic supporting marks on documents, trust and calendar.
 
 ### Neutral
 
-- **Ivory:** page background, with a slightly brighter surface for containers and controls.
-- **Forest ink:** primary text; softer olive ink and muted olive support secondary copy.
+- **Beige:** page background, with a slightly brighter surface for containers and controls.
+- **Warm-black ink:** primary text; taupe tones support secondary copy.
 - **Quiet dividers:** structure containers; the stronger control stroke distinguishes interactive fields.
-- **Deep forest:** dark background and raised layers, with pale olive accent and ivory text.
+- **Warm black:** dark background and raised layers, with beige actions and text.
 
 ### Named Rules
 
-**The Quiet Accent Rule.** Use the primary accent for actions and selection; brass remains a restrained detail rather than a competing action colour.
+**The Quiet Accent Rule.** Use beige and warm-black contrast for actions and selection. Reserve natural red for compact warning/error surfaces with no borders.
 
 **The Text Before Colour Rule.** Status and provenance retain readable labels; colour never supplies their only meaning.
 
@@ -209,7 +209,7 @@ Containers are gently curved; controls use a tighter radius and text chips remai
 
 ### Buttons
 
-Quiet, familiar action controls. Primary buttons use forest fill and contrasting text; secondary buttons use the neutral surface and a stronger control stroke. Both use 10px corners, 10px by 16px padding, and a 40px minimum height. Mobile controls rise to a 44px minimum. Hover moves buttons up by one pixel; active state reduces their scale slightly. Keyboard focus uses a two-pixel visible outline with a three-pixel offset.
+Quiet, familiar action controls. Primary buttons use warm-black or beige fill and contrasting text; secondary buttons use the neutral surface and a stronger control stroke. Both use 10px corners, 10px by 16px padding, and a 40px minimum height. Mobile controls rise to a 44px minimum. Hover moves buttons up by one pixel; active state reduces their scale slightly. Keyboard focus uses a two-pixel visible outline with a three-pixel offset.
 
 ### Chips
 
@@ -217,7 +217,7 @@ Text remains the state authority. Standard chips combine a small dot, readable l
 
 ### Cards / Containers
 
-Ivory or dark-forest surface, a quiet one-pixel border and gently curved corners. Shared cards use 24px padding, reduced to 20px on mobile. Avoid adding a new visual layer when spacing or a divider already supplies the grouping.
+Beige or warm-black surface, a quiet one-pixel border and gently curved corners. Shared cards use 24px padding, reduced to 20px on mobile. Avoid adding a new visual layer when spacing or a divider already supplies the grouping.
 
 ### Inputs / Fields
 
@@ -240,7 +240,7 @@ A descriptive title, optional subtitle, optional count and chevron form the clos
 - **Do** reserve strong visual emphasis for the current task and its action.
 
 ### Don't:
-- **Don't** reintroduce the rejected teal palette.
+- **Don't** add green, blue, olive or metallic accents. Keep warning and error surfaces borderless.
 - **Don't** add decorative metrics or imply an automatic regulatory decision.
 - **Don't** create competing accent colours or expose every secondary option at once.
 - **Don't** load remote fonts, scripts or images into the offline interface.
