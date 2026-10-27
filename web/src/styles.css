@@ -1394,3 +1394,41 @@ details.pw form, details.pw > .stack, details.pw > ul { margin-top: 12px; }
   .doc-views { justify-content: flex-start; }
 }
 @media (hover: none) { .dp { display: none; } }
+
+/* ---------- second wave: dashboard panels, applications register, login ---------- */
+/* Dashboard: the two lead cubbies become big soft panels; holding states are one row of count pills. */
+.sorting { gap: 18px; }
+.rack { background: none; border: 0; box-shadow: none; overflow: visible; gap: 16px; }
+.rack .cubby { transition: translate 0.25s var(--ease), background 0.25s var(--ease), box-shadow 0.25s var(--ease); }
+.rack.lead .cubby { padding: 24px 28px 20px; border-radius: var(--radius-xl); border: 1px solid var(--line-2); background: var(--surface); box-shadow: var(--panel-shadow); }
+.rack.lead .cubby:hover { background: var(--raised); translate: 0 -2px; box-shadow: var(--paper-lift); }
+.rack.lead .cubby.late { background-color: var(--bad-soft); border-color: transparent; }
+.rack:not(.lead) { display: flex; flex-wrap: wrap; gap: 10px; }
+.rack:not(.lead) .cubby {
+  display: inline-flex; align-items: center; gap: 12px; min-height: 0; padding: 8px 8px 8px 18px; border-radius: var(--radius-pill);
+  background: var(--surface); border: 1px solid var(--line-2); box-shadow: var(--panel-shadow);
+}
+.rack:not(.lead) .cubby:hover { background: var(--raised); translate: 0 -1px; }
+.rack:not(.lead) .cubby-label { max-width: none; font-size: 13px; }
+.rack:not(.lead) .cubby-count { order: 2; align-self: center; min-width: 32px; padding: 4px 11px; text-align: center; border-radius: var(--radius-pill); background: var(--surface-2); font-size: 15px; font-weight: 650; letter-spacing: 0; }
+.rack:not(.lead) .cubby.zero .cubby-count { background: transparent; }
+.rack:not(.lead) .cubby.late { background-color: var(--bad-soft); border-color: transparent; }
+.rack:not(.lead) .cubby.late .cubby-count { background: rgba(146, 58, 44, 0.12); }
+.rack:not(.lead) .cubby-foot, .rack:not(.lead) .pile { display: none; }
+.clear-line { border-radius: var(--radius-xl); border-style: solid; border-color: var(--line-2); background: var(--surface); }
+
+/* Applications register shares the documents table; the case preview adds one line for lateness. */
+.dp-late { color: var(--bad); font-weight: 650; }
+.app-table td a.mono { font-size: 13px; }
+.app-table .doc-case-sm { font-family: var(--font); }
+.application-filters { border-radius: var(--radius-xl); }
+
+/* Login: rounder cards, a softer hero. */
+.login-hero { border-right: 0; border-radius: 0 var(--radius-xl) var(--radius-xl) 0; }
+.demo-track { border-color: var(--line-2); border-radius: var(--radius-xl); box-shadow: var(--panel-shadow); padding: 22px 24px 20px; }
+.role-card { border-radius: 14px; border-color: var(--line-2); box-shadow: var(--panel-shadow); padding: 18px 20px; transition: translate 0.25s var(--ease), border-color 0.25s var(--ease), box-shadow 0.25s var(--ease); }
+.role-card:hover { translate: 0 -1px; border-color: var(--control-line); box-shadow: var(--paper-lift); }
+.role-card .ico { width: 44px; height: 44px; }
+.windows { gap: 8px; }
+.windows button { border-radius: var(--radius-pill); padding: 6px 16px; }
+@media (max-width: 860px) { .login-hero { border-radius: 0 0 var(--radius-xl) var(--radius-xl); border-bottom: 0; } }

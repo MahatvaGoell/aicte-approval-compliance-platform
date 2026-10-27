@@ -87,7 +87,7 @@ export function LoginPage() {
 
   return (
     <div className="login-page">
-      {meta.data?.demoMode && <div className="demo-banner" role="note"><span className="tag">DEMO</span><span><strong>Demonstration environment.</strong> All institutions, people and rules are synthetic. Routing and timing rules are labelled demo assumptions, not AICTE rules.{meta.data.demoClockOffsetMs !== 0 && <strong> Demo clock: {meta.data.demoClockOffsetMs > 0 ? '+' : ''}{(meta.data.demoClockOffsetMs / 86_400_000).toFixed(1)} days.</strong>}</span></div>}
+      {meta.data?.demoMode && <div className="demo-banner" role="note"><span className="tag">DEMO</span><span className="demo-long"><strong>Demonstration environment.</strong> All institutions, people and rules are synthetic. Routing and timing rules are labelled demo assumptions, not AICTE rules.{meta.data.demoClockOffsetMs !== 0 && <strong> Demo clock: {meta.data.demoClockOffsetMs > 0 ? '+' : ''}{(meta.data.demoClockOffsetMs / 86_400_000).toFixed(1)} days.</strong>}</span><span className="demo-short" aria-hidden="true">Synthetic data · demo rules, not AICTE rules</span></div>}
     <div className="login-wrap">
       <section className="login-hero">
         <div className="brand">

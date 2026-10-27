@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { api, qs } from '../api';
+import { TrailingCard, useTrailingCard } from '../hoverCard';
 import { Icon } from '../motion';
 import { useSession } from '../session';
 import { Empty, ErrorState, formatDate, humanise, Loading, Status } from '../ui';
@@ -56,41 +57,90 @@ export function ageDays(from: string | null) {
   return Math.floor((Date.now() - new Date(from).getTime()) / 86_400_000);
 }
 
+/** Hover preview content for one case: what the list returns, plus the due date read lazily from the case detail. */
+function CasePreview({ row, on, stageName, catName }: { row: ListRow | null; on: boolean; stageName: (k: string | null) => string; catName: (k: string) => string }) {
+  const detail = useQuery({
+    queryKey: ['case', row?.id],
+    queryFn: () => api.get<any>(`/applications/${row!.id}`),
+    enabled: on && !!row,
+    staleTime: 60_000,
+  });
+  if (!row) return null;
+  const live = !!row.stage_state && !['COMPLETED', 'CANCELLED'].includes(row.stage_state);
+  const age = live ? ageDays(row.stage_entered_at) : null;
+  const due = detail.data?.actionPanel?.due;
+  return (
+    <>
+      <div className="dp-top">
+        <div className="dp-sheet">
+          <div className="dp-letterhead"><span>Case file</span><span>{row.region_id}</span></div>
+          <div className="dp-lines" />
+          <div className="dp-lines short" />
+        </div>
+        <div className="dp-title">
+          <strong>{row.institution_name}</strong>
+          <span className="small muted"><span className="mono">{row.app_no}</span> · {catName(row.category_code)}</span>
+        </div>
+      </div>
+      <dl className="dp-kv">
+        <dt>Status</dt><dd><Status value={row.lifecycle_state} /></dd>
+        <dt>Stage</dt><dd>{row.stage_key ? `${stageName(row.stage_key)} · ${humanise(row.stage_state)}` : <span className="muted">No live stage</span>}</dd>
+        <dt>Owner</dt><dd>{row.assignee_name ?? <span className="muted">Unassigned</span>}</dd>
+        <dt>In stage</dt><dd className="num">{age === null ? <span className="muted">—</span> : `${age} ${age === 1 ? 'day' : 'days'}`}</dd>
+        <dt>Due</dt>
+        <dd>{due ? <>{formatDate(due.dueDate, false)}{due.overdueDays > 0 && <span className="dp-late"> · {due.overdueDays} d overdue</span>}</> : <span className="muted">{detail.isLoading ? '…' : 'Not recorded'}</span>}</dd>
+        {row.decision_outcome && <><dt>Decision</dt><dd><Status value={row.decision_outcome} /></dd></>}
+      </dl>
+      <div className="dp-open">Open case<Icon name="arrow" /></div>
+    </>
+  );
+}
+
 export function ApplicationTable({ rows, showAssignee }: { rows: ListRow[]; showAssignee: boolean }) {
   const ref = useReference();
+  const navigate = useNavigate();
+  const card = useTrailingCard<ListRow>();
   const stageName = (k: string | null) => ref.data?.activePolicy.stages.find((s) => s.key === k)?.name ?? humanise(k);
   const catName = (k: string) => ref.data?.activePolicy.categories.find((c) => c.code === k)?.name ?? humanise(k);
   return (
-    <div className="table-wrap" tabIndex={0} role="region" aria-label="Applications table">
-      <table>
-        <thead>
-          <tr>
-            <th>Application</th>
-            <th>Institution</th>
-            <th>Category</th>
-            <th>Status</th>
-            <th>Current stage</th>
-            {showAssignee && <th>Owner</th>}
-            <th className="num">Days in stage</th>
-            <th>Decision</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((r) => (
-            <tr key={r.id}>
-              <td><Link to={`/applications/${r.id}`} className="mono">{r.app_no}</Link></td>
-              <td>{r.institution_name}<div className="small muted">{r.region_id}</div></td>
-              <td>{catName(r.category_code)}</td>
-              <td><Status value={r.lifecycle_state} /></td>
-              <td>{r.stage_key ? <>{stageName(r.stage_key)} <div><Status value={r.stage_state} /></div></> : <span className="muted">—</span>}</td>
-              {showAssignee && <td>{r.assignee_name ?? <span className="muted">Unassigned</span>}</td>}
-              <td className="num">{r.stage_state && !['COMPLETED', 'CANCELLED'].includes(r.stage_state) ? <span className="age">{ageDays(r.stage_entered_at)}</span> : <span className="muted">—</span>}</td>
-              <td><Status value={r.decision_outcome} /></td>
+    <>
+      <div className="table-wrap doc-table app-table" tabIndex={0} role="region" aria-label="Applications table" {...card.wrapProps}>
+        <table>
+          <thead>
+            <tr>
+              <th>Application</th>
+              <th className="hide-sm">Institution</th>
+              <th className="hide-sm">Category</th>
+              <th>Status</th>
+              <th className="hide-sm">Current stage</th>
+              {showAssignee && <th className="hide-sm">Owner</th>}
+              <th className="num hide-sm">Days in stage</th>
+              <th className="hide-sm">Decision</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr key={r.id} tabIndex={-1} {...card.rowProps(r)} onClick={(e) => { if (!(e.target as HTMLElement).closest('a')) navigate(`/applications/${r.id}`); }}>
+                <td>
+                  <Link to={`/applications/${r.id}`} className="mono">{r.app_no}</Link>
+                  <span className="doc-case-sm">{r.institution_name}</span>
+                </td>
+                <td className="hide-sm">{r.institution_name}<div className="small muted">{r.region_id}</div></td>
+                <td className="hide-sm">{catName(r.category_code)}</td>
+                <td><Status value={r.lifecycle_state} /></td>
+                <td className="hide-sm">{r.stage_key ? <>{stageName(r.stage_key)} <div><Status value={r.stage_state} /></div></> : <span className="muted">—</span>}</td>
+                {showAssignee && <td className="hide-sm">{r.assignee_name ?? <span className="muted">Unassigned</span>}</td>}
+                <td className="num hide-sm">{r.stage_state && !['COMPLETED', 'CANCELLED'].includes(r.stage_state) ? <span className="age">{ageDays(r.stage_entered_at)}</span> : <span className="muted">—</span>}</td>
+                <td className="hide-sm"><Status value={r.decision_outcome} /></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <TrailingCard cardRef={card.cardRef} on={!!card.active}>
+        <CasePreview row={card.shown} on={!!card.active} stageName={stageName} catName={catName} />
+      </TrailingCard>
+    </>
   );
 }
 
