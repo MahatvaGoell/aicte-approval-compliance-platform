@@ -3,13 +3,15 @@ import { useState, type FormEvent } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { api } from '../api';
 import { Icon } from '../motion';
-import { Barcode, Disclosure, NamePlate, Postmark, readable, stampDate, Urgency } from '../ui';
+import { Barcode, Disclosure, NamePlate, readable } from '../ui';
 import { useCommand } from '../caseCommand';
 import { Empty, ErrorState, formatDate, humanise, Loading, MutationError, Provenance, Status } from '../ui';
 import { Amendments, AppealForm, ClassifyForm, FindingsPanel, WorkflowHistory } from './CaseM2';
 import { DeadlinesCard } from './CaseM3';
 import { EvcCaseCard } from './CaseM4';
 import { DocumentsCard,ObligationsCard } from './CaseM5';
+import { CaseSummary, RouteTimeline } from './CaseRoute';
+import { ApprovalLetterSlot, DoubleClaimsSlot } from './CaseSlots';
 
 type View = any;
 
@@ -52,10 +54,10 @@ export function CasePage() {
             {v.application.submittedAt && <span><i>Submitted</i>{formatDate(v.application.submittedAt)}</span>}
           </div>
         </div>
-        {v.workflow && <><div className="perf" aria-hidden="true" /><RouteCard v={v} /></>}
       </section>
 
       <ActionPanel panel={v.actionPanel} jump={jumpFor(allowed)} />
+      <RouteTimeline v={v} />
       <div className="grid-2 case-workspace">
         <div className="stack case-main">
           {allowed('CLASSIFY') && <ClassifyForm v={v} />}
@@ -64,6 +66,8 @@ export function CasePage() {
           {(allowed('SAVE_CHECKLIST') || allowed('RECORD_RECOMMENDATION') || allowed('COMPLETE_STAGE')) && <StageWork key={v.currentStageId} v={v} />}
           {allowed('RECORD_DECISION') && <DecisionForm v={v} />}
           {v.decision && <DecisionCard decision={v.decision} />}
+          <ApprovalLetterSlot v={v} />
+          <DoubleClaimsSlot v={v} />
           {allowed('FILE_APPEAL') && <AppealForm v={v} />}
           <EvcCaseCard v={v} />
           <Disclosure title="Documents" subtitle="Upload, exact versions and human verification" icon="document" count={v.documents.length} id="case-documents" open={window.location.hash.startsWith('#document-')}>
@@ -80,6 +84,7 @@ export function CasePage() {
           </Disclosure>
         </div>
         <aside className="stack case-context" aria-label="Case tools and details">
+          <CaseSummary v={v} />
           {allowed('ASSIGN_STAGE') && <Disclosure title="Assignment" subtitle="View owner or reassign this stage" icon="users"><AssignForm v={v} /></Disclosure>}
           <PermittedActions list={v.permittedCommands} />
           {v.recommendations.length > 0 && <Recommendations list={v.recommendations} />}
@@ -100,10 +105,8 @@ function jumpFor(allowed: (c: string) => boolean): [string, string] | null {
 }
 
 function ActionPanel({ panel, jump }: { panel: any; jump: [string, string] | null }) {
-  const due = panel.due;
-  const late = !!due && due.overdueDays > 0;
   return (
-    <section className="note" aria-labelledby="ap-title">
+    <section className="note ink-panel" aria-labelledby="ap-title">
       <div className="note-main">
         <h2 id="ap-title" className="next"><span className="sr-only">Next action: </span>{panel.nextAction}</h2>
         <div className="note-people">
@@ -112,6 +115,7 @@ function ActionPanel({ panel, jump }: { panel: any; jump: [string, string] | nul
             : <span className="muted">No one is responsible for this step right now.</span>}
           {panel.waitingSince && <span className="small muted">Waiting since {formatDate(panel.waitingSince)}</span>}
         </div>
+        {jump && <a className="btn primary note-go" href={jump[0]} onClick={(e) => { const t = document.querySelector(jump[0]); if (t) { e.preventDefault(); t.scrollIntoView({ behavior: 'smooth', block: 'start' }); } }}>{jump[1]}<Icon name="arrow" /></a>}
         <details className="action-explanation">
           <summary>Why this action?</summary>
           <dl className="kv small">
@@ -121,15 +125,6 @@ function ActionPanel({ panel, jump }: { panel: any; jump: [string, string] | nul
             <dd className="mono">{panel.ruleRef ?? '—'}</dd>
           </dl>
         </details>
-      </div>
-      <div className={`note-due ${late ? 'late hatched' : ''}`}>
-        {due ? <>
-          <Urgency due={due} />
-          <span className="due-date">{formatDate(due.dueDate, false)}</span>
-          {due.originalDueDate !== due.dueDate && <span className="due-rule">Originally {formatDate(due.originalDueDate, false)}</span>}
-          <span className="due-rule" title={due.ruleRef}>{due.label}</span>
-        </> : <span className="small muted">No clock configured for this step</span>}
-        {jump && <a className="btn primary note-go" href={jump[0]} onClick={(e) => { const t = document.querySelector(jump[0]); if (t) { e.preventDefault(); t.scrollIntoView({ behavior: 'smooth', block: 'start' }); } }}>{jump[1]}<Icon name="arrow" /></a>}
       </div>
       {panel.blockers.length > 0 && (
         <div className="blockers" role="note">
@@ -141,49 +136,6 @@ function ActionPanel({ panel, jump }: { panel: any; jump: [string, string] | nul
         <p className="human-note"><Icon name="shield" />This step needs an authorised human decision. The system does not decide it.</p>
       )}
     </section>
-  );
-}
-
-function RouteCard({ v }: { v: View }) {
-  const w = v.workflow;
-  const current = v.stages.find((s: any) => s.id === v.currentStageId);
-  return (
-    <div className="track-wrap">
-      <div className="track-head">
-        <h2 id="route-title">Route · {w.routeName ?? 'Not yet classified'}</h2>
-        <span className="small">Finished stages carry the date they were completed</span>
-      </div>
-      {w.routeProgress.length > 0 && (
-        <ol className="track" aria-labelledby="route-title">
-          {w.routeProgress.map((s: any, i: number) => {
-            const done = s.state === 'COMPLETED';
-            const live = !done && current?.stageKey === s.stageKey;
-            const record = [...v.stages].reverse().find((x: any) => x.stageKey === s.stageKey);
-            const returned = live && s.state === 'AWAITING_RESPONSE';
-            return (
-              <li key={s.position} className={`hop ${done ? 'done' : ''} ${live ? 'current' : ''} ${returned ? 'returned' : ''}`} style={{ '--i': i } as any}>
-                <div className="hop-mark">
-                  {done ? <Postmark top={s.name} date={stampDate(record?.completedAt) || 'COMPLETED'} bottom={`Stage ${s.position + 1}`} land delay={i * 110} />
-                    : live ? <span className="hop-live"><Icon name={returned ? 'inbox' : 'clock'} /></span>
-                    : <span className="hop-empty" />}
-                </div>
-                <div className="hop-text">
-                  <span className="n">Stage {s.position + 1}{s.attempts > 1 ? ` · ${s.attempts} attempts` : ''}</span>
-                  <strong>{s.name}</strong>
-                  <span className="state">{done ? `Completed${record?.completedAt ? ` ${formatDate(record.completedAt, false)}` : ''}` : live ? `${humanise(s.state)} · here now` : humanise(s.state)}</span>
-                  {done && record?.assignee?.name && <span className="ack" title="Acknowledgement of completion"><b>AD</b>Signed off by {record.assignee.name}</span>}
-                </div>
-              </li>
-            );
-          })}
-        </ol>
-      )}
-      <details className="route-explanation"><summary>Why this route?</summary><div className="small">
-        {w.classification.explanation}
-        {w.classification.ruleRef && <> <span className="mono">({w.classification.ruleRef})</span></>}
-        {w.classification.provenance && <> <Provenance value={w.classification.provenance} /></>}
-      </div></details>
-    </div>
   );
 }
 
