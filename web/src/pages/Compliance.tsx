@@ -3,7 +3,8 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api,qs } from '../api';
 import { useSession } from '../session';
-import { DocStamp,Empty,ErrorState,formatDate,humanise,Loading,Status } from '../ui';
+import { Empty,ErrorState,formatDate,Loading,Status } from '../ui';
+import { DocumentViews } from './DocumentRegister';
 
 export function CompliancePage({kind}:{kind:'documents'|'obligations'}) {
  const {can}=useSession(),[page,setPage]=useState(1),[state,setState]=useState(''),[onlyMine,setMine]=useState(false),[pending,setPending]=useState(false);
@@ -14,15 +15,7 @@ export function CompliancePage({kind}:{kind:'documents'|'obligations'}) {
     {can('EVIDENCE_VERIFY')&&<label className="row"><input type="checkbox" checked={onlyMine} onChange={e=>{setMine(e.target.checked);setPage(1);}}/>Assigned to me</label>}</>}
   </div>{query.isLoading?<Loading/>:query.error?<ErrorState error={query.error} onRetry={()=>query.refetch()}/>:<>
    <p className="small muted">{query.data.total} {query.data.total===1?'record':'records'} · refreshed {formatDate(query.data.refreshedAt)}</p>
-   {query.data.rows.length ? kind === 'documents' ? <div className="document-library">{query.data.rows.map((r:any) => <Link className={`sheet ${r.version_no>1?'stacked':''}`} key={r.id} to={`/applications/${r.application_id}#document-${r.id}`} aria-label={`${r.title}, version ${r.version_no}, ${r.app_no}`}>
-    <div className="sheet-paper">
-     <div className="sheet-letterhead"><span>{humanise(r.document_type)}</span><span>v{r.version_no}</span></div>
-     <h2>{r.title}</h2>
-     <div className="sheet-lines" aria-hidden="true"/>
-     <div className="sheet-foot"><span className="mono">{r.app_no}</span><span>{r.visibility==='INTERNAL'?'Internal only':'Institution visible'} · received {formatDate(r.received_at,false)}</span><span><Status value={r.state??r.review_state}/></span></div>
-    </div>
-    <div className="sheet-stamp"><DocStamp state={r.state??r.review_state} bottom={`Version ${r.version_no}`} size={84}/></div>
-   </Link>)}</div> : <div className="table-wrap" tabIndex={0} role="region" aria-label="Obligation register"><table><thead><tr><th>Case</th><th>Condition / verifier</th><th>State</th><th>Submission / verification due</th></tr></thead><tbody>{query.data.rows.map((r:any)=><tr key={r.id}><td><Link to={`/applications/${r.application_id}#obligation-${r.id}`}>{r.app_no}</Link></td><td>{r.condition_text}<div className="small muted">{r.verifier} · {r.institution}</div></td><td><Status value={r.state??r.review_state}/></td><td>Submission: {formatDate(r.submission_due_at)}<br/>Verification: {formatDate(r.verification_due_at)}</td></tr>)}</tbody></table></div>:<Empty>No records match your active scope and filters.</Empty>}
+   {query.data.rows.length ? kind === 'documents' ? <DocumentViews rows={query.data.rows}/> : <div className="table-wrap" tabIndex={0} role="region" aria-label="Obligation register"><table><thead><tr><th>Case</th><th>Condition / verifier</th><th>State</th><th>Submission / verification due</th></tr></thead><tbody>{query.data.rows.map((r:any)=><tr key={r.id}><td><Link to={`/applications/${r.application_id}#obligation-${r.id}`}>{r.app_no}</Link></td><td>{r.condition_text}<div className="small muted">{r.verifier} · {r.institution}</div></td><td><Status value={r.state??r.review_state}/></td><td>Submission: {formatDate(r.submission_due_at)}<br/>Verification: {formatDate(r.verification_due_at)}</td></tr>)}</tbody></table></div>:<Empty>No records match your active scope and filters.</Empty>}
    <div className="pager"><button className="secondary" disabled={page===1} onClick={()=>setPage(p=>p-1)}>Previous</button><span>Page {page}</span><button className="secondary" disabled={page*50>=query.data.total} onClick={()=>setPage(p=>p+1)}>Next</button></div>
   </>}</section>
  </>;
