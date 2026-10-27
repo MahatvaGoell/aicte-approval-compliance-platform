@@ -2,9 +2,10 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, qs } from '../api';
-import { Empty, ErrorState, formatDate, Loading, MutationError, Status } from '../ui';
+import { Empty, ErrorState, formatDate, Loading, MutationError, Postmark, Status, stampDate } from '../ui';
 
-// The signed-in user's notification centre. Reading or acknowledging never closes the case or the deadline.
+// The signed-in user's notification centre, laid out as delivery slips: a dated counterfoil, a perforation and the message.
+// Reading or acknowledging never closes the case or the deadline.
 
 const FILTERS: Array<[string, string]> = [['all', 'All'], ['unread', 'Unread'], ['escalations', 'Overdue and escalations'], ['deadlines', 'Deadlines']];
 const SEVERITY_TONE: Record<string, string> = { INFO: 'NOT_STARTED', REMINDER: 'AWAITING_RESPONSE', OVERDUE: 'OVERDUE', ESCALATION: 'REJECTED' };
@@ -14,6 +15,11 @@ const EMAIL_LABEL: Record<string, string> = {
   BOUNCED: 'Email bounced', DEAD: 'Email failed', CANCELLED: 'Email cancelled (no longer current)',
 };
 const EMAIL_TONE: Record<string, string> = { ACCEPTED: 'SATISFIED', BOUNCED: 'DEFICIENT', DEAD: 'DEFICIENT', CANCELLED: 'NOT_APPLICABLE' };
+
+/** Time printed on the slip's counterfoil, India time. */
+function slipTime(v: string) {
+  return new Date(v).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' });
+}
 
 export function useUnreadCount() {
   return useQuery({
@@ -53,30 +59,41 @@ export function NotificationsPage() {
         <div className="card"><Empty>Nothing here.</Empty></div>
       ) : (
         <ul className="notif-list" key={filter}>
-          {list.data.items.map((n: any) => (
-            <li key={n.id} className={`notif ${n.readAt ? '' : 'unread'} sev-${n.severity.toLowerCase()}`}>
-              <div className="row" style={{ justifyContent: 'space-between' }}>
-                <div className="row">
+          {list.data.items.map((n: any) => {
+            const late = ['OVERDUE', 'ESCALATION'].includes(n.severity);
+            return (
+              <li key={n.id} className={`notif ${n.readAt ? 'read' : 'unread'} sev-${n.severity.toLowerCase()}`}>
+                <div className="notif-stub">
                   <Status value={SEVERITY_TONE[n.severity]} label={SEVERITY_LABEL[n.severity]} />
-                  {!n.readAt && <span className="chip accent">New</span>}
-                  {n.acknowledgedAt && <span className="chip ok">Acknowledged</span>}
+                  <time className="notif-date" dateTime={n.createdAt}>{stampDate(n.createdAt)}<span>{slipTime(n.createdAt)}</span></time>
+                  {n.appNo && <span className="notif-no">{n.appNo}</span>}
                 </div>
-                <span className="small muted">{formatDate(n.createdAt)}</span>
-              </div>
-              <strong>{n.title}</strong>
-              <p className="small">{n.body}</p>
-              <div className="row" style={{ justifyContent: 'space-between' }}>
-                <div className="row small">
-                  {n.applicationId && <Link to={`/applications/${n.applicationId}`} onClick={() => !n.readAt && act(`/notifications/${n.id}/read`)}>Open {n.appNo}</Link>}
-                  {n.email && <Status value={EMAIL_TONE[n.email.state] ?? 'IN_PROGRESS'} label={EMAIL_LABEL[n.email.state] ?? n.email.state} />}
+                <div className="notif-body">
+                  <div className="notif-head">
+                    <strong>{n.title}</strong>
+                    {!n.readAt && <span className="chip accent">New</span>}
+                  </div>
+                  <p className="small">{n.body}</p>
+                  <div className="notif-foot">
+                    <div className="row small">
+                      {n.applicationId && <Link to={`/applications/${n.applicationId}`} onClick={() => !n.readAt && act(`/notifications/${n.id}/read`)}>Open {n.appNo}</Link>}
+                      {n.email && <Status value={EMAIL_TONE[n.email.state] ?? 'IN_PROGRESS'} label={EMAIL_LABEL[n.email.state] ?? n.email.state} />}
+                      {n.acknowledgedAt && <span className="ack"><b>AD</b>Acknowledged {formatDate(n.acknowledgedAt)}</span>}
+                    </div>
+                    <div className="row">
+                      {!n.readAt && <button onClick={() => act(`/notifications/${n.id}/read`)}>Mark read</button>}
+                      {late && !n.acknowledgedAt && <button className="primary" onClick={() => act(`/notifications/${n.id}/acknowledge`)}>Acknowledge</button>}
+                    </div>
+                  </div>
                 </div>
-                <div className="row">
-                  {!n.readAt && <button onClick={() => act(`/notifications/${n.id}/read`)}>Mark read</button>}
-                  {['OVERDUE', 'ESCALATION'].includes(n.severity) && !n.acknowledgedAt && <button className="primary" onClick={() => act(`/notifications/${n.id}/acknowledge`)}>Acknowledge</button>}
-                </div>
-              </div>
-            </li>
-          ))}
+                {n.acknowledgedAt && (
+                  <span className="notif-mark">
+                    <Postmark top="Acknowledged" date={stampDate(n.acknowledgedAt)} bottom="AD" size={64} land label={`Acknowledged ${formatDate(n.acknowledgedAt)}`} />
+                  </span>
+                )}
+              </li>
+            );
+          })}
         </ul>
       )}
     </>

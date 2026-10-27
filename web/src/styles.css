@@ -820,10 +820,58 @@ details.pw form, details.pw > .stack, details.pw > ul { margin-top: 12px; }
   background: var(--bad); color: var(--raised); font: 700 10px/18px var(--mono); text-align: center;
   box-shadow: 0 0 0 2px var(--bg); animation: pop-badge 0.45s var(--ease-stamp) both;
 }
-.notif-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
-.notif { display: grid; gap: 6px; padding: 14px 16px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface); box-shadow: var(--paper-shadow); }
-.notif.unread { background: var(--raised); border-color: var(--control-line); }
+/* Notifications are delivery slips: counterfoil stub, perforation, message. Unread slips sit raised on the counter. */
+.notif-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.notif {
+  --stub: 168px; position: relative; display: grid; grid-template-columns: var(--stub) minmax(0, 1fr) auto; align-items: stretch;
+  border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface); box-shadow: var(--paper-shadow);
+  transition: box-shadow 0.3s var(--ease), translate 0.3s var(--ease);
+}
+/* Punched notches where the perforation meets the slip edge. */
+.notif::before, .notif::after {
+  content: ""; position: absolute; left: calc(var(--stub) - 7px); width: 14px; height: 14px; border-radius: 50%;
+  background: var(--bg); box-shadow: inset 0 0 0 1px var(--line); pointer-events: none;
+}
+.notif::before { top: -8px; clip-path: inset(50% 0 0 0); }
+.notif::after { bottom: -8px; clip-path: inset(0 0 50% 0); }
+.notif.unread { background: var(--raised); border-color: var(--control-line); box-shadow: var(--paper-lift); }
+.notif.unread::before, .notif.unread::after { box-shadow: inset 0 0 0 1px var(--control-line); }
+.notif.read:hover { box-shadow: var(--paper-lift); translate: 0 -1px; }
 .notif.sev-escalation, .notif.sev-overdue { border-color: transparent; background: var(--bad-soft); }
+.notif.sev-escalation::before, .notif.sev-escalation::after, .notif.sev-overdue::before, .notif.sev-overdue::after { box-shadow: none; }
+.notif-stub {
+  display: grid; align-content: start; justify-items: start; gap: 8px; padding: 16px 18px;
+  border-right: 1.5px dashed var(--line); font-variant-numeric: tabular-nums;
+}
+.notif.unread .notif-stub { border-right-color: var(--control-line); }
+.notif.sev-escalation .notif-stub, .notif.sev-overdue .notif-stub {
+  border-right-color: color-mix(in srgb, var(--bad) 35%, transparent);
+  background-image: repeating-linear-gradient(135deg, var(--hatch) 0 7px, transparent 7px 14px);
+}
+.notif-date { display: grid; gap: 2px; font: 650 15px/1.1 var(--mono); letter-spacing: -0.02em; color: var(--ink); }
+.notif-date span { font-weight: 400; font-size: 11.5px; color: var(--muted); letter-spacing: 0; }
+.notif.sev-escalation .notif-date, .notif.sev-overdue .notif-date { color: var(--bad); }
+.notif-no { font: 400 11px/1.3 var(--mono); color: var(--ink-2); overflow-wrap: anywhere; }
+.notif-body { display: grid; gap: 6px; align-content: start; min-width: 0; padding: 16px 20px 14px; }
+.notif-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.notif-head strong { font-size: 14.5px; font-weight: 650; letter-spacing: -0.01em; }
+.notif.read .notif-head strong { color: var(--ink-2); }
+.notif.read .notif-body > p { color: var(--muted); }
+.notif-body > p { margin: 0; max-width: 72ch; }
+.notif-foot { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px 14px; margin-top: 4px; }
+.notif-foot .ack { margin-top: 0; }
+.notif-mark { display: grid; place-items: center; padding: 10px 18px 10px 0; }
+@media (max-width: 560px) {
+  .notif { grid-template-columns: minmax(0, 1fr) auto; }
+  .notif::before, .notif::after { display: none; }
+  .notif-stub { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; padding: 12px 16px; border-right: 0; border-bottom: 1.5px dashed var(--line); }
+  .notif.unread .notif-stub { border-bottom-color: var(--control-line); }
+  .notif-date { grid-auto-flow: column; align-items: baseline; gap: 8px; }
+  .notif-no { white-space: nowrap; }
+  .notif-body { padding: 14px 16px 12px; }
+  .notif-mark { padding: 8px 12px 8px 0; }
+  .notif-mark .postmark { width: 52px !important; height: 52px !important; }
+}
 .clock-face { display: grid; gap: 2px; padding: 14px 16px; border-radius: var(--radius-sm); background: var(--raised); border: 1px dashed var(--control-line); }
 .clock-face strong { font: 650 20px/1.2 var(--mono); letter-spacing: -0.03em; }
 .outbox { display: grid; grid-template-columns: minmax(0, 220px) minmax(0, 1fr); gap: 12px; }
