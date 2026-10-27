@@ -881,6 +881,45 @@ details.pw form, details.pw > .stack, details.pw > ul { margin-top: 12px; }
 .outbox-view { min-width: 0; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--raised); }
 .eml { white-space: pre-wrap; font-family: var(--mono); font-size: 12px; margin: 8px 0 0; }
 
+/* Audit log: a bound ledger. Entry numbers sit behind a double margin rule; seals show the hash chain as receipt stubs. */
+.ledger td.num { font: 650 13px/1.4 var(--mono); font-variant-numeric: tabular-nums; }
+.ledger td.num .secondary { margin-top: 8px; min-height: 30px; padding: 4px 10px; font-size: 12px; }
+.ledger th.num, .ledger td.num { width: 1%; border-right: 3px double var(--line); }
+.ledger td.mono { white-space: nowrap; font-size: 12px; }
+.ledger tbody tr:not(.ledger-detail):hover td { background: var(--raised); }
+.ledger-detail > td { background: var(--raised); border-left: 0; padding: 20px 22px 22px; }
+.chain { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0; max-width: 860px; }
+.receipt {
+  position: relative; display: grid; gap: 6px; min-width: 0; padding: 14px 18px 14px 22px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 2px;
+  font-size: 11.5px; color: var(--muted);
+}
+.receipt code { font: 400 11.5px/1.5 var(--mono); color: var(--ink-2); overflow-wrap: anywhere; }
+/* Punched holes down the torn edge of each stub. */
+.receipt::before {
+  content: ""; position: absolute; left: 6px; top: 8px; bottom: 8px; width: 6px;
+  background: radial-gradient(circle, var(--bg) 2.4px, transparent 2.8px) center top / 6px 10px repeat-y;
+}
+.receipt.this { border-left: 1.5px dashed var(--control-line); background: var(--raised); box-shadow: var(--paper-shadow); }
+.receipt.this span { color: var(--stamp); font-weight: 650; }
+.receipt.this code { color: var(--ink); }
+.receipt + .receipt { margin-left: -1px; }
+.seal { display: flex; align-items: center; gap: 18px 22px; padding: 16px 22px; border-radius: var(--radius); background: var(--raised); border: 1px solid var(--line); box-shadow: var(--paper-shadow); animation: pop-in 0.3s var(--ease) both; }
+.seal.bad { background: var(--bad-soft); border-color: transparent; color: var(--bad); }
+.seal-text { display: grid; gap: 2px; min-width: 0; }
+.seal-text p { margin: 0; }
+.seal.ok .seal-text p { color: var(--ink-2); }
+/* The register scrolls sideways on small screens; keep an opened entry pinned to the visible width. */
+@media (max-width: 860px) {
+  .ledger-detail > td > .stack { position: sticky; left: 16px; max-width: calc(100vw - 96px); }
+  .ledger-detail > td { padding: 16px; }
+}
+@media (max-width: 560px) {
+  .chain { grid-template-columns: minmax(0, 1fr); }
+  .receipt + .receipt { margin-left: 0; margin-top: -1px; border-left: 1px solid var(--line); border-top: 1.5px dashed var(--control-line); }
+  .seal { flex-direction: column; align-items: flex-start; }
+}
+
 /* ---------- keyframes ---------- */
 @keyframes rise { from { transform: translateY(105%); } to { transform: translateY(0); } }
 @keyframes pop-in { from { opacity: 0; scale: 0.98; } to { opacity: 1; scale: 1; } }

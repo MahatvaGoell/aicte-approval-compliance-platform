@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Fragment, useState, type FormEvent } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { api, qs } from '../api';
-import { Empty, ErrorState, formatDate, humanise, Loading, MutationError } from '../ui';
+import { Disclosure, Empty, ErrorState, formatDate, humanise, Loading, MutationError, Postmark, stampDate } from '../ui';
 
 interface AuditEvent {
   id:number;at:string;recorded_at:string;actor_name:string|null;actor_role:string;
@@ -23,7 +23,9 @@ function Filters({params,facets,onApply}:{params:URLSearchParams;facets:Facets;o
     onApply(next);
   }
   const choices=(values:string[],current:string|null)=>current&&!values.includes(current)?[current,...values]:values;
-  return <form className="card stack" aria-label="Audit filters" onSubmit={apply}>
+  const active=FILTERS.filter(k=>params.get(k)).length;
+  return <Disclosure title="Filter the register" subtitle={active?`${active} ${active===1?'filter':'filters'} applied`:'Case, action, actor and date'} icon="search" count={active||undefined} open={active>0}>
+  <form className="card stack" aria-label="Audit filters" onSubmit={apply}>
     <div className="form-grid">
       <label>Case number<input name="appNo" defaultValue={params.get('appNo')??''} placeholder="APP-2027-28-01001" maxLength={80}/></label>
       <label>Case ID<input name="applicationId" defaultValue={params.get('applicationId')??''} placeholder="Application UUID"/></label>
@@ -36,7 +38,8 @@ function Filters({params,facets,onApply}:{params:URLSearchParams;facets:Facets;o
     </div>
     <p className="small muted">Dates include the whole local day. Dropdowns list only actors and actions in your visible audit scope.</p>
     <div className="row"><button>Apply filters</button><button type="button" className="secondary" onClick={()=>onApply(new URLSearchParams())}>Clear filters</button></div>
-  </form>;
+  </form>
+  </Disclosure>;
 }
 
 function Detail({id}:{id:number}) {
@@ -48,7 +51,12 @@ function Detail({id}:{id:number}) {
     <h3>Event #{event.id} details</h3>
     <p className="small">{humanise(event.visibility)} · entity {event.entity_type}: {event.entity_id}</p>
     <div className="form-grid"><div><h4>Before state</h4><pre className="small pre">{JSON.stringify(event.before_state,null,2)}</pre></div><div><h4>After state</h4><pre className="small pre">{JSON.stringify(event.after_state,null,2)}</pre></div></div>
-    <dl className="kv small"><dt>Correlation ID</dt><dd className="mono">{event.correlation_id}</dd><dt>Recorded</dt><dd>{formatDate(event.recorded_at)}</dd><dt>Hash</dt><dd className="mono">{event.hash}</dd><dt>Previous hash</dt><dd className="mono">{event.prev_hash}</dd></dl>
+    <div className="chain" aria-label="Hash chain for this entry">
+      <div className="receipt"><span>Carried from the previous entry</span><code>{event.prev_hash}</code></div>
+      <div className="receipt this"><span>Entry #{event.id} seal</span><code>{event.hash}</code></div>
+    </div>
+    <p className="small muted">This entry's seal is computed from its own fields and the previous entry's seal, so editing any earlier entry breaks every seal after it.</p>
+    <dl className="kv small"><dt>Correlation ID</dt><dd className="mono">{event.correlation_id}</dd><dt>Recorded</dt><dd>{formatDate(event.recorded_at)}</dd></dl>
   </div>;
 }
 
@@ -56,10 +64,10 @@ function EventRow({event:e}:{event:AuditEvent}) {
   const [expanded,setExpanded]=useState(false);
   return <Fragment><tr>
     <td className="num">{e.id}<div><button className="secondary" aria-expanded={expanded} aria-controls={`audit-detail-${e.id}`} aria-label={`${expanded?'Hide':'Show'} event ${e.id} details`} onClick={()=>setExpanded(v=>!v)}>{expanded?'Hide':'Details'}</button></div></td>
-    <td className="small">{formatDate(e.at)}</td><td className="small">{e.actor_name??'System'}<div className="muted">{humanise(e.actor_role)}</div></td>
+    <td className="small mono">{formatDate(e.at)}</td><td className="small">{e.actor_name??'System'}<div className="muted">{humanise(e.actor_role)}</div></td>
     <td>{humanise(e.action)}<div className="small muted">{e.entity_type}</div></td><td>{e.app_no?<Link className="mono" to={`/applications/${e.application_id}`}>{e.app_no}</Link>:'System-level event'}</td>
     <td className="small">{e.reason??'—'}</td><td className="small mono">{e.rule_ref??'—'}</td>
-  </tr>{expanded&&<tr id={`audit-detail-${e.id}`}><td colSpan={7}><Detail id={e.id}/></td></tr>}</Fragment>;
+  </tr>{expanded&&<tr id={`audit-detail-${e.id}`} className="ledger-detail"><td colSpan={7}><Detail id={e.id}/></td></tr>}</Fragment>;
 }
 
 export function AuditPage() {
@@ -74,15 +82,20 @@ export function AuditPage() {
     <div className="section-head"><h1>Audit log</h1><button onClick={verify} disabled={busy}>{busy?'Checking…':'Verify integrity'}</button></div>
     <p className="small muted">The application cannot change or delete audit rows. Hash-chain verification makes tampering detectable; it does not make the log impossible to alter. Integrity checks cover the global chain, even when your event list is scoped.</p>
     <MutationError error={error}/>
-    {result&&<div className={`alert ${result.ok?'ok':'bad'}`} role="status">
-      <strong>{result.ok?'Global chain intact.':`Global chain integrity problem${result.firstBrokenId!=null?` at event #${result.firstBrokenId}`:''}: ${result.problem??'Verification failed'}.`}</strong>
-      {result.checked!==undefined&&<p>{result.checked} events checked.</p>}<p>Verified {formatDate(result.verifiedAt)}.</p><p className="small">{result.limits}</p>
+    {result&&<div className={`seal ${result.ok?'ok':'bad'}`} role="status">
+      {result.ok
+        ?<Postmark top="Chain intact" date={stampDate(result.verifiedAt)} bottom={result.checked!==undefined?`${result.checked} entries`:'Audit register'} size={84} land label={`Chain intact, verified ${formatDate(result.verifiedAt)}`}/>
+        :<span className="rubber bad">Chain broken</span>}
+      <div className="seal-text">
+        <strong>{result.ok?'Global chain intact.':`Global chain integrity problem${result.firstBrokenId!=null?` at event #${result.firstBrokenId}`:''}: ${result.problem??'Verification failed'}.`}</strong>
+        {result.checked!==undefined&&<p>{result.checked} events checked.</p>}<p>Verified {formatDate(result.verifiedAt)}.</p><p className="small">{result.limits}</p>
+      </div>
     </div>}
     <Filters key={params.toString()} params={params} facets={data?.facets??EMPTY_FACETS} onApply={setParams}/>
     {list.isLoading?<div className="card"><Loading rows={5}/></div>:list.error&&!data?<ErrorState error={list.error} onRetry={()=>list.refetch()}/>:data&&<section className="card stack">
       {list.isError&&<div className="alert warn" role="alert">The last refresh failed; these events may be out of date. <button onClick={()=>list.refetch()}>Retry now</button></div>}
       <p className="small muted" aria-live="polite">{data.total} {data.total===1?'event':'events'} in your scope matching these filters · refreshed {formatDate(data.refreshedAt)} · polls every 30 s{list.isFetching?' · refreshing…':''}</p>
-      {!data.rows.length?<Empty>No events match these filters in your active scope.</Empty>:<div className="table-wrap"><table><thead><tr><th className="num">#</th><th>Time (Asia/Kolkata)</th><th>Actor</th><th>Action</th><th>Case</th><th>Reason</th><th>Rule</th></tr></thead><tbody>{data.rows.map(event=><EventRow key={event.id} event={event}/>)}</tbody></table></div>}
+      {!data.rows.length?<Empty>No events match these filters in your active scope.</Empty>:<div className="table-wrap ledger"><table><thead><tr><th className="num">Entry</th><th>Time (Asia/Kolkata)</th><th>Actor</th><th>Action</th><th>Case</th><th>Reason</th><th>Rule</th></tr></thead><tbody>{data.rows.map(event=><EventRow key={event.id} event={event}/>)}</tbody></table></div>}
       <div className="row"><button className="secondary" disabled={data.page<=1||list.isFetching} onClick={()=>goPage(data.page-1)}>Previous</button><span>Page {data.page} of {pages}</span><button className="secondary" disabled={data.page>=pages||list.isFetching} onClick={()=>goPage(data.page+1)}>Next</button></div>
     </section>}
   </>;
