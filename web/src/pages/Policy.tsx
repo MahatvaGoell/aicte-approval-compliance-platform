@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api, qs } from '../api';
 import { useSession } from '../session';
-import { Empty, ErrorState, formatDate, humanise, Loading, MutationError, Provenance, Status } from '../ui';
+import { Empty, ErrorState, formatDate, humanise, Loading, MutationError, Postmark, Provenance, Status, stampDate } from '../ui';
 
 // Policy change control: version list, structured view, JSON editor with live validation, diff and publish.
 
@@ -44,7 +44,7 @@ export function PolicyListPage() {
             <tbody>
               {versions.data!.map((v) => (
                 <tr key={v.id}>
-                  <td><Link to={`/policy/${v.id}`}>v{v.version_no}</Link><div className="small muted">{v.label}</div></td>
+                  <td><Link className="policy-no" to={`/policy/${v.id}`}>v{v.version_no}</Link><div className="small muted">{v.label}</div></td>
                   <td><Status value={VERSION_TONE[v.status]} label={humanise(v.status)} /></td>
                   <td>{formatDate(v.effective_from, false)}</td>
                   <td className="num">{v.case_count}</td>
@@ -99,7 +99,8 @@ export function PolicyVersionPage() {
 
   return (
     <>
-      <header className="stack" style={{ gap: 6 }}>
+      <header className="policy-head">
+        <div className="stack" style={{ gap: 6 }}>
         <div className="row">
           <h1>Policy v{v.versionNo}</h1>
           <Status value={VERSION_TONE[v.status]} label={humanise(v.status)} />
@@ -107,6 +108,10 @@ export function PolicyVersionPage() {
         </div>
         <p className="muted">{v.label} · created {formatDate(v.createdAt)}{v.createdBy ? ` by ${v.createdBy}` : ''}{v.publishedAt && <> · published {formatDate(v.publishedAt)} by {v.publishedBy}, effective {formatDate(v.effectiveFrom, false)}</>}</p>
         {v.changeNote && <p className="small"><strong>Change note:</strong> {v.changeNote}</p>}
+        </div>
+        {v.status === 'PUBLISHED' && v.publishedAt
+          ? <Postmark top="Policy in force" date={stampDate(v.effectiveFrom ?? v.publishedAt)} bottom={`Version ${v.versionNo}`} size={92} land label={`Published, effective ${formatDate(v.effectiveFrom ?? v.publishedAt, false)}`} />
+          : v.status === 'DRAFT' ? <span className="rubber pending">Draft · not in force</span> : null}
       </header>
       <div className="tabs" role="tablist">
         {tabs.map(([k, label]) => <button key={k} role="tab" aria-selected={tab === k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{label}</button>)}
@@ -253,8 +258,13 @@ function Compare({ v }: { v: any }) {
     queryKey: ['policy-diff', base, v.id], enabled: !!base,
     queryFn: () => api.get<any>(`/policy/diff${qs({ from: base, to: v.id })}`),
   });
+  const baseVersion = others.find((o) => o.id === base);
   return (
-    <section className="card stack">
+    <section className="amend stack">
+      <div className="amend-letterhead">
+        <span>Amendment slip</span>
+        <span>{baseVersion ? `v${baseVersion.version_no} amended to v${v.versionNo}` : `Policy v${v.versionNo}`}</span>
+      </div>
       <div className="section-head" style={{ marginBottom: 0 }}>
         <h2>Changes</h2>
         <label className="row" style={{ fontWeight: 400 }}>Compared with
@@ -264,16 +274,17 @@ function Compare({ v }: { v: any }) {
         </label>
       </div>
       {!base ? <Empty>No other version to compare with.</Empty> : diff.isLoading ? <Loading /> : diff.error ? <ErrorState error={diff.error} /> : diff.data.changes.length === 0 ? <Empty>No differences.</Empty> : (
-        <ul className="diff">
+        <ul className="diff amend-lines">
           {diff.data.changes.map((c: any, i: number) => (
             <li key={i} className={c.change}>
-              <span className="chip neutral">{humanise(c.section)}</span>
+              <span className="amend-section">{humanise(c.section)}</span>
               <span className={`diff-tag ${c.change}`}>{c.change}</span>
-              <span>{c.summary}</span>
+              <span className={`amend-text ${c.change}`}>{c.summary}</span>
             </li>
           ))}
         </ul>
       )}
+      <p className="small muted amend-foot">{v.status === 'DRAFT' ? 'Not in force until a policy approver publishes it. Running cases stay on the version they started with.' : 'Cases already running keep the version they started with.'}</p>
     </section>
   );
 }

@@ -920,6 +920,32 @@ details.pw form, details.pw > .stack, details.pw > ul { margin-top: 12px; }
   .seal { flex-direction: column; align-items: flex-start; }
 }
 
+/* Policy: versions are numbered slips; a published version carries a postmark, a draft a dashed rubber stamp. */
+.policy-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 18px; }
+.policy-head > .postmark, .policy-head > .rubber { flex: none; margin-top: 4px; }
+.table-wrap td a.policy-no { font: 650 18px/1.2 var(--mono); letter-spacing: -0.03em; }
+/* Amendment slip: struck lines leave, underlined lines arrive, dashed underline marks a changed value. */
+.amend { position: relative; padding: 22px 26px 18px; background: var(--raised); border: 1px solid var(--line); border-radius: 2px; box-shadow: var(--paper-shadow); }
+.amend::after {
+  content: ""; position: absolute; top: 0; right: 0; width: 22px; height: 22px;
+  background: linear-gradient(225deg, var(--bg) 50%, var(--surface-2) 50%); border-bottom-left-radius: 3px;
+}
+.amend-letterhead { display: flex; justify-content: space-between; gap: 8px 16px; flex-wrap: wrap; padding: 0 22px 10px 0; border-bottom: 1.5px solid var(--ink); font: 600 10px/1.3 var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-2); }
+.amend-lines { gap: 0; }
+.amend-lines li { display: grid; grid-template-columns: minmax(110px, 160px) 82px minmax(0, 1fr); gap: 4px 14px; align-items: baseline; padding: 11px 0; border: 0; border-radius: 0; background: transparent; border-bottom: 1px dashed var(--line); }
+.amend-lines li:last-child { border-bottom: 0; }
+.amend-section { font-size: 12px; color: var(--muted); }
+.amend-lines .diff-tag.removed { color: var(--ink-2); }
+.amend-text.removed { text-decoration: line-through; text-decoration-thickness: 1.5px; color: var(--muted); }
+.amend-text.added { background: linear-gradient(transparent 62%, var(--stamp-soft) 62%); box-shadow: 0 1.5px 0 var(--ink); width: fit-content; max-width: 100%; }
+.amend-text.changed { text-decoration: underline dashed var(--stamp); text-decoration-thickness: 1.5px; text-underline-offset: 4px; }
+.amend-foot { margin: 0; padding-top: 10px; border-top: 1.5px solid var(--ink); }
+@media (max-width: 560px) {
+  .policy-head { flex-direction: column-reverse; align-items: flex-start; }
+  .amend { padding: 18px 16px 14px; }
+  .amend-lines li { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+}
+
 /* ---------- keyframes ---------- */
 @keyframes rise { from { transform: translateY(105%); } to { transform: translateY(0); } }
 @keyframes pop-in { from { opacity: 0; scale: 0.98; } to { opacity: 1; scale: 1; } }
