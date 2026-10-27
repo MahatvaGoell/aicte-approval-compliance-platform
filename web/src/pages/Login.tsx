@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../api';
 import { Icon, ThemeToggle } from '../motion';
 import { useMeta } from '../session';
-import { MutationError } from '../ui';
+import { Loading, MutationError, ErrorState } from '../ui';
 
 // Demo accounts grouped by the kind of user, so a presenter can pick a role at a glance.
 const GROUPS: { title: string; icon: string; match: (handle: string) => boolean }[] = [
@@ -24,6 +24,7 @@ export function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<unknown>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [activeGroup, setActiveGroup] = useState(0);
 
   async function demoSignIn(demoEmail: string) {
     setBusy(demoEmail);
@@ -66,7 +67,6 @@ export function LoginPage() {
     });
     return { ...g, list };
   }).filter((g) => g.list.length > 0);
-  let i = 0;
 
   const form = (
     <form className="stack" onSubmit={submit} aria-labelledby="signin-title">
@@ -83,10 +83,12 @@ export function LoginPage() {
   );
 
   return (
+    <div className="login-page">
+      {meta.data?.demoMode && <div className="demo-banner" role="note"><span className="tag">DEMO</span><span><strong>Demonstration environment.</strong> All institutions, people and rules are synthetic. Routing and timing rules are labelled demo assumptions, not AICTE rules.{meta.data.demoClockOffsetMs !== 0 && <strong> Demo clock: {meta.data.demoClockOffsetMs > 0 ? '+' : ''}{(meta.data.demoClockOffsetMs / 86_400_000).toFixed(1)} days.</strong>}</span></div>}
     <div className="login-wrap">
       <section className="login-hero">
         <div className="brand">
-          <span className="brand-mark">Ai</span>
+          <span className="brand-mark"><Icon name="shield" /></span>
           <span className="brand-name">
             {meta.data?.brandName ?? 'AICTE Approval & Compliance Platform'}
             <small>Prototype · SIH 2026 · PS 26262</small>
@@ -106,22 +108,27 @@ export function LoginPage() {
             <span><i>01</i>Route</span><span><i>02</i>Clock</span><span><i>03</i>Escalate</span><span><i>04</i>Watch</span><span><i>05</i>Prove</span>
           </div>
         </div>
-        <p className="small muted">Not an official AICTE system. All institutions, people and documents are synthetic.</p>
+        <div className="login-trust"><Icon name="shield" /><p className="small muted">Not an official AICTE system. All institutions, people and documents are synthetic.</p></div>
       </section>
 
       <section className="login-panel" aria-labelledby="signin-title">
         <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div className="stack" style={{ gap: 6 }}>
-            <h2 id="signin-title" style={{ fontSize: 26, letterSpacing: '-0.035em' }}>{groups.length ? 'Choose who you are' : 'Sign in'}</h2>
-            <p className="muted">{groups.length ? 'Synthetic demo users. Click a role to enter the platform as that person.' : 'Use your account email and password.'}</p>
+            <h2 id="signin-title" style={{ fontSize: 28, letterSpacing: '-0.035em' }}>{groups.length ? 'Welcome to your workspace' : 'Sign in'}</h2>
+            <p className="muted">{groups.length ? 'Choose a workspace, then a demo account to continue.' : 'Use your account email and password.'}</p>
           </div>
           <ThemeToggle />
         </div>
         <MutationError error={error} />
-        {groups.length > 0 ? (
+        {meta.isLoading ? <Loading rows={4} /> : meta.error ? <ErrorState error={meta.error} onRetry={() => meta.refetch()} /> : groups.length > 0 ? (
           <>
+            <label className="workspace-picker">Workspace
+              <select value={activeGroup} onChange={(e) => setActiveGroup(Number(e.target.value))}>
+                {groups.map((g, index) => <option key={g.title} value={index}>{g.title}</option>)}
+              </select>
+            </label>
             <div className="account-list">
-              {groups.map((g) => (
+              {groups.filter((_, index) => index === activeGroup).map((g) => (
                 <div className="role-group" key={g.title}>
                   <h3>{g.title}</h3>
                   <div className="role-grid">
@@ -132,7 +139,6 @@ export function LoginPage() {
                           key={a.email}
                           type="button"
                           className={`role-card ${busy === a.email ? 'busy' : ''}`}
-                          style={{ ['--i' as string]: i++ }}
                           disabled={busy !== null}
                           onClick={() => demoSignIn(a.email)}
                         >
@@ -141,6 +147,7 @@ export function LoginPage() {
                             <b>{a.label}</b>
                             <span>{busy === a.email ? 'Signing in…' : handle}</span>
                           </span>
+                          <Icon name="arrow" />
                         </button>
                       );
                     })}
@@ -155,6 +162,7 @@ export function LoginPage() {
           </>
         ) : form}
       </section>
+    </div>
     </div>
   );
 }

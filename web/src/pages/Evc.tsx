@@ -2,16 +2,17 @@ import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, qs } from '../api';
+import { Icon } from '../motion';
 import { useMeta, useSession } from '../session';
-import { Empty, ErrorState, formatDate, Loading, Provenance, Status } from '../ui';
+import { Disclosure, Empty, ErrorState, formatDate, Loading, Provenance, Status } from '../ui';
 
 export function EvcPage() {
   const { can } = useSession();
   const [state, setState] = useState(''), [region, setRegion] = useState(''), [page, setPage] = useState(1);
   const queue = useQuery({ queryKey: ['evc','queue', state, region, page], queryFn: () => api.get<any>(`/evc/queue${qs({ state, region, page })}`), refetchInterval: 30_000 });
   return <>
-    <header className="stack"><h1>Expert visits</h1><p className="muted">Ready cases, confirmed reservations and report review. Queue refreshes every 30 seconds.</p></header>
-    <section className="card stack">
+    <header className="evc-welcome"><div className="stack"><h1>Expert visits</h1><p className="muted">Ready cases, confirmed reservations and report review. Queue refreshes every 30 seconds.</p><p className="evc-process small">Plan <span>→</span> Confirm <span>→</span> Visit <span>→</span> Review</p></div><Icon name="calendar" /></header>
+    <section className="card stack evc-queue">
       <h2>Readiness queue</h2>
       <div className="form-grid">
         <label>Visit state<select value={state} onChange={(e) => { setState(e.target.value); setPage(1); }}><option value="">All states</option>{['WAITING','PROPOSED','CONFIRMED','HELD','REPORT_SUBMITTED','REPORT_ACCEPTED'].map((s) => <option key={s}>{s}</option>)}</select></label>
@@ -28,7 +29,7 @@ export function EvcPage() {
       </>}
     </section>
     <VisitCalendar />
-    {can('EVC_SCHEDULE') && <ExpertDirectory />}
+    {can('EVC_SCHEDULE') && <Disclosure title="Expert directory" subtitle="Eligibility, specialisms and availability" icon="users"><ExpertDirectory /></Disclosure>}
   </>;
 }
 function VisitCalendar() {
@@ -55,7 +56,7 @@ function VisitCalendar() {
 function ExpertDirectory() {
   const query = useQuery({ queryKey: ['evc','experts'], queryFn: () => api.get<any>('/evc/experts') });
   return <section className="card stack"><h2>Expert directory</h2><p className="small muted">Synthetic directory. Missing information blocks selection. Conflict and availability checks are repeated for each proposed slot.</p>
-    {query.isLoading ? <Loading /> : query.error ? <ErrorState error={query.error} onRetry={() => query.refetch()} /> : <div className="table-wrap"><table><thead><tr><th>Expert / specialisms</th><th>Home region</th><th>Eligibility / capacity</th><th>Directory / availability</th></tr></thead><tbody>{query.data.rows.map((e: any) => <tr key={e.user_id}>
+    {query.isLoading ? <Loading /> : query.error ? <ErrorState error={query.error} onRetry={() => query.refetch()} /> : !query.data.rows.length ? <Empty>No experts in the directory for this scope.</Empty> : <div className="table-wrap"><table><thead><tr><th>Expert / specialisms</th><th>Home region</th><th>Eligibility / capacity</th><th>Directory / availability</th></tr></thead><tbody>{query.data.rows.map((e: any) => <tr key={e.user_id}>
       <td>{e.name}<div className="small">{e.specialisms.join(', ')}</div><Provenance value={e.provenance} /></td><td>{e.home_region_id ?? 'Information unavailable'}</td><td>{e.eligible ? 'Eligible' : 'Not eligible'} · max {e.max_visits_per_month}/month</td>
       <td>{e.directory_complete ? 'Directory complete' : 'Information unavailable'}{e.availability?.map((a: any, i: number) => <div className="small muted" key={i}>{formatDate(a.from, false)} — {formatDate(a.to, false)}</div>)}</td>
     </tr>)}</tbody></table></div>}

@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { api, ApiError } from '../api';
+import { Icon } from '../motion';
 import { ErrorState, Loading, MutationError, Provenance } from '../ui';
 import { useReference } from './Applications';
 
@@ -115,14 +116,15 @@ export function ApplicationFormPage() {
   }
 
   return (
-    <form className="stack" onSubmit={(e) => { e.preventDefault(); onSave(); }}>
+    <form className="stack application-editor" onSubmit={(e) => { e.preventDefault(); onSave(); }}>
       <div className="section-head">
         <h1>{id ? `Edit draft ${existing.data?.application.appNo ?? ''}` : 'New application'}</h1>
-        <span className="small muted">Demonstration form (demo-form-v1)</span>
+        <span className="small muted">Demonstration form · save a draft at any time</span>
       </div>
-
-      <section className="card stack">
-        <h2>Approval sought</h2>
+      <div className="editor-layout">
+      <div className="stack editor-fields">
+      <section className="card stack" id="form-approval">
+        <h2><span className="section-number">1</span>Approval sought</h2>
         <div className="form-grid">
           <label>Academic cycle
             <select id="cycle" value={form.cycleCode} disabled={!!id} onChange={(e) => upd({ cycleCode: e.target.value })}>
@@ -151,8 +153,8 @@ export function ApplicationFormPage() {
         )}
       </section>
 
-      <section className="card stack">
-        <h2>Campus</h2>
+      <section className="card stack" id="form-campus">
+        <h2><span className="section-number">2</span>Campus</h2>
         <div className="form-grid">
           <label>Campus address
             <input id="campus" value={form.campusAddress} onChange={(e) => upd({ campusAddress: e.target.value })} />
@@ -165,13 +167,13 @@ export function ApplicationFormPage() {
         </div>
       </section>
 
-      <section className="card stack">
+      <section className="card stack" id="form-programmes">
         <div className="section-head" style={{ marginBottom: 0 }}>
-          <h2>Programmes</h2>
+          <h2><span className="section-number">3</span>Programmes</h2>
           <button type="button" onClick={() => upd({ programmes: [...form.programmes, { name: '', level: 'UG', intake: 60 }] })}>Add programme</button>
         </div>
         {form.programmes.map((p, i) => (
-          <div className="form-grid" key={i}>
+          <div className="form-grid programme-row" key={i}>
             <label>Programme name<input id={`prog-${i}-name`} value={p.name} onChange={(e) => upd({ programmes: form.programmes.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)) })} /></label>
             <label>Level
               <select id={`prog-${i}-level`} value={p.level} onChange={(e) => upd({ programmes: form.programmes.map((x, j) => (j === i ? { ...x, level: e.target.value as Programme['level'] } : x)) })}>
@@ -187,7 +189,8 @@ export function ApplicationFormPage() {
         {fieldError('programmes') && <span className="field-error">{fieldError('programmes')}</span>}
       </section>
 
-      <section className="card stack">
+      <section className="card stack" id="form-declaration">
+        <h2><span className="section-number">4</span>Declaration</h2>
         <label>Remarks (optional)<textarea id="remarks" value={form.remarks} onChange={(e) => upd({ remarks: e.target.value })} /></label>
         <label className="row" style={{ fontWeight: 400 }}>
           <input id="declaration" type="checkbox" checked={form.declarationAccepted} onChange={(e) => upd({ declarationAccepted: e.target.checked })} />
@@ -195,9 +198,25 @@ export function ApplicationFormPage() {
         </label>
         {fieldError('declarationAccepted') && <span className="field-error">{fieldError('declarationAccepted')}</span>}
       </section>
-
+      </div>
+      <aside className="editor-guide">
+        <div className="stack">
+          <Icon name="document" /><h2>Your draft, at a glance</h2>
+          <p className="small muted">These fields have been entered. Submission checks still apply when you submit.</p>
+          <ul className="draft-checklist">
+            {[
+              { label: 'Approval sought', target: 'approval', entered: !!form.categoryCode },
+              { label: 'Campus', target: 'campus', entered: !!form.campusAddress.trim() && !!form.landAreaAcres },
+              { label: 'Programmes', target: 'programmes', entered: form.programmes.some((p) => !!p.name.trim()) },
+              { label: 'Declaration', target: 'declaration', entered: form.declarationAccepted },
+            ].map((item) => <li key={item.target}><a href={`#form-${item.target}`}><span className={`draft-check ${item.entered ? 'entered' : ''}`}>{item.entered ? <Icon name="check" /> : null}</span><span>{item.label}<small>{item.entered ? 'Entered' : 'Not entered'}</small></span></a></li>)}
+          </ul>
+          <p className="small muted">Submission freezes the application. You can save your draft before that.</p>
+        </div>
+      </aside>
+      </div>
       <MutationError error={error} />
-      <div className="row">
+      <div className="row editor-footer">
         <button type="submit" disabled={!!busy || !form.categoryCode}>{busy === 'save' ? 'Saving…' : 'Save draft'}</button>
         <button type="button" className="primary" disabled={!!busy || !form.categoryCode} onClick={onSubmit}>{busy === 'submit' ? 'Submitting…' : 'Save and submit'}</button>
         <span className="small muted">Once submitted, the application is frozen and its route is chosen by the policy in effect.</span>

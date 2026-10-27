@@ -1,6 +1,7 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { Link, useSearchParams } from 'react-router-dom';
 import { api, qs } from '../api';
+import { Icon } from '../motion';
 import { useSession } from '../session';
 import { Empty, ErrorState, formatDate, humanise, Loading } from '../ui';
 import { FilterBar, filtersFromParams, useCatalogue, useStageName } from './Reports';
@@ -64,7 +65,10 @@ export function DashboardPage() {
         )}
       </div>
 
-      <FilterBar report={undefined} params={params} setParams={setParams} hideKeys={['stageKey']} />
+      <details className="dashboard-filters" open={Object.values(filters).some(Boolean)}>
+        <summary><Icon name="sliders" /><strong>Filter dashboard</strong><span className="small muted">Region, category and reporting period</span><Icon name="chevron" /></summary>
+        <FilterBar report={undefined} params={params} setParams={setParams} hideKeys={['stageKey']} />
+      </details>
 
       {dash.isLoading ? <div className="card"><Loading rows={4} /></div>
         : dash.isError && !dash.data ? <ErrorState error={dash.error} onRetry={() => dash.refetch()} />
@@ -82,13 +86,13 @@ export function DashboardPage() {
             )}
 
             {dash.data.tiles.length === 0 ? <div className="card"><Empty>No figures are available for these filters.</Empty></div> : (
-              <div className="stats" aria-label="Key figures">
+              <div className="stats dashboard-tiles" aria-label="Key figures">
                 {dash.data.tiles.map((t: any) => (
                   <Link key={t.key} to={drill(t.report, t.filters)} className={`stat ${t.count > 0 ? TONE[t.key] ?? '' : ''}`} style={{ textDecoration: 'none', color: 'inherit' }}
                     title={defs.get(t.key)?.denominator}>
                     <span className="stat-label">{t.label}</span>
                     <span className="stat-value num">{t.count}</span>
-                    <span className="small muted">{t.count === 0 ? 'None right now' : 'Open the list →'}</span>
+                    <span className="stat-footer small muted">{t.count === 0 ? 'None right now' : 'View records'}<Icon name="arrow" /></span>
                   </Link>
                 ))}
               </div>

@@ -2,6 +2,8 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, type FormEvent } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { api } from '../api';
+import { Icon } from '../motion';
+import { Disclosure } from '../ui';
 import { useCommand } from '../caseCommand';
 import { Empty, ErrorState, formatDate, humanise, Loading, MutationError, Provenance, Status } from '../ui';
 import { Amendments, AppealForm, ClassifyForm, FindingsPanel, WorkflowHistory } from './CaseM2';
@@ -25,7 +27,8 @@ export function CasePage() {
 
   return (
     <>
-      <header className="stack" style={{ gap: 6 }}>
+      <header className="stack case-header" style={{ gap: 10 }}>
+        <Link className="back-link" to="/applications">← Applications</Link>
         <div className="row">
           <h1 className="mono">{v.application.appNo}</h1>
           <Status value={v.application.lifecycleState} label={v.application.lifecycleLabel} />
@@ -40,31 +43,37 @@ export function CasePage() {
         </p>
       </header>
 
-      <div className="grid-2">
-        <div className="stack">
-          <ActionPanel panel={v.actionPanel} />
+      <ActionPanel panel={v.actionPanel} />
+      {v.workflow && <RouteCard v={v} />}
+      <div className="grid-2 case-workspace">
+        <div className="stack case-main">
           {allowed('CLASSIFY') && <ClassifyForm v={v} />}
-          {v.workflow && <RouteCard v={v} />}
           <FindingsPanel v={v} />
-          <DeadlinesCard v={v} />
-          <EvcCaseCard v={v} />
-          <DocumentsCard v={v}/>
-          <ObligationsCard v={v}/>
           {v.canEditDraft && <DraftActions v={v} />}
           {(allowed('SAVE_CHECKLIST') || allowed('RECORD_RECOMMENDATION') || allowed('COMPLETE_STAGE')) && <StageWork key={v.currentStageId} v={v} />}
           {allowed('RECORD_DECISION') && <DecisionForm v={v} />}
           {v.decision && <DecisionCard decision={v.decision} />}
           {allowed('FILE_APPEAL') && <AppealForm v={v} />}
-          <WorkflowHistory v={v} />
-          <StageHistory v={v} />
-          <Timeline id={v.application.id} />
+          <EvcCaseCard v={v} />
+          <Disclosure title="Documents" subtitle="Upload, exact versions and human verification" icon="document" count={v.documents.length} id="case-documents" open={window.location.hash.startsWith('#document-')}>
+            <DocumentsCard v={v}/>
+          </Disclosure>
+          <Disclosure title="Obligations" subtitle="Conditions, evidence receipts and closure" icon="layers" count={v.obligations.length} id="case-obligations" open={window.location.hash.startsWith('#obligation-')}>
+            <ObligationsCard v={v}/>
+          </Disclosure>
+          {v.deadlines?.length > 0 && <Disclosure title="Deadline details" subtitle="Rules, calculations, reminders and extensions" icon="clock"><DeadlinesCard v={v} /></Disclosure>}
+          <Disclosure title="Case history" subtitle="Stage attempts and the complete event record" icon="inbox">
+            <WorkflowHistory v={v} />
+            <StageHistory v={v} />
+            <Timeline id={v.application.id} />
+          </Disclosure>
         </div>
-        <div className="stack">
-          {allowed('ASSIGN_STAGE') && <AssignForm v={v} />}
+        <aside className="stack case-context" aria-label="Case tools and details">
+          {allowed('ASSIGN_STAGE') && <Disclosure title="Assignment" subtitle="View owner or reassign this stage" icon="users"><AssignForm v={v} /></Disclosure>}
           <PermittedActions list={v.permittedCommands} />
           {v.recommendations.length > 0 && <Recommendations list={v.recommendations} />}
-          <Submission v={v} />
-        </div>
+          <Disclosure title="Application details" subtitle="Submitted data and snapshot record" icon="building"><Submission v={v} /></Disclosure>
+        </aside>
       </div>
     </>
   );
@@ -73,20 +82,25 @@ export function CasePage() {
 function ActionPanel({ panel }: { panel: any }) {
   return (
     <section className={`card action-panel ${panel.requiresHumanDecision ? 'human' : ''}`} aria-labelledby="ap-title">
-      <h2 id="ap-title" className="small muted" style={{ marginBottom: 4 }}>Next action</h2>
+      <h2 id="ap-title" className="small muted" style={{ marginBottom: 4 }}><Icon name="arrow" />Next action</h2>
       <p className="next">{panel.nextAction}</p>
       <dl className="kv" style={{ marginTop: 10 }}>
         <dt>Responsible</dt>
         <dd>{panel.responsible ? <>{panel.responsible.role}{panel.responsible.person && <> · {panel.responsible.person}</>}</> : '—'}</dd>
         <dt>Due</dt>
         <dd><DueLine due={panel.due} /></dd>
+      </dl>
+      <details className="action-explanation">
+        <summary>Why this action?</summary>
+        <dl className="kv small">
         <dt>Waiting since</dt>
         <dd>{formatDate(panel.waitingSince)}</dd>
         <dt>Why pending</dt>
         <dd>{panel.reasonPending ?? '—'}</dd>
         <dt>Rule</dt>
         <dd className="mono">{panel.ruleRef ?? '—'}</dd>
-      </dl>
+        </dl>
+      </details>
       {panel.blockers.length > 0 && (
         <div className="alert warn" style={{ marginTop: 10 }}>
           <strong>Blocking items</strong>
@@ -104,7 +118,7 @@ function RouteCard({ v }: { v: View }) {
   const w = v.workflow;
   const current = v.stages.find((s: any) => s.id === v.currentStageId);
   return (
-    <section className="card stack" aria-labelledby="route-title">
+    <section className="route-card stack" aria-labelledby="route-title">
       <div className="section-head" style={{ marginBottom: 0 }}>
         <h2 id="route-title">Route: {w.routeName ?? 'Not yet classified'}</h2>
         <span className="small muted">Policy {w.policyVersion.label}</span>
@@ -120,11 +134,11 @@ function RouteCard({ v }: { v: View }) {
           ))}
         </ol>
       )}
-      <div className="small">
+      <details className="route-explanation"><summary>Why this route?</summary><div className="small">
         <strong>Why this route: </strong>{w.classification.explanation}
         {w.classification.ruleRef && <> <span className="mono">({w.classification.ruleRef})</span></>}
         {w.classification.provenance && <> <Provenance value={w.classification.provenance} /></>}
-      </div>
+      </div></details>
     </section>
   );
 }

@@ -41,7 +41,7 @@ function UploadDocument({v}:{v:any}) {
   <label>Document<select value={documentId} onChange={e=>setDocumentId(e.target.value)}><option value="">New document</option>{v.documents.map((d:any)=><option key={d.id} value={d.id}>Replacement for {d.title}</option>)}</select></label>
   {!previous&&<><label>Document title<input value={title} onChange={e=>setTitle(e.target.value)} minLength={3} maxLength={200} required/></label><label>Document type<select value={type} onChange={e=>setType(e.target.value)}>{v.documentTypes.map((t:any)=><option value={t.code} key={t.code}>{t.name}</option>)}</select></label>
    {can('INTERNAL_NOTES_VIEW')&&<label>Document visibility<select value={visibility} onChange={e=>setVisibility(e.target.value)}><option value="INSTITUTION">Institution visible</option><option value="INTERNAL">Internal only</option></select></label>}</>}
-  <label>Evidence file (PDF, PNG or JPEG)<input ref={fileInput} type="file" accept=".pdf,.png,.jpg,.jpeg" required onChange={e=>setFile(e.target.files?.[0]??null)}/></label>
+  <label className="upload-zone">Evidence file (PDF, PNG or JPEG)<input ref={fileInput} type="file" accept=".pdf,.png,.jpg,.jpeg" required onChange={e=>setFile(e.target.files?.[0]??null)}/><span className="hint">{file ? `${file.name} · ${file.size.toLocaleString('en-IN')} bytes selected` : 'Choose a synthetic file to upload'}</span></label>
   <p className="small muted">Synthetic files only. Maximum 10 MB under the default configuration. Byte checks are not malware scanning or authenticity verification.</p>
   <MutationError error={error}/><div><button disabled={busy||!file}>{busy?'Uploading…':'Upload pending verification'}</button></div>
  </form>;

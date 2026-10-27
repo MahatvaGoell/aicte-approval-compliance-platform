@@ -60,7 +60,7 @@ export function ApplicationTable({ rows, showAssignee }: { rows: ListRow[]; show
   const stageName = (k: string | null) => ref.data?.activePolicy.stages.find((s) => s.key === k)?.name ?? humanise(k);
   const catName = (k: string) => ref.data?.activePolicy.categories.find((c) => c.code === k)?.name ?? humanise(k);
   return (
-    <div className="table-wrap">
+    <div className="table-wrap" tabIndex={0} role="region" aria-label="Applications table">
       <table>
         <thead>
           <tr>
@@ -113,10 +113,11 @@ export function ApplicationsPage() {
   return (
     <>
       <div className="section-head">
-        <h1>Applications</h1>
+        <div className="stack" style={{ gap: 8 }}><h1>Applications</h1><p className="muted small">Find a case and pick up the next action.</p></div>
         <span className="muted small">{list.data ? `${list.data.total} matching` : ''}</span>
       </div>
-      <div className="card filters" role="search">
+      <div className="card application-filters" role="search">
+        <div className="filters filters-primary">
         <label>Search<input id="f-q" placeholder="Application no. or institution" value={filters.q ?? ''} onChange={(e) => set('q', e.target.value)} /></label>
         <label>Status
           <select id="f-life" value={filters.lifecycleState ?? ''} onChange={(e) => set('lifecycleState', e.target.value)}>
@@ -124,6 +125,10 @@ export function ApplicationsPage() {
             {LIFECYCLES.map((l) => <option key={l} value={l}>{humanise(l)}</option>)}
           </select>
         </label>
+        </div>
+        <details className="filter-more" open={['categoryCode', 'stageKey', 'regionId', 'submittedFrom', 'submittedTo', 'assignedToMe'].some((key) => !!filters[key])}>
+          <summary>More filters <span className="small muted">Category, stage, region and dates</span></summary>
+          <div className="filters">
         <label>Category
           <select id="f-cat" value={filters.categoryCode ?? ''} onChange={(e) => set('categoryCode', e.target.value)}>
             <option value="">Any</option>
@@ -152,6 +157,8 @@ export function ApplicationsPage() {
             Assigned to me
           </label>
         )}
+          </div>
+        </details>
       </div>
       {list.isLoading ? <div className="card"><Loading /></div>
         : list.error ? <ErrorState error={list.error} onRetry={() => list.refetch()} />
