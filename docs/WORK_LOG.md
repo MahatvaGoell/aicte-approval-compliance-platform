@@ -99,3 +99,18 @@ Row: `id, appNo, institution, region, stage, stageState, owner, pendingAction, d
   `m6-integration.test.ts`: 16 tests. Baseline **170/170**, final **186/186**, typecheck/build/diff checks pass; logs `var/b6a-*-tests.log` (ignored). Idempotency/concurrency, ordering/conflicts, scope/revocation, immutable history, atomic rollback aur local decision/obligation isolation covered.
   Live local API import/replay/retry verified. Server-only step: RO login ke baad `/api/v1/integration/runs` se counts dekh sakte ho; Integration UI aur reasoned/versioned queue resolve/retry **B6b** me. B6a par rukna; push nahi kiya.
 
+
+- Finale A (27 Oct): migration 008, transactional custody segments and audited re-scrutiny justification (DEMO_ASSUMPTION); deadline behaviour preserved.
+  Added scoped custody strip, returns-and-holding JSON/CSV and conservative stored-transition backfill with incomplete-history disclosure.
+  Baseline 226/226; AC01–AC05 added; final 231/231, typecheck/build/diff checks pass. Catalogue assertion updated for the intentionally added report.
+  Browser: APP-2027-28-01002 response opened attempt 2, custody/report rendered, no console errors. Local commit only; nothing pushed.
+
+- Finale B (27 Oct): migration 009 and one exact faculty/lab/building detector, pinned DEMO_ASSUMPTION policy and transactional submission/recheck events.
+  Added optional resource declarations, scoped flags/notes, versioned officer review, report/CSV and real case-count sorting-rack tile; no lifecycle/decision/compliance effects.
+  Synthetic demo pairs plus an honest same-name/different-ID case created through the command/submission API. DC01–DC06: eight new tests, full 239/239; typecheck/build/diff pass.
+  Browser: APP-2027-28-01010 review and explicit institution note share; APP-2027-28-01015 unflagged. No console errors. One local commit; no push.
+
+- Finale C (27 Oct): migration 010, transactional Ed25519 demo letters/QR, public signature/current-state verification, authenticated single-page print and authority revocation.
+  Added a separate local append-only witness, durable outbox requests, verified receipts and independent local/witness results; same-host and unwitnessed-tail limits remain explicit.
+  Q01–Q05/WA01–WA04 add ten tests; full 249/249, typecheck/build/diff checks pass. Browser desktop/mobile/dark, offline QR decode and one-A4 print passed; no console errors/overflow. Fresh frontend review: ship; existing design context preserved.
+  Real rewrite demo: event 1 changed, local passed, witness failed at 265; original synthetic snapshot restored with witness store untouched. One local commit; no push and no main changes.

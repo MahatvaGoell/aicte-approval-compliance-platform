@@ -13,7 +13,12 @@
     "test": "vitest run",
     "evaluate": "tsx scripts/evaluate.ts",
     "typecheck": "tsc --noEmit",
-    "demo:scenarios": "tsx scripts/demo-scenarios.ts"
+    "demo:scenarios": "tsx scripts/demo-scenarios.ts",
+    "backfill:custody": "tsx scripts/backfill-custody.ts",
+    "demo:finale": "tsx scripts/demo-finale.ts",
+    "keys:demo": "tsx scripts/keys-demo.ts",
+    "dev:witness": "tsx src/witness/main.ts",
+    "demo:rewrite-chain": "tsx scripts/rewrite-chain.ts"
   },
   "dependencies": {
     "@fastify/cookie": "11.0.2",
@@ -23,12 +28,14 @@
     "nodemailer": "7.0.3",
     "pdfjs-dist": "6.4.299",
     "pg": "8.16.3",
+    "qrcode": "1.5.4",
     "zod": "3.25.67"
   },
   "devDependencies": {
     "@types/node": "22.15.30",
     "@types/nodemailer": "6.4.17",
     "@types/pg": "8.15.4",
+    "@types/qrcode": "1.5.5",
     "embedded-postgres": "17.5.0-beta.15",
     "tsx": "4.20.3",
     "typescript": "5.8.3",

@@ -1,3 +1,5 @@
+import {claimsForCase} from '../claims/service.js';
+import {custodyForCase} from '../custody/service.js';
 import type { Db } from '../../db.js';
 import { AppError, NotFoundError, one, q } from '../../db.js';
 import { now } from '../../lib/clock.js';
@@ -44,7 +46,9 @@ function buildQuery(actor: Actor, def: ReportDef, f: ReportFilters, at: Date) {
 
   if (def.entity === 'application') {
     if (f.stageKey) where.push(f.stageKey === 'NONE' ? 'si.id IS NULL' : `si.stage_key = ${p(f.stageKey)}`);
-    where.push(`a.lifecycle_state = ANY(${p(PENDING_LIFECYCLE)}::text[])`);
+    if(['returns-and-holding','double-claims'].includes(def.name))where.push('a.submitted_at IS NOT NULL');
+    if(def.name==='double-claims')where.push('EXISTS(SELECT 1 FROM resource_claims rc JOIN claim_flags cf ON rc.id=ANY(cf.claim_ids) WHERE rc.application_id=a.id)');
+    if(!['returns-and-holding','double-claims'].includes(def.name))where.push(`a.lifecycle_state = ANY(${p(PENDING_LIFECYCLE)}::text[])`);
     const extra: Partial<Record<ReportName, () => string>> = {
       overdue: () => `dl.current_due_at <= ${nowP()}`,
       'due-soon': () => `dl.current_due_at > ${nowP()} AND dl.current_due_at <= ${p(new Date(at.getTime() + DUE_SOON_DAYS * DAY_MS))}`,
@@ -180,7 +184,7 @@ export async function runReport(db: Db, actor: Actor, def: ReportDef, f: ReportF
   const rows = await q(db, `SELECT ${b.select} ${b.from} ORDER BY ${b.order} LIMIT ${pageSize} OFFSET ${(page - 1) * pageSize}`, b.params);
   return {
     name: def.name, label: def.label, entity: def.entity, filters: f, total: total.n, page, pageSize,
-    rows: rows.map((r) => mapRow(def, r, actor, at)),
+    rows:await Promise.all(rows.map(async r=>({...mapRow(def,r,actor,at),...(def.name==='returns-and-holding'?{accountability:await custodyForCase(db,r.id,at)}:{}),...(def.name==='double-claims'?{doubleClaims:await claimsForCase(db,actor,r.id)}:{})}))),
     definition: { denominator: def.denominator, ageingAnchor: def.ageingAnchor },
     refreshedAt: at,
   };
@@ -198,9 +202,13 @@ export async function exportReportCsv(db: Db, actor: Actor, def: ReportDef, f: R
   if (rows.length > maxRows) {
     throw new AppError(422, 'EXPORT_TOO_LARGE', `This export would exceed ${maxRows} rows. Narrow the filters and try again.`, { maxRows });
   }
+  if(def.name==='returns-and-holding')for(const row of rows)row.accountability=await custodyForCase(db,row.id,at);
+  if(def.name==='double-claims')for(const row of rows)row.doubleClaims=await claimsForCase(db,actor,row.id);
   const office = !isInstitutionActor(actor);
   const obligation = def.entity === 'obligation';
   const cols: Array<[string, (r: any) => unknown]> = [
+    ...(def.name==='returns-and-holding'?(['totalDays','institutionDays','officeDays','authorityDays','returns','historyIncomplete'] as const).map(k=>[k,(r:any)=>r.accountability.recorded?r.accountability[k]:'Not recorded'] as [string,(r:any)=>unknown]):[]),
+    ...(def.name==='double-claims'?[['Resource claims',(r:any)=>r.doubleClaims.map((c:any)=>`${c.resource} (${c.kind}) ${c.periodFrom} to ${c.periodTo??'open'}: ${c.state}`).join('; ')],['Scoped other claims',(r:any)=>r.doubleClaims.flatMap((c:any)=>[...c.otherClaims.map((x:any)=>x.appNo),...(c.outsideScope?['Also claimed by another institution outside your scope']:[])]).join('; ')]] as Array<[string,(r:any)=>unknown]>:[]),
     ['Application number', (r) => r.appNo],
     ['Institution', (r) => r.institution],
     ['Region', (r) => r.regionId],
@@ -230,8 +238,8 @@ export type DashboardView = 'institution' | 'officer' | 'management';
 
 const TILES: Record<DashboardView, ReportName[]> = {
   institution: ['pending', 'awaiting-institution', 'obligations-overdue'],
-  officer: ['overdue', 'due-soon', 'awaiting-institution', 'evidence-backlog', 'evc-unscheduled', 'obligations-overdue'],
-  management: ['pending', 'overdue', 'due-soon', 'awaiting-institution', 'evc-unscheduled', 'evidence-backlog', 'obligations-overdue'],
+  officer: ['double-claims','overdue', 'due-soon', 'awaiting-institution', 'evidence-backlog', 'evc-unscheduled', 'obligations-overdue'],
+  management: ['double-claims','pending', 'overdue', 'due-soon', 'awaiting-institution', 'evc-unscheduled', 'evidence-backlog', 'obligations-overdue'],
 };
 
 const UNAVAILABLE: Record<DashboardView, Array<{ key: string; label: string; reason: string }>> = {

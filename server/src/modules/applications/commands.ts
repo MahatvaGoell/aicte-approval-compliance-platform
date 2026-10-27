@@ -18,6 +18,9 @@ import {
 import { assertVersion, bumpVersion, loadVisibleApplication } from './service.js';
 import type { CaseContext, CommandDef } from './command-kit.js';
 import { LIVE_WORK_STATES, assignedOwnerGuard, deny, loadCaseExtras, markStarted } from './command-kit.js';
+import {issueLetter} from '../letters/service.js';
+import {LETTER_COMMANDS} from '../letters/commands.js';
+import {CLAIM_COMMANDS} from '../claims/commands.js';
 import { M2_COMMANDS } from './commands-m2.js';
 import { EVC_COMMANDS } from '../evc/commands.js';
 import { DOCUMENT_COMMANDS } from '../documents/commands.js';
@@ -237,6 +240,7 @@ const recordDecision: CommandDef<z.ZodObject<any>> = {
       [c.app.id, c.workflow!.id, stage.id, input.outcome, input.reason, JSON.stringify(input.conditions), ctx.actor!.userId, ctx.actor!.grantId,
         policy.id, ref, ctx.at],
     );
+    await issueLetter(tx,ctx,c.app,decision.id,policy);
     const from = stage.state;
     await setStageState(tx, stage, 'COMPLETED', { completed_at: ctx.at, completed_by: ctx.actor!.userId, outcome: input.outcome, outcome_reason: input.reason });
     await closeDeadlines(tx, ctx, stage.id, 'MET', 'Decision recorded');
@@ -263,7 +267,7 @@ const recordDecision: CommandDef<z.ZodObject<any>> = {
 };
 
 export const COMMANDS: Record<string, CommandDef<any>> = Object.fromEntries(
-  [assignStage, saveChecklist, recordRecommendation, completeStage, recordDecision, ...M2_COMMANDS, ...EVC_COMMANDS, ...DOCUMENT_COMMANDS, ...COMPLIANCE_COMMANDS].map((c) => [c.name, c]),
+  [assignStage, saveChecklist, recordRecommendation, completeStage, recordDecision, ...M2_COMMANDS, ...EVC_COMMANDS, ...DOCUMENT_COMMANDS, ...COMPLIANCE_COMMANDS,...CLAIM_COMMANDS,...LETTER_COMMANDS].map((c) => [c.name, c]),
 );
 
 export async function loadCaseContext(db: Db, actor: Actor, appId: string, forUpdate: boolean): Promise<CaseContext> {

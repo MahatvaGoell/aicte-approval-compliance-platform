@@ -117,7 +117,17 @@ export async function verifyChain(db: Db): Promise<ChainVerification> {
     if (r.prev_hash !== prev) {
       return { ok: false, checked: rows.length, firstBrokenId: r.id, problem: 'prev_hash does not match the previous event' };
     }
-    const fields: HashedFields = {
+
+    if (storedAuditHash(prev,r) !== r.hash) {
+      return { ok: false, checked: rows.length, firstBrokenId: r.id, problem: 'stored content does not match its hash' };
+    }
+    prev = r.hash;
+  }
+  return { ok: true, checked: rows.length, firstBrokenId: null, problem: null };
+}
+
+export function storedAuditHash(prev:string,r:any) {
+  const fields: HashedFields = {
       at: new Date(r.at).toISOString(),
       actor_user_id: r.actor_user_id,
       actor_role: r.actor_role,
@@ -136,10 +146,5 @@ export async function verifyChain(db: Db): Promise<ChainVerification> {
       correlation_id: r.correlation_id,
       visibility: r.visibility,
     };
-    if (computeHash(prev, fields) !== r.hash) {
-      return { ok: false, checked: rows.length, firstBrokenId: r.id, problem: 'stored content does not match its hash' };
-    }
-    prev = r.hash;
-  }
-  return { ok: true, checked: rows.length, firstBrokenId: null, problem: null };
+  return computeHash(prev,fields);
 }

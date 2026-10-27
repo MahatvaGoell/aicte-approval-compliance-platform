@@ -1,6 +1,8 @@
 # Progress
 
-Last updated: 26 Oct 2026 · Specification: [BUILD_PLAN.md](BUILD_PLAN.md) · Agent rules: [../AGENTS.md](../AGENTS.md)
+Last updated: 27 Oct 2026 · Specification: [BUILD_PLAN.md](BUILD_PLAN.md) · Agent rules: [../AGENTS.md](../AGENTS.md)
+
+Finale update (27 Oct): A/B/C below are complete on local `features-finale`, with 249/249 tests. Nothing from this finale has been pushed.
 
 Publication update: the user authorised **"push everything on github"** on 26 Oct. This main-branch batch includes all completed B5–B7/C1–C2 commits plus publication documentation. Earlier no-push/local-only statements below record the original step completion, not the current publication instruction. C3 remains the next separate step.
 
@@ -182,3 +184,23 @@ Case page: findings panel (raise, return, respond, amend, resolve / not resolved
 - `docker-compose.yml` is provided but was not tested; the embedded PostgreSQL path was.
 - Port 5173 was occupied on the original dev machine, so the web app uses 5180.
 - `DEBUG_ERRORS=true` prints unhandled server errors to the console (useful in tests).
+
+## Finale A — custody accounting
+
+Migration 008 adds custody segments, incomplete-history disclosure and recorded re-scrutiny justification. Submission, returns, new attempts, decision-stage entry and decision closure update custody and audit together; deadline calculations remain unchanged. The scoped case strip and returns-and-holding JSON/CSV report expose recorded calendar-day accounting in Asia/Kolkata. `npm run backfill:custody` uses stored transitions and refuses to attribute uncertain history. New objections after attempt 1 require a 20-character justification or a validated earlier-finding link (DEMO_ASSUMPTION).
+
+Baseline 226/226; AC01–AC05 plus M3 targeted checks: 19/19. Typecheck and production build pass; full suite 231/231; browser response → attempt 2 and scoped report verified without console errors. Roadmap only: Evidence Recall Network, Document Contradiction Finder, Queue Fairness Proof, Policy Impact Simulator, Decision Proof Compiler. Dropped features remain unimplemented.
+
+## Finale B — exact double-claim detection
+
+Migration 009 adds synthetic faculty/lab/building identities, declared claim periods and human-reviewed flags. One deterministic engine uses exact normalised identity and inclusive overlapping dates under each case's pinned DEMO_ASSUMPTION policy. Submission writes claims/flags/audit/outbox atomically; the worker rechecks without duplicate flags. CASE_REVIEW officers record EXPLAINED or CONFIRMED views with a note and shared-flag version check. Lifecycle, approval and compliance are untouched. Other case numbers and review notes are scope-filtered; institution notes are explicitly shared only to the selected case.
+
+`npm run demo:finale` creates three synthetic overlap pairs and an honest same-name/different-ID non-match through submission. Optional resource forms, case disclosure, scoped report/CSV and computed case-count dashboard tile are wired. DC01–DC06: eight new tests; full suite **239/239**, typecheck/build/diff checks pass. Browser review, institution disclosure and honest non-match passed without console errors.
+
+## Finale C — signed demo letters and witnessed audit
+
+Migration 010 adds immutable signed issue fields, authority-only reasoned revocation and signed audit receipts. Approved outcomes issue an Ed25519 demo letter in the decision transaction. The scoped case preview and authenticated print page include an offline QR; public `/verify/:token` shows “Signed at issue” separately from revocation and current open conditions (including untracked conditions). Invalid/tampered tokens reveal no signed data. Public checks are rate limited; no user/contact data is returned. No validity end is invented. Keys are generated only by `npm run keys:demo` into ignored `var/keys` (tests use ephemeral keys).
+
+`npm run dev:witness` starts a separate loopback process on 4100 with its own key and append-only JSONL; it never reads PostgreSQL. The worker uses durable outbox checkpoint requests at the DEMO_ASSUMPTION 25-event / 5-minute cadence, verifies Ed25519 receipts against the pinned public key, and records receipts/audit together. Integrity results independently report local chain and witness status; a missing/down witness is never a pass. Same-machine trust and the unwitnessed tail remain explicit limits.
+
+Q01–Q05 and WA01–WA04 add ten tests. Full suite **249/249**, typecheck and production build pass. Browser checks cover public/revoked/tampered states, scoped review/forms and separate integrity results on desktop/mobile, with zero console errors or body overflow; the public page also uses dark tokens. Independent QR decoding returned the exact URL. Printed letter rendered as **one A4 page**. Live `demo:rewrite-chain` edited event 1: local passed and witness failed at checkpoint 265; the original synthetic audit snapshot was then restored without changing the witness store. Fresh finish review: ship for the reviewed frontend; ordinary extension, existing design context preserved. Details: FINALE_FEATURES.md and DEMO_SCRIPT.md.

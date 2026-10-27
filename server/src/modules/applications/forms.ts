@@ -1,3 +1,4 @@
+import {facultyClaim,physicalClaim} from '../claims/forms.js';
 import { z } from 'zod';
 
 // Demonstration application form (schema version demo-form-v1). The real AICTE form is far larger;
@@ -17,6 +18,9 @@ export const draftDataSchema = z
     landAreaAcres: z.number().min(0).max(10000).optional(),
     programmes: z.array(programmeSchema).max(40).optional(),
     declarationAccepted: z.boolean().optional(),
+    faculty:z.array(facultyClaim).max(100).optional(),
+    labs:z.array(physicalClaim).max(100).optional(),
+    buildings:z.array(physicalClaim).max(100).optional(),
     remarks: z.string().trim().max(2000).optional(),
   })
   .strict();

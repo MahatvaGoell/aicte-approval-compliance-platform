@@ -11,3 +11,9 @@ export async function complianceStatus(db: Db, applicationId: string) {
     FROM obligations o WHERE application_id = $1`, [applicationId,now()]);
   return x.conditions === 0 && x.tracked === 0 ? 'NONE' : x.overdue ? 'OVERDUE' : x.tracked >= x.conditions && x.closed === x.tracked ? 'ALL_FULFILLED' : 'OPEN';
 }
+
+/** Count stored decision conditions still open, including conditions not yet tracked as obligations. */
+export async function openConditionsForDecision(db:Db,decisionId:string) {
+ const result=await one(db,`SELECT jsonb_array_length(d.conditions)::int AS total,(SELECT count(DISTINCT o.condition_index)::int FROM obligations o WHERE o.decision_id=d.id AND o.condition_index<jsonb_array_length(d.conditions) AND o.state IN ('FULFILLED','CLOSED_WITH_AUTHORISED_REASON')) AS closed FROM decisions d WHERE d.id=$1`,[decisionId]);
+ return Math.max(0,result.total-result.closed);
+}

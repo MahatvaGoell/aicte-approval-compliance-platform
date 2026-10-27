@@ -1,3 +1,4 @@
+import {publicLetterRoutes} from './modules/letters/routes.js';
 import cookie from '@fastify/cookie';
 import multipart from '@fastify/multipart';
 import Fastify, { type FastifyInstance } from 'fastify';
@@ -28,6 +29,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   const app = Fastify({
     logger: process.env.NODE_ENV === 'test' ? false : { level: process.env.LOG_LEVEL ?? 'info', redact: ['req.headers.cookie', 'req.headers.authorization'] },
     bodyLimit: 1024 * 1024,
+    maxParamLength:8192,
     trustProxy: false,
   });
   await app.register(cookie);
@@ -47,6 +49,7 @@ export async function buildApp(): Promise<FastifyInstance> {
     if (!SAFE_METHODS.has(req.method) && req.headers[CSRF_HEADER] !== CSRF_VALUE) {
       throw new AppError(403, 'CSRF_CHECK_FAILED', `Mutating requests must include the ${CSRF_HEADER} header`);
     }
+    if(req.url.startsWith('/api/v1/public/'))return;
     const pool = getPool();
     await refreshDemoOffset(pool);
     const token = req.cookies.sid;
@@ -100,6 +103,7 @@ export async function buildApp(): Promise<FastifyInstance> {
     }
   });
 
+  await app.register(publicLetterRoutes,{prefix:'/api/v1'});
   await app.register(identityRoutes, { prefix: '/api/v1' });
   await app.register(referenceRoutes, { prefix: '/api/v1' });
   await app.register(applicationRoutes, { prefix: '/api/v1' });

@@ -1,3 +1,5 @@
+import {PrintLetterPage} from './pages/PrintLetter';
+import {VerifyLetterPage} from './pages/VerifyLetter';
 import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { ApiError } from './api';
@@ -22,6 +24,8 @@ import { ErrorState, initials, Loading } from './ui';
 export function App() {
   const location = useLocation();
   useSmoothScroll();
+  if(/^\/applications\/[^/]+\/letters\/[^/]+\/print$/.test(location.pathname))return <Routes><Route path="/applications/:id/letters/:letterId/print" element={<PrintLetterPage/>}/></Routes>;
+  if(location.pathname.startsWith('/verify/'))return <Routes><Route path="/verify/:token" element={<VerifyLetterPage/>}/></Routes>;
   return (
     <>
       <Intro />

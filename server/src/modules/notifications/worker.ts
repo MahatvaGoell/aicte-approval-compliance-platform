@@ -12,7 +12,7 @@ const LEASE_MS = 60_000;
 export async function processOutbox(at: Date, batch = 100) {
   return withTx(async (tx) => {
     const events = await q(tx,
-      `SELECT * FROM outbox_events WHERE state = 'PENDING' ORDER BY id LIMIT $1 FOR UPDATE SKIP LOCKED`, [batch]);
+      `SELECT * FROM outbox_events WHERE state = 'PENDING' AND event_type <> 'AUDIT_CHECKPOINT_REQUESTED' ORDER BY id LIMIT $1 FOR UPDATE SKIP LOCKED`, [batch]);
     let notified = 0;
     for (const e of events) {
       notified += await handleEvent(tx, e, at);
@@ -71,6 +71,12 @@ async function handleEvent(tx: Db, e: any, at: Date): Promise<number> {
       const unique = [...new Map(recipients.map((u) => [u.id, u])).values()];
       return send(unique, e.event_type.replaceAll('_',' ').toLowerCase(), 'The EVC visit record changed. Open your authorised case workspace for the current schedule or review action. No report content is included.', true);
     }
+    case 'DOUBLE_CLAIM_DETECTED':
+      if(!app)return 0;
+      return send([...await usersCoveringRegion(tx,'REGIONAL_OFFICER',app.region_id,at),...await usersCoveringRegion(tx,'BUREAU_OFFICER',app.region_id,at)],'A resource claim needs officer review','An exact overlapping resource claim was flagged on your authorised case. This flag makes no decision.');
+    case 'DOUBLE_CLAIM_REVIEWED':
+      if(!app||!p.visibleToInstitution)return 0;
+      return send(await institutionUsers(tx,app.institution_id,at),'Resource claim review recorded','An officer shared a review note on your authorised case. Open the case to read it.');
     case 'STAGE_ASSIGNED':
       if (!p.assigneeUserId) return 0;
       return send([{ id: p.assigneeUserId }], `Assigned to you: ${p.stageName} for ${p.appNo}`, `You are now responsible for the ${p.stageName} stage of ${p.appNo}.`);
@@ -86,6 +92,9 @@ async function handleEvent(tx: Db, e: any, at: Date): Promise<number> {
       if (!app) return 0;
       return send(await institutionUsers(tx, app.institution_id, at), `Action needed: ${p.appNo} was returned with ${p.findingCount} finding(s)`,
         'Open the case to read the findings and respond. The review continues once every finding is answered.', true);
+    case 'APPROVAL_LETTER_REVOKED':
+      if(!app)return 0;
+      return send(await institutionUsers(tx,app.institution_id,at),'Demo approval letter revoked','An authority revoked the demo letter. Open your authorised case to read the recorded reason.',true);
     case 'DECISION_RECORDED':
       if (!app) return 0;
       return send(await institutionUsers(tx, app.institution_id, at), `Decision recorded on ${p.appNo}`,

@@ -22,6 +22,8 @@ function resolveDir(v: string | undefined, def: string) {
 export const config = {
   databaseUrl: process.env.DATABASE_URL ?? 'postgres://aicte:aicte_dev_password@127.0.0.1:54329/aicte',
   testDatabaseUrl: process.env.TEST_DATABASE_URL ?? 'postgres://aicte:aicte_dev_password@127.0.0.1:54329/aicte_test',
+  witnessUrl:process.env.WITNESS_URL??'http://127.0.0.1:4100',
+  witnessPublicKeyPath:resolveDir(process.env.WITNESS_PUBLIC_KEY_PATH,'./var/witness/keys/public.pem'),
   port: Number(process.env.PORT ?? 4000),
   appBaseUrl: process.env.APP_BASE_URL ?? 'http://localhost:5180',
   cookieSecure: bool(process.env.COOKIE_SECURE, false),

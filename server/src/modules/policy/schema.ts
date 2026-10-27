@@ -80,6 +80,7 @@ export const policyDocumentSchema = z.object({
     conditionsRequiredFor: z.array(z.enum(DECISION_OUTCOMES)).default(['APPROVED_WITH_CONDITIONS']),
     ...ruleMeta,
   }),
+  doubleClaim:z.object({exclusiveKinds:z.array(z.enum(['FACULTY','LAB','BUILDING'])).min(1),sameInstitutionDifferentProgramme:z.boolean(),overlapRule:z.literal('INCLUSIVE_DATES'),provenance:z.literal('DEMO_ASSUMPTION')}).optional(),
   // Clocks and the escalation ladder. Absent = no deadlines are tracked for cases on this version.
   compliance: z.object({
     documentTypes: z.array(z.object({ code: z.string().regex(/^[A-Z0-9_]{2,60}$/), name: z.string().min(3), validityRequired: z.boolean(), ...ruleMeta })).min(1),
@@ -155,6 +156,7 @@ export function validatePolicy(raw: unknown): { doc: PolicyDocument | null; issu
   const err = (path: string, message: string) => issues.push({ level: 'error', path, message });
   const warn = (path: string, message: string) => issues.push({ level: 'warning', path, message });
 
+  if(doc.doubleClaim&&new Set(doc.doubleClaim.exclusiveKinds).size!==doc.doubleClaim.exclusiveKinds.length)err('doubleClaim.exclusiveKinds','Exclusive kinds must be unique');
   const categoryCodes = new Set(doc.categories.map((c) => c.code));
   if (doc.compliance && new Set(doc.compliance.documentTypes.map((t) => t.code)).size !== doc.compliance.documentTypes.length) err('compliance.documentTypes', 'Document type codes must be unique');
   if (doc.evc && doc.evc.minMembers > doc.evc.maxMembers) err('evc.maxMembers', 'Maximum members must cover the minimum composition');

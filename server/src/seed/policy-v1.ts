@@ -102,6 +102,7 @@ export const policyV1: PolicyDocumentInput = {
       ...demo,
     },
   },
+  doubleClaim:{exclusiveKinds:['FACULTY','LAB','BUILDING'],sameInstitutionDifferentProgramme:true,overlapRule:'INCLUSIVE_DATES',provenance:'DEMO_ASSUMPTION'},
   decision: {
     outcomes: ['APPROVED', 'APPROVED_WITH_CONDITIONS', 'REJECTED', 'DEFERRED'],
     authorityRole: 'COMPETENT_AUTHORITY',

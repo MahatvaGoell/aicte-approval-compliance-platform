@@ -6,3 +6,5 @@ var/
 coverage/
 .claude/
 server/scripts/extraction/__pycache__/
+
+.impeccable/review/
