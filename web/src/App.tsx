@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { ApiError } from './api';
 import { Icon, Intro, ProgressBar, ThemeToggle, useNavIndicator, useSmoothScroll } from './motion';
@@ -71,13 +71,16 @@ function Shell() {
   const location = useLocation();
   const navRef = useRef<HTMLElement>(null);
   const indRef = useRef<HTMLSpanElement>(null);
+  const [navOpen, setNavOpen] = useState(false);
+  useEffect(() => setNavOpen(false), [location.pathname]);
   useNavIndicator(navRef, indRef, location.pathname);
   const [idx, label] = sectionFor(location.pathname);
   // Case pages belong under Applications; the new-application form has its own entry.
   const inApplications = location.pathname.startsWith('/applications') && location.pathname !== '/applications/new' && !location.pathname.endsWith('/edit');
   return (
     <div className="shell">
-      <aside className="side">
+      <a className="skip-link" href="#main">Skip to workspace</a>
+      <aside className={`side ${navOpen ? 'menu-open' : ''}`}>
         <Link to="/" className="brand" aria-label="Home">
           <span className="brand-mark">Ai</span>
           <span className="brand-name">
@@ -85,7 +88,8 @@ function Shell() {
             <small>Approval workflow · SIH26262</small>
           </span>
         </Link>
-        <div>
+        <button className="mobile-menu" aria-controls="workspace-navigation" aria-expanded={navOpen} onClick={() => setNavOpen((open) => !open)}><Icon name="menu" />{navOpen ? 'Close menu' : 'Menu'}</button>
+        <div className="workspace-navigation" id="workspace-navigation">
           <div className="nav-label">Workspace</div>
           <nav className="nav" aria-label="Main" ref={navRef}>
             <span className="nav-indicator" ref={indRef} aria-hidden="true" />
@@ -93,24 +97,30 @@ function Shell() {
             {(can('APPLICATION_VIEW_SCOPE') || can('APPLICATION_VIEW_ASSIGNED')) && <NavLink to="/applications" className={() => (inApplications ? 'active' : '')}><Icon name="folder" />Applications</NavLink>}
             {can('APPLICATION_CREATE') && <NavLink to="/applications/new"><Icon name="plus" />New application</NavLink>}
             {(can('APPLICATION_VIEW_SCOPE')||can('APPLICATION_VIEW_ASSIGNED'))&&<><NavLink to="/documents"><Icon name="folder"/>Documents</NavLink><NavLink to="/obligations"><Icon name="layers"/>Obligations</NavLink></>}
-            {(me.activeGrant.role === 'INSTITUTION_REP' || can('REPORTS_VIEW')) && <><NavLink to="/dashboard"><Icon name="pulse" />Dashboard</NavLink><NavLink to="/reports"><Icon name="layers" />Reports</NavLink></>}
+            {(me.activeGrant.role === 'INSTITUTION_REP' || can('REPORTS_VIEW')) && <><NavLink to="/dashboard"><Icon name="pulse" />Dashboard</NavLink></>}
+            {can('EVC_VIEW') && (me.activeGrant.role !== 'COMMITTEE_MEMBER' || me.activeGrant.committeeKind === 'EVC') && <NavLink to="/evc"><Icon name="calendar" />Expert visits</NavLink>}
+          </nav>
+          <details className="tool-nav" open={['/reports', '/audit', '/integration', '/policy', '/notifications', '/ops'].some((path) => location.pathname.startsWith(path))}>
+            <summary><Icon name="sliders" />More tools<Icon name="chevron" /></summary>
+            <nav className="nav secondary-nav" aria-label="More tools">
+              {(me.activeGrant.role === 'INSTITUTION_REP' || can('REPORTS_VIEW')) && <NavLink to="/reports"><Icon name="layers" />Reports</NavLink>}
             {can('AUDIT_VIEW') && <NavLink to="/audit"><Icon name="shield" />Audit log</NavLink>}
             {can('INTEGRATION_VIEW') && <NavLink to="/integration"><Icon name="layers" />Mock integration</NavLink>}
             {can('POLICY_VIEW') && <NavLink to="/policy"><Icon name="layers" />Policy</NavLink>}
             <NavLink to="/notifications"><Icon name="bell" />Notifications</NavLink>
             {can('OPS_VIEW') && <NavLink to="/ops"><Icon name="pulse" />Operations</NavLink>}
-            {can('EVC_VIEW') && (me.activeGrant.role !== 'COMMITTEE_MEMBER' || me.activeGrant.committeeKind === 'EVC') && <NavLink to="/evc"><Icon name="calendar" />Expert visits</NavLink>}
-          </nav>
+            </nav>
+          </details>
         </div>
         <div className="side-foot">
-          <strong>Decisions stay human.</strong> The system routes, reminds and records. Only a competent authority decides.
+          <Icon name="shield" /><strong>Decisions stay human.</strong> The system routes, reminds and records. Only a competent authority decides.
         </div>
       </aside>
       <div className="main">
         <TopBar />
         <DemoBanner />
         <main className="content" id="main">
-          <div className="page" key={location.pathname}>
+          <div className={`page surface-${label.toLowerCase().replaceAll(' ', '-')}`} key={location.pathname}>
             <div className="eyebrow"><span className="idx">({idx})</span>{label}</div>
             <Routes>
               <Route path="/" element={<HomePage />} />
@@ -139,7 +149,7 @@ function Shell() {
   );
 }
 
-function DemoBanner() {
+export function DemoBanner() {
   const meta = useMeta();
   if (!meta.data?.demoMode) return null;
   const days = meta.data.demoClockOffsetMs / 86_400_000;
@@ -170,7 +180,7 @@ function TopBar() {
     <header className="topbar">
       <span className="who">
         <span className="avatar" aria-hidden="true">{initials(me.user.name)}</span>
-        <span className="small">{me.user.name}</span>
+        <span className="identity"><strong>{me.user.name}</strong><span className="small muted">Your approval workspace</span></span>
       </span>
       {me.grants.length > 1 ? (
         <label className="row" style={{ fontWeight: 400 }}>

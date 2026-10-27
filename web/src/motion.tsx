@@ -30,26 +30,17 @@ export function useSmoothScroll() {
 export function Intro() {
   const [phase, setPhase] = useState<'show' | 'leave' | 'gone'>(() =>
     readStore('session', 'intro-seen') || reducedMotion() ? 'gone' : 'show');
-  const [n, setN] = useState(0);
 
   useEffect(() => {
     if (phase !== 'show') return;
     writeStore('session', 'intro-seen', '1');
-    const start = performance.now();
-    let frame = 0;
-    const tick = (t: number) => {
-      const p = Math.min(1, (t - start - 200) / 1300);
-      setN(Math.max(0, Math.round(100 * (p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2))));
-      if (p < 1) frame = requestAnimationFrame(tick);
-    };
-    frame = requestAnimationFrame(tick);
-    const leave = setTimeout(() => setPhase('leave'), 1750);
-    return () => { cancelAnimationFrame(frame); clearTimeout(leave); };
+    const leave = setTimeout(() => setPhase('leave'), 250);
+    return () => clearTimeout(leave);
   }, [phase]);
 
   useEffect(() => {
     if (phase !== 'leave') return;
-    const t = setTimeout(() => setPhase('gone'), 900);
+    const t = setTimeout(() => setPhase('gone'), 250);
     return () => clearTimeout(t);
   }, [phase]);
 
@@ -62,11 +53,7 @@ export function Intro() {
           {word.split('').map((c, i) => <span key={i} style={{ animationDelay: `${i * 55}ms` }}>{c}</span>)}
           <span style={{ animationDelay: `${word.length * 55}ms` }}><em>.</em></span>
         </div>
-        <div className="intro-line">
-          <span>Reading approval files</span>
-          <b />
-          <span className="num">{n}</span>
-        </div>
+
       </div>
     </div>
   );
@@ -154,6 +141,11 @@ const PATHS: Record<string, ReactNode> = {
   sun: <><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></>,
   moon: <><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z" /></>,
   logout: <><path d="M15 4h3.5A1.5 1.5 0 0 1 20 5.5v13a1.5 1.5 0 0 1-1.5 1.5H15" /><path d="M10 16l-4-4 4-4M6 12h10" /></>,
+  chevron: <path d="m8 10 4 4 4-4" />,
+  menu: <path d="M4 6h16M4 12h16M4 18h16" />,
+  arrow: <><path d="M4 12h16M14 6l6 6-6 6" /></>,
+  check: <path d="m5 12 4 4L19 6" />,
+  document: <><path d="M6 3h8l4 4v14H6zM14 3v5h4M9 12h6M9 16h6" /></>,
 };
 
 export function Icon({ name }: { name: keyof typeof PATHS | string }) {

@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { ApiError } from './api';
+import { Icon } from './motion';
 
 const TONE: Record<string, string> = {
   DRAFT: 'neutral', SUBMITTED: 'accent', AWAITING_CLASSIFICATION: 'warn', IN_PROCESS: 'accent', AWAITING_DECISION: 'info',
@@ -41,7 +42,7 @@ export function formatDate(v: string | null | undefined, withTime = true) {
 
 export function Loading({ rows = 3 }: { rows?: number }) {
   return (
-    <div className="stack" aria-busy="true" aria-label="Loading">
+    <div className="stack loading-block" role="status" aria-busy="true" aria-label="Loading">
       {Array.from({ length: rows }).map((_, i) => <div key={i} className="skeleton" style={{ width: `${90 - i * 12}%` }} />)}
     </div>
   );
@@ -81,4 +82,13 @@ export function MutationError({ error }: { error: unknown }) {
 
 export function Empty({ children }: { children: ReactNode }) {
   return <div className="empty">{children}</div>;
+}
+
+export function Disclosure({ title, subtitle, icon, count, children, id, open = false }: {
+  title: string; subtitle?: string; icon: string; count?: number; children: ReactNode; id?: string; open?: boolean;
+}) {
+  return <details className="disclosure" id={id} open={open}>
+    <summary><span className="disclosure-icon"><Icon name={icon} /></span><span className="disclosure-label"><strong>{title}</strong>{subtitle && <span className="small muted">{subtitle}</span>}</span>{count != null && <span className="disclosure-count num">{count}</span>}<Icon name="chevron" /></summary>
+    <div className="disclosure-body">{children}</div>
+  </details>;
 }
