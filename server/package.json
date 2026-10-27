@@ -14,7 +14,8 @@
     "evaluate": "tsx scripts/evaluate.ts",
     "typecheck": "tsc --noEmit",
     "demo:scenarios": "tsx scripts/demo-scenarios.ts",
-    "backfill:custody": "tsx scripts/backfill-custody.ts"
+    "backfill:custody": "tsx scripts/backfill-custody.ts",
+    "demo:finale": "tsx scripts/demo-finale.ts"
   },
   "dependencies": {
     "@fastify/cookie": "11.0.2",

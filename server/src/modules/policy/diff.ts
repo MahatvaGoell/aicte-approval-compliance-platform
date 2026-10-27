@@ -4,7 +4,7 @@ import { canonicalJson } from '../../lib/crypto.js';
 // policy screens and tests. Works on raw documents so a draft that does not validate can still be compared.
 
 export interface PolicyChange {
-  section: 'meta' | 'calendar' | 'holidays' | 'categories' | 'classification' | 'routes' | 'stages' | 'checklist' | 'decision' | 'appeal' | 'evc' | 'compliance';
+  section: 'meta' | 'calendar' | 'holidays' | 'categories' | 'classification' | 'routes' | 'stages' | 'checklist' | 'decision' | 'appeal' | 'evc' | 'compliance' | 'doubleClaim';
   key: string;
   change: 'added' | 'removed' | 'changed';
   summary: string;
@@ -91,6 +91,8 @@ export function diffPolicies(before: any, after: any): PolicyChange[] {
     const ap = fieldChanges(before.appeal, after.appeal);
     if (ap.length) out.push({ section: 'appeal', key: 'appeal', change: 'changed', summary: `Appeal: ${describe(ap)}`, fields: ap });
   }
+  const claims=fieldChanges(before?.doubleClaim??{},after?.doubleClaim??{});
+  if(claims.length)out.push({section:'doubleClaim',key:'doubleClaim',change:'changed',summary:`Double claims: ${describe(claims)}`,fields:claims});
   const evc = fieldChanges(before?.evc ?? {}, after?.evc ?? {});
   const compliance = fieldChanges(before?.compliance ?? {}, after?.compliance ?? {});
   if (compliance.length) out.push({ section: 'compliance', key: 'compliance', change: 'changed', summary: `Compliance: ${describe(compliance)}`, fields: compliance });

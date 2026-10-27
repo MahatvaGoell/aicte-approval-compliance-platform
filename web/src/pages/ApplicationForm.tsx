@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import {ResourceClaimsForm,EMPTY_RESOURCES,type ResourceInputs} from './ResourceClaimsForm';
 import { api, ApiError } from '../api';
 import { Icon } from '../motion';
 import { ErrorState, Loading, MutationError, Provenance } from '../ui';
@@ -17,18 +18,19 @@ interface FormState {
   programmes: Programme[];
   declarationAccepted: boolean;
   remarks: string;
+  resources:ResourceInputs;
 }
 
 const EMPTY: FormState = {
   cycleCode: '2027-28', categoryCode: '', intakeIncreasePercent: '', proposedSiteAddress: '', campusAddress: '', landAreaAcres: '',
-  programmes: [{ name: '', level: 'UG', intake: 60 }], declarationAccepted: false, remarks: '',
+  programmes: [{ name: '', level: 'UG', intake: 60 }], declarationAccepted: false, remarks: '',resources:EMPTY_RESOURCES,
 };
 
 function toPayload(f: FormState) {
   const details: Record<string, unknown> = {};
   if (f.categoryCode === 'INCREASE_IN_INTAKE' && f.intakeIncreasePercent !== '') details.intakeIncreasePercent = Number(f.intakeIncreasePercent);
   if (f.categoryCode === 'CHANGE_OF_SITE' && f.proposedSiteAddress) details.proposedSiteAddress = f.proposedSiteAddress;
-  const draftData: Record<string, unknown> = { declarationAccepted: f.declarationAccepted };
+  const draftData: Record<string, unknown> = { declarationAccepted:f.declarationAccepted,...f.resources };
   if (f.campusAddress) draftData.campusAddress = f.campusAddress;
   if (f.landAreaAcres !== '') draftData.landAreaAcres = Number(f.landAreaAcres);
   const programmes = f.programmes.filter((p) => p.name.trim());
@@ -63,6 +65,7 @@ export function ApplicationFormPage() {
       programmes: v.form.programmes?.length ? v.form.programmes : EMPTY.programmes,
       declarationAccepted: !!v.form.declarationAccepted,
       remarks: v.form.remarks ?? '',
+      resources:{faculty:v.form.faculty??[],labs:v.form.labs??[],buildings:v.form.buildings??[]},
     });
   }, [existing.data]);
 
@@ -129,6 +132,7 @@ export function ApplicationFormPage() {
       <div className="editor-layout">
       <div className="stack editor-fields">
       <div className="form-sheet-head" aria-hidden="true"><span>Application for approval · cycle {form.cycleCode}</span><span>{id ? 'Draft on record' : 'New draft'} · demonstration form</span></div>
+      <ResourceClaimsForm value={form.resources} onChange={resources=>upd({resources})}/>
       <section className="card stack" id="form-approval">
         <h2><span className="section-number">1</span>Approval sought</h2>
         <div className="form-grid">

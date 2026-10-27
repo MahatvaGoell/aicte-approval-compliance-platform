@@ -31,6 +31,7 @@ export interface CaseContext {
   stageDef: StageDef | null;
   /** Findings of the current workflow instance. */
   findings: FindingRow[];
+  claimFlagIds?:string[];
   /** The decision recorded on the current workflow, if any. */
   decision: { id: string; outcome: string; issued_at: Date } | null;
   /** True if that decision has already been appealed. */
@@ -81,12 +82,13 @@ export async function markStarted(tx: Db, c: CaseContext, ctx: ActionContext) {
 
 
 export async function loadCaseExtras(db: Db, app: AppRow, workflow: WorkflowRow | null) {
+  const claimFlagIds=(await q(db,`SELECT DISTINCT f.id FROM claim_flags f JOIN resource_claims c ON c.id=ANY(f.claim_ids) WHERE c.application_id=$1`,[app.id])).map(f=>f.id as string);
   const obligations = await q(db,'SELECT id,state,verifier_user_id FROM obligations WHERE application_id = $1',[app.id]);
   const activeDeadlineIds = (await q(db, `SELECT id FROM deadlines WHERE application_id = $1 AND state = 'ACTIVE'`, [app.id])).map((r) => r.id as string);
   const evcVisit = workflow?.current_stage_id ? (await q(db, `SELECT v.id, v.state, v.ends_at, v.institution_acknowledged_at,
     (SELECT count(*)::int FROM visit_members m WHERE m.visit_id = v.id AND m.confirmed_at IS NULL) AS pending_members
     FROM evc_visits v WHERE v.stage_instance_id = $1 AND v.state NOT IN ('CANCELLED','RESCHEDULED')`, [workflow.current_stage_id]))[0] ?? null : null;
-  if (!workflow) return { findings: [] as FindingRow[], decision: null, appealed: false, workflowKind: null, activeDeadlineIds, evcVisit, obligations };
+  if (!workflow) return { findings: [] as FindingRow[], decision: null, appealed: false, workflowKind: null, activeDeadlineIds, evcVisit, obligations,claimFlagIds };
   const findings = await q<FindingRow>(
     db,
     `SELECT id, stage_instance_id, stage_key, checklist_code, visibility, responsible_party, requests_amendment, state
@@ -96,5 +98,5 @@ export async function loadCaseExtras(db: Db, app: AppRow, workflow: WorkflowRow 
   const decision = (await q(db, 'SELECT id, outcome, issued_at FROM decisions WHERE workflow_id = $1', [workflow.id]))[0] ?? null;
   const appealed = decision ? (await q(db, 'SELECT 1 FROM appeals WHERE decision_id = $1', [decision.id])).length > 0 : false;
   const kind = (await q(db, 'SELECT kind FROM workflow_instances WHERE id = $1', [workflow.id]))[0].kind;
-  return { findings, decision, appealed, workflowKind: kind, activeDeadlineIds, evcVisit, obligations };
+  return { findings, decision, appealed, workflowKind: kind, activeDeadlineIds, evcVisit, obligations,claimFlagIds };
 }

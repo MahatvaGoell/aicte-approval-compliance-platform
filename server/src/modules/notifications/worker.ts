@@ -71,6 +71,12 @@ async function handleEvent(tx: Db, e: any, at: Date): Promise<number> {
       const unique = [...new Map(recipients.map((u) => [u.id, u])).values()];
       return send(unique, e.event_type.replaceAll('_',' ').toLowerCase(), 'The EVC visit record changed. Open your authorised case workspace for the current schedule or review action. No report content is included.', true);
     }
+    case 'DOUBLE_CLAIM_DETECTED':
+      if(!app)return 0;
+      return send([...await usersCoveringRegion(tx,'REGIONAL_OFFICER',app.region_id,at),...await usersCoveringRegion(tx,'BUREAU_OFFICER',app.region_id,at)],'A resource claim needs officer review','An exact overlapping resource claim was flagged on your authorised case. This flag makes no decision.');
+    case 'DOUBLE_CLAIM_REVIEWED':
+      if(!app||!p.visibleToInstitution)return 0;
+      return send(await institutionUsers(tx,app.institution_id,at),'Resource claim review recorded','An officer shared a review note on your authorised case. Open the case to read it.');
     case 'STAGE_ASSIGNED':
       if (!p.assigneeUserId) return 0;
       return send([{ id: p.assigneeUserId }], `Assigned to you: ${p.stageName} for ${p.appNo}`, `You are now responsible for the ${p.stageName} stage of ${p.appNo}.`);

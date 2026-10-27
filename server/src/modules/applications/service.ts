@@ -12,6 +12,7 @@ import type { AppRow } from '../workflow/workflow.js';
 import { setApplicationState, startWorkflow } from '../workflow/workflow.js';
 import type { z } from 'zod';
 import { FORM_SCHEMA_VERSION, createApplicationSchema, submissionProblems, updateDraftSchema } from './forms.js';
+import {registerClaims} from '../claims/service.js';
 import {moveCustody} from '../custody/service.js';
 import { complianceStatus } from '../compliance/status.js';
 
@@ -147,6 +148,7 @@ export async function submitApplication(tx: pg.PoolClient, ctx: ActionContext, a
   await emitEvent(tx, ctx, 'APPLICATION_SUBMITTED', 'application', app.id, { applicationId: app.id, appNo: app.app_no, regionId: app.region_id });
   await moveCustody(tx,ctx,app,'OFFICE',null,'SUBMITTED','Institution submitted the case');
   await startWorkflow(tx, ctx, app, policy);
+  await registerClaims(tx,ctx,app,policy);
   const version = await bumpVersion(tx, app.id, ctx.at);
   return { rowVersion: version };
 }

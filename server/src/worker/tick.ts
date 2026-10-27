@@ -1,3 +1,4 @@
+import {recheckClaims} from '../modules/claims/service.js';
 import os from 'node:os';
 import { config } from '../config.js';
 import { getPool, withTx } from '../db.js';
@@ -33,6 +34,7 @@ export async function heartbeat(workerId: string, startedAt: Date, lastTick: unk
 export async function runTick(workerId = defaultWorkerId(), opts: { reconcile?: boolean } = {}) {
   await refreshDemoOffset(getPool());
   const at = now();
+  const doubleClaims=await recheckClaims(at);
   const outbox = await processOutbox(at);
   const scan = await scanDeadlines(at);
   // Notifications created by the scan are delivered in the same pass.
@@ -42,5 +44,5 @@ export async function runTick(workerId = defaultWorkerId(), opts: { reconcile?: 
   const storage = opts.reconcile ? await reconcileDocumentStorage() : null;
   await withTx((tx) => tx.query(`INSERT INTO system_settings (key, value) VALUES ('scheduler_last_run_at', $1)
     ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`, [JSON.stringify(at.toISOString())]));
-  return { at, outbox: { events: outbox.events + outbox2.events, notified: outbox.notified + outbox2.notified }, scan, delivery, reconcile, storage };
+  return { at, doubleClaims, outbox: { events: outbox.events + outbox2.events, notified: outbox.notified + outbox2.notified }, scan, delivery, reconcile, storage };
 }

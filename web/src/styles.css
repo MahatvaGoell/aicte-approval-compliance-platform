@@ -990,3 +990,6 @@ details.pw form, details.pw > .stack, details.pw > ul { margin-top: 12px; }
 .finale-custody {padding:1rem 0;border-block:1px solid var(--line);}
 .finale-custody p {margin-block:.5rem;overflow-wrap:anywhere;}
 .finale-custody .mono {font-variant-numeric:tabular-nums;}
+
+.finale-claim {padding-block:.75rem;border-bottom:1px solid var(--line);overflow-wrap:anywhere;}
+.finale-resource {padding:1rem;border:1px solid var(--line);min-width:0;}

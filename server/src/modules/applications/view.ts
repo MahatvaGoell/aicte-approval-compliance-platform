@@ -1,3 +1,4 @@
+import {claimsForCase} from '../claims/service.js';
 import {custodyForCase} from '../custody/service.js';
 import type { Db } from '../../db.js';
 import { one, q } from '../../db.js';
@@ -142,6 +143,7 @@ export async function caseView(db: Db, actor: Actor, appId: string) {
     proposal: { categoryCode: proposal.category_code, categoryName: category?.name ?? proposal.category_code, details: proposal.details, classificationStatus: proposal.classification_status },
     form: app.lifecycle_state === 'DRAFT' ? app.draft_data : full.submitted_snapshot?.form ?? {},
     findings,
+    doubleClaims:await claimsForCase(db,actor,app.id),
     accountability:await custodyForCase(db,app.id,now()),
     deadlines,
     documents: await documentsForCase(db,actor,app.id), attachments:await attachmentsForCase(db,actor,app.id),

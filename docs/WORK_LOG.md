@@ -104,3 +104,8 @@ Row: `id, appNo, institution, region, stage, stageState, owner, pendingAction, d
   Added scoped custody strip, returns-and-holding JSON/CSV and conservative stored-transition backfill with incomplete-history disclosure.
   Baseline 226/226; AC01–AC05 added; final 231/231, typecheck/build/diff checks pass. Catalogue assertion updated for the intentionally added report.
   Browser: APP-2027-28-01002 response opened attempt 2, custody/report rendered, no console errors. Local commit only; nothing pushed.
+
+- Finale B (27 Oct): migration 009 and one exact faculty/lab/building detector, pinned DEMO_ASSUMPTION policy and transactional submission/recheck events.
+  Added optional resource declarations, scoped flags/notes, versioned officer review, report/CSV and real case-count sorting-rack tile; no lifecycle/decision/compliance effects.
+  Synthetic demo pairs plus an honest same-name/different-ID case created through the command/submission API. DC01–DC06: eight new tests, full 239/239; typecheck/build/diff pass.
+  Browser: APP-2027-28-01010 review and explicit institution note share; APP-2027-28-01015 unflagged. No console errors. One local commit; no push.

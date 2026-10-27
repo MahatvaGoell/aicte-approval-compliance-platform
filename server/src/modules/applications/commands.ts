@@ -18,6 +18,7 @@ import {
 import { assertVersion, bumpVersion, loadVisibleApplication } from './service.js';
 import type { CaseContext, CommandDef } from './command-kit.js';
 import { LIVE_WORK_STATES, assignedOwnerGuard, deny, loadCaseExtras, markStarted } from './command-kit.js';
+import {CLAIM_COMMANDS} from '../claims/commands.js';
 import { M2_COMMANDS } from './commands-m2.js';
 import { EVC_COMMANDS } from '../evc/commands.js';
 import { DOCUMENT_COMMANDS } from '../documents/commands.js';
@@ -263,7 +264,7 @@ const recordDecision: CommandDef<z.ZodObject<any>> = {
 };
 
 export const COMMANDS: Record<string, CommandDef<any>> = Object.fromEntries(
-  [assignStage, saveChecklist, recordRecommendation, completeStage, recordDecision, ...M2_COMMANDS, ...EVC_COMMANDS, ...DOCUMENT_COMMANDS, ...COMPLIANCE_COMMANDS].map((c) => [c.name, c]),
+  [assignStage, saveChecklist, recordRecommendation, completeStage, recordDecision, ...M2_COMMANDS, ...EVC_COMMANDS, ...DOCUMENT_COMMANDS, ...COMPLIANCE_COMMANDS,...CLAIM_COMMANDS].map((c) => [c.name, c]),
 );
 
 export async function loadCaseContext(db: Db, actor: Actor, appId: string, forUpdate: boolean): Promise<CaseContext> {

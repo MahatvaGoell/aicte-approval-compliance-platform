@@ -15,6 +15,7 @@ export const OFFICE_CLOCKS = ['STAGE_HANDLING', 'INSTITUTION_RESPONSE', 'EVC_SCH
 export const INSTITUTION_CLOCKS = ['INSTITUTION_RESPONSE'];
 
 export type ReportName =
+  | 'double-claims'
   | 'returns-and-holding'
   | 'pending'
   | 'overdue'
@@ -39,6 +40,7 @@ const APP_FILTERS = FILTER_KEYS;
 const OBLIGATION_FILTERS = FILTER_KEYS.filter((k) => k !== 'stageKey');
 
 export const REPORTS: readonly ReportDef[] = [
+  {name:'double-claims',label:'Cases with double claims',entity:'application',audience:'BOTH',denominator:'Cases with an exact overlapping claim flag, including reviewed flags. These flags never decide a case. DEMO_ASSUMPTION.',ageingAnchor:'Stored resource-claim periods; detection and review timestamps.',supports:APP_FILTERS},
   {name:'returns-and-holding',label:'Returns and holding',entity:'application',audience:'BOTH',denominator:'Submitted cases and recorded custody periods; missing history disclosed. DEMO_ASSUMPTION accounting.',ageingAnchor:'Calendar days in Asia/Kolkata including every recorded return.',supports:APP_FILTERS},
   {
     name: 'pending', label: 'Applications in process', entity: 'application', audience: 'BOTH',

@@ -24,6 +24,7 @@
     "fixtures:extraction:verify": "node server/scripts/extraction/run.mjs verify",
     "fixtures:extraction:qa": "node server/scripts/extraction/run.mjs qa",
     "extract:pdf": "tsx server/scripts/extract-pdf.ts",
-    "backfill:custody": "npm -w server run backfill:custody"
+    "backfill:custody": "npm -w server run backfill:custody",
+    "demo:finale": "npm -w server run demo:finale"
   }
 }
