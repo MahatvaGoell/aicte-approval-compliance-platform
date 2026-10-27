@@ -3,11 +3,11 @@ import { useState, type FormEvent } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { api } from '../api';
 import { Icon } from '../motion';
-import { Disclosure } from '../ui';
+import { Barcode, Disclosure, NamePlate, Postmark, readable, stampDate, Urgency } from '../ui';
 import { useCommand } from '../caseCommand';
 import { Empty, ErrorState, formatDate, humanise, Loading, MutationError, Provenance, Status } from '../ui';
 import { Amendments, AppealForm, ClassifyForm, FindingsPanel, WorkflowHistory } from './CaseM2';
-import { DeadlinesCard, DueLine } from './CaseM3';
+import { DeadlinesCard } from './CaseM3';
 import { EvcCaseCard } from './CaseM4';
 import { DocumentsCard,ObligationsCard } from './CaseM5';
 
@@ -27,24 +27,35 @@ export function CasePage() {
 
   return (
     <>
-      <header className="stack case-header" style={{ gap: 10 }}>
-        <Link className="back-link" to="/applications">← Applications</Link>
-        <div className="row">
-          <h1 className="mono">{v.application.appNo}</h1>
-          <Status value={v.application.lifecycleState} label={v.application.lifecycleLabel} />
-          {v.application.decisionOutcome && <Status value={v.application.decisionOutcome} />}
-          {v.application.complianceStatus !== 'NONE' && <span className="chip warn">Compliance: {humanise(v.application.complianceStatus)}</span>}
-          {v.workflow?.kind === 'APPEAL' && <span className="chip info">Appeal in progress</span>}
-          {v.application.isSynthetic && <span className="chip demo">Synthetic record</span>}
+      <section className="slip" aria-labelledby="case-no">
+        <div className="slip-head">
+          <Link className="back-link" to="/applications"><Icon name="arrow" />Applications</Link>
+          <div className="slip-no">
+            <h1 id="case-no">{v.application.appNo}</h1>
+            <div className="row">
+              <Status value={v.application.lifecycleState} label={v.application.lifecycleLabel} />
+              {v.application.decisionOutcome && <Status value={v.application.decisionOutcome} />}
+              {v.application.complianceStatus !== 'NONE' && <Status value={v.application.complianceStatus} label={`Compliance: ${humanise(v.application.complianceStatus)}`} />}
+              {v.workflow?.kind === 'APPEAL' && <span className="chip info">Appeal in progress</span>}
+              {v.application.isSynthetic && <span className="chip demo">Synthetic record</span>}
+            </div>
+          </div>
+          <div className="slip-side">
+            <Barcode value={v.application.appNo} />
+            {v.workflow && <span className="small">Policy {v.workflow.policyVersion.label}</span>}
+          </div>
+          <div className="slip-meta">
+            <span><i>Institution</i>{v.institution.name}</span>
+            <span><i>Category</i>{v.proposal.categoryName}</span>
+            <span><i>Cycle</i>{v.application.cycleCode}</span>
+            <span><i>Region</i>{v.institution.region_id}</span>
+            {v.application.submittedAt && <span><i>Submitted</i>{formatDate(v.application.submittedAt)}</span>}
+          </div>
         </div>
-        <p className="muted">
-          {v.institution.name} · {v.proposal.categoryName} · Cycle {v.application.cycleCode} · {v.institution.region_id}
-          {v.application.submittedAt && <> · Submitted {formatDate(v.application.submittedAt)}</>}
-        </p>
-      </header>
+        {v.workflow && <><div className="perf" aria-hidden="true" /><RouteCard v={v} /></>}
+      </section>
 
-      <ActionPanel panel={v.actionPanel} />
-      {v.workflow && <RouteCard v={v} />}
+      <ActionPanel panel={v.actionPanel} jump={jumpFor(allowed)} />
       <div className="grid-2 case-workspace">
         <div className="stack case-main">
           {allowed('CLASSIFY') && <ClassifyForm v={v} />}
@@ -79,36 +90,55 @@ export function CasePage() {
   );
 }
 
-function ActionPanel({ panel }: { panel: any }) {
+// The note's primary action takes the user straight to the form where their turn happens.
+function jumpFor(allowed: (c: string) => boolean): [string, string] | null {
+  if (allowed('RECORD_DECISION')) return ['#dec-title', 'Record the decision'];
+  if (allowed('CLASSIFY')) return ['#cls-title', 'Classify the application'];
+  if (allowed('SAVE_CHECKLIST') || allowed('RECORD_RECOMMENDATION') || allowed('COMPLETE_STAGE')) return ['#work-title', 'Open your checklist'];
+  if (allowed('FILE_APPEAL')) return ['#appeal-title', 'File an appeal'];
+  return null;
+}
+
+function ActionPanel({ panel, jump }: { panel: any; jump: [string, string] | null }) {
+  const due = panel.due;
+  const late = !!due && due.overdueDays > 0;
   return (
-    <section className={`card action-panel ${panel.requiresHumanDecision ? 'human' : ''}`} aria-labelledby="ap-title">
-      <h2 id="ap-title" className="small muted" style={{ marginBottom: 4 }}><Icon name="arrow" />Next action</h2>
-      <p className="next">{panel.nextAction}</p>
-      <dl className="kv" style={{ marginTop: 10 }}>
-        <dt>Responsible</dt>
-        <dd>{panel.responsible ? <>{panel.responsible.role}{panel.responsible.person && <> · {panel.responsible.person}</>}</> : '—'}</dd>
-        <dt>Due</dt>
-        <dd><DueLine due={panel.due} /></dd>
-      </dl>
-      <details className="action-explanation">
-        <summary>Why this action?</summary>
-        <dl className="kv small">
-        <dt>Waiting since</dt>
-        <dd>{formatDate(panel.waitingSince)}</dd>
-        <dt>Why pending</dt>
-        <dd>{panel.reasonPending ?? '—'}</dd>
-        <dt>Rule</dt>
-        <dd className="mono">{panel.ruleRef ?? '—'}</dd>
-        </dl>
-      </details>
+    <section className="note" aria-labelledby="ap-title">
+      <div className="note-main">
+        <h2 id="ap-title" className="next"><span className="sr-only">Next action: </span>{panel.nextAction}</h2>
+        <div className="note-people">
+          {panel.responsible
+            ? <NamePlate name={panel.responsible.person ?? panel.responsible.role} role={panel.responsible.person ? panel.responsible.role : 'Responsible role'} />
+            : <span className="muted">No one is responsible for this step right now.</span>}
+          {panel.waitingSince && <span className="small muted">Waiting since {formatDate(panel.waitingSince)}</span>}
+        </div>
+        <details className="action-explanation">
+          <summary>Why this action?</summary>
+          <dl className="kv small">
+            <dt>Why pending</dt>
+            <dd>{panel.reasonPending ?? '—'}</dd>
+            <dt>Rule</dt>
+            <dd className="mono">{panel.ruleRef ?? '—'}</dd>
+          </dl>
+        </details>
+      </div>
+      <div className={`note-due ${late ? 'late hatched' : ''}`}>
+        {due ? <>
+          <Urgency due={due} />
+          <span className="due-date">{formatDate(due.dueDate, false)}</span>
+          {due.originalDueDate !== due.dueDate && <span className="due-rule">Originally {formatDate(due.originalDueDate, false)}</span>}
+          <span className="due-rule" title={due.ruleRef}>{due.label}</span>
+        </> : <span className="small muted">No clock configured for this step</span>}
+        {jump && <a className="btn primary note-go" href={jump[0]} onClick={(e) => { const t = document.querySelector(jump[0]); if (t) { e.preventDefault(); t.scrollIntoView({ behavior: 'smooth', block: 'start' }); } }}>{jump[1]}<Icon name="arrow" /></a>}
+      </div>
       {panel.blockers.length > 0 && (
-        <div className="alert warn" style={{ marginTop: 10 }}>
+        <div className="blockers" role="note">
           <strong>Blocking items</strong>
-          <ul>{panel.blockers.map((b: string, i: number) => <li key={i}>{b}</li>)}</ul>
+          <ul>{panel.blockers.map((b: string, i: number) => <li key={i}>{readable(b)}</li>)}</ul>
         </div>
       )}
       {panel.requiresHumanDecision && (
-        <p className="small" style={{ marginTop: 10 }}>This step needs an authorised human decision. The system does not decide it.</p>
+        <p className="human-note"><Icon name="shield" />This step needs an authorised human decision. The system does not decide it.</p>
       )}
     </section>
   );
@@ -118,28 +148,42 @@ function RouteCard({ v }: { v: View }) {
   const w = v.workflow;
   const current = v.stages.find((s: any) => s.id === v.currentStageId);
   return (
-    <section className="route-card stack" aria-labelledby="route-title">
-      <div className="section-head" style={{ marginBottom: 0 }}>
-        <h2 id="route-title">Route: {w.routeName ?? 'Not yet classified'}</h2>
-        <span className="small muted">Policy {w.policyVersion.label}</span>
+    <div className="track-wrap">
+      <div className="track-head">
+        <h2 id="route-title">Route · {w.routeName ?? 'Not yet classified'}</h2>
+        <span className="small">Finished stages carry the date they were completed</span>
       </div>
       {w.routeProgress.length > 0 && (
-        <ol className="route" aria-label="Route stages">
-          {w.routeProgress.map((s: any) => (
-            <li key={s.position} className={`step ${current?.stageKey === s.stageKey && !['COMPLETED'].includes(s.state) ? 'current' : ''} ${s.state === 'COMPLETED' ? 'done' : ''}`} style={{ listStyle: 'none' }}>
-              <div className="n">Stage {s.position + 1}{s.attempts > 1 ? ` · ${s.attempts} attempts` : ''}</div>
-              <div><strong>{s.name}</strong></div>
-              <Status value={s.state} />
-            </li>
-          ))}
+        <ol className="track" aria-labelledby="route-title">
+          {w.routeProgress.map((s: any, i: number) => {
+            const done = s.state === 'COMPLETED';
+            const live = !done && current?.stageKey === s.stageKey;
+            const record = [...v.stages].reverse().find((x: any) => x.stageKey === s.stageKey);
+            const returned = live && s.state === 'AWAITING_RESPONSE';
+            return (
+              <li key={s.position} className={`hop ${done ? 'done' : ''} ${live ? 'current' : ''} ${returned ? 'returned' : ''}`} style={{ '--i': i } as any}>
+                <div className="hop-mark">
+                  {done ? <Postmark top={s.name} date={stampDate(record?.completedAt) || 'COMPLETED'} bottom={`Stage ${s.position + 1}`} land delay={i * 110} />
+                    : live ? <span className="hop-live"><Icon name={returned ? 'inbox' : 'clock'} /></span>
+                    : <span className="hop-empty" />}
+                </div>
+                <div className="hop-text">
+                  <span className="n">Stage {s.position + 1}{s.attempts > 1 ? ` · ${s.attempts} attempts` : ''}</span>
+                  <strong>{s.name}</strong>
+                  <span className="state">{done ? `Completed${record?.completedAt ? ` ${formatDate(record.completedAt, false)}` : ''}` : live ? `${humanise(s.state)} · here now` : humanise(s.state)}</span>
+                  {done && record?.assignee?.name && <span className="ack" title="Acknowledgement of completion"><b>AD</b>Signed off by {record.assignee.name}</span>}
+                </div>
+              </li>
+            );
+          })}
         </ol>
       )}
       <details className="route-explanation"><summary>Why this route?</summary><div className="small">
-        <strong>Why this route: </strong>{w.classification.explanation}
+        {w.classification.explanation}
         {w.classification.ruleRef && <> <span className="mono">({w.classification.ruleRef})</span></>}
         {w.classification.provenance && <> <Provenance value={w.classification.provenance} /></>}
       </div></details>
-    </section>
+    </div>
   );
 }
 
@@ -191,11 +235,11 @@ function StageWork({ v }: { v: View }) {
   }
 
   return (
-    <section className="card stack" aria-labelledby="work-title">
+    <section className="card stack work-card" aria-labelledby="work-title">
       <h2 id="work-title">{stage.name} — your work</h2>
       {allowed('SAVE_CHECKLIST') && (
         <form className="stack" onSubmit={saveChecklist}>
-          <div className="table-wrap">
+          <div className="table-wrap checklist-table">
             <table>
               <thead><tr><th>Requirement</th><th>Result</th><th>Observation</th></tr></thead>
               <tbody>
@@ -280,7 +324,7 @@ function DecisionForm({ v }: { v: View }) {
     });
   }
   return (
-    <form className="card stack action-panel human" onSubmit={submit} aria-labelledby="dec-title">
+    <form className="card stack decision-form" onSubmit={submit} aria-labelledby="dec-title">
       <h2 id="dec-title">Record the decision</h2>
       <p className="small muted">You are recording a decision as the competent authority. Recommendations above inform it; they do not make it.</p>
       <label>Outcome
@@ -346,21 +390,18 @@ function PermittedActions({ list }: { list: any[] }) {
   const blocked = list.filter((p) => !p.allowed);
   return (
     <section className="card stack" aria-labelledby="perm-title">
-      <h2 id="perm-title">Your permitted actions</h2>
+      <h2 id="perm-title">What you can do here</h2>
       {allowed.length === 0 ? <p className="small muted">Nothing for your role to do on this case right now.</p> : (
-        <ul style={{ listStyle: 'none', padding: 0, margin: 0 }} className="stack">
-          {allowed.map((p) => <li key={p.command} className="small"><Status value="SATISFIED" label="Allowed" /> {p.label}</li>)}
+        <ul className="permitted">
+          {allowed.map((p) => <li key={p.command}><Icon name="check" /><span>{p.label}</span></li>)}
         </ul>
       )}
       {blocked.length > 0 && (
-        <details className="pw">
-          <summary>{blocked.length} action(s) not available, and why</summary>
-          <ul style={{ listStyle: 'none', padding: 0, margin: '12px 0 0' }} className="stack">
+        <details className="permitted-blocked">
+          <summary>{blocked.length} action{blocked.length === 1 ? '' : 's'} not available, and why</summary>
+          <ul className="permitted">
             {blocked.map((p) => (
-              <li key={p.command} className="small">
-                <Status value="NOT_APPLICABLE" label="Not available" /> {p.label}
-                <div className="muted">{p.reason}</div>
-              </li>
+              <li key={p.command} className="off"><Icon name="minus" /><span>{p.label}<span className="sr-only"> (not available)</span></span><span className="why">{p.reason}</span></li>
             ))}
           </ul>
         </details>

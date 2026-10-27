@@ -4,7 +4,10 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../api';
 import { Icon, ThemeToggle } from '../motion';
 import { useMeta } from '../session';
-import { Loading, MutationError, ErrorState } from '../ui';
+import { ErrorState, Loading, MutationError, Postmark } from '../ui';
+
+// The five things the platform does to every case, shown as postmarked hops on the welcome side.
+const HOPS: [string, string][] = [['Route', 'versioned rules'], ['Clock', 'every deadline'], ['Escalate', 'notify, never decide'], ['Watch', 'conditions & expiry'], ['Prove', 'tamper-evident log']];
 
 // Demo accounts grouped by the kind of user, so a presenter can pick a role at a glance.
 const GROUPS: { title: string; icon: string; match: (handle: string) => boolean }[] = [
@@ -88,14 +91,13 @@ export function LoginPage() {
     <div className="login-wrap">
       <section className="login-hero">
         <div className="brand">
-          <span className="brand-mark"><Icon name="shield" /></span>
+          <span className="brand-mark" aria-hidden="true">AT</span>
           <span className="brand-name">
             {meta.data?.brandName ?? 'AICTE Approval & Compliance Platform'}
             <small>Prototype · SIH 2026 · PS 26262</small>
           </span>
         </div>
         <div className="stack" style={{ gap: 22 }}>
-          <div className="eyebrow"><span className="idx">(00)</span>Welcome</div>
           <h1>
             Every approval file,
             <span className="dim">on time and on record.</span>
@@ -104,41 +106,47 @@ export function LoginPage() {
             Applications are routed by versioned rules, every stage shows who owns the next action, and every step is written to a
             tamper-evident log. Decisions stay with the competent authority.
           </p>
-          <div className="flow" aria-label="How it works">
-            <span><i>01</i>Route</span><span><i>02</i>Clock</span><span><i>03</i>Escalate</span><span><i>04</i>Watch</span><span><i>05</i>Prove</span>
+          <div className="demo-track">
+            <ol aria-label="How it works">
+              {HOPS.map(([name, note], i) => (
+                <li key={name} style={{ '--i': i } as any}>
+                  <Postmark top={name} date={`STEP 0${i + 1}`} bottom="Approval track" size={72} land delay={200 + i * 180} />
+                  <span className="hop-name">{name}</span><span className="cap">{note}</span>
+                </li>
+              ))}
+            </ol>
           </div>
         </div>
         <div className="login-trust"><Icon name="shield" /><p className="small muted">Not an official AICTE system. All institutions, people and documents are synthetic.</p></div>
       </section>
 
       <section className="login-panel" aria-labelledby="signin-title">
-        <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <div className="stack" style={{ gap: 6 }}>
-            <h2 id="signin-title" style={{ fontSize: 28, letterSpacing: '-0.035em' }}>{groups.length ? 'Welcome to your workspace' : 'Sign in'}</h2>
-            <p className="muted">{groups.length ? 'Choose a workspace, then a demo account to continue.' : 'Use your account email and password.'}</p>
+        <div className="login-panel-head">
+          <div>
+            <h2 id="signin-title">{groups.length ? 'Welcome to your workspace' : 'Sign in'}</h2>
+            <p>{groups.length ? 'Choose who you are. Demo accounts sign in with one click.' : 'Use your account email and password.'}</p>
           </div>
           <ThemeToggle />
         </div>
         <MutationError error={error} />
         {meta.isLoading ? <Loading rows={4} /> : meta.error ? <ErrorState error={meta.error} onRetry={() => meta.refetch()} /> : groups.length > 0 ? (
           <>
-            <label className="workspace-picker">Workspace
-              <select value={activeGroup} onChange={(e) => setActiveGroup(Number(e.target.value))}>
-                {groups.map((g, index) => <option key={g.title} value={index}>{g.title}</option>)}
-              </select>
-            </label>
+            <div className="windows" role="group" aria-label="Workspace">
+              {groups.map((g, index) => <button key={g.title} type="button" aria-pressed={index === activeGroup} onClick={() => setActiveGroup(index)}>{g.title}</button>)}
+            </div>
             <div className="account-list">
               {groups.filter((_, index) => index === activeGroup).map((g) => (
                 <div className="role-group" key={g.title}>
                   <h3>{g.title}</h3>
                   <div className="role-grid">
-                    {g.list.map((a) => {
+                    {g.list.map((a, i) => {
                       const handle = a.email.split('@')[0];
                       return (
                         <button
                           key={a.email}
                           type="button"
                           className={`role-card ${busy === a.email ? 'busy' : ''}`}
+                          style={{ '--i': i } as any}
                           disabled={busy !== null}
                           onClick={() => demoSignIn(a.email)}
                         >

@@ -2,16 +2,16 @@ import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, qs } from '../api';
-import { Icon } from '../motion';
 import { useMeta, useSession } from '../session';
-import { Disclosure, Empty, ErrorState, formatDate, Loading, Provenance, Status } from '../ui';
+import { Disclosure, Empty, ErrorState, formatDate, humanise, Loading, Provenance, Status } from '../ui';
 
 export function EvcPage() {
   const { can } = useSession();
   const [state, setState] = useState(''), [region, setRegion] = useState(''), [page, setPage] = useState(1);
   const queue = useQuery({ queryKey: ['evc','queue', state, region, page], queryFn: () => api.get<any>(`/evc/queue${qs({ state, region, page })}`), refetchInterval: 30_000 });
   return <>
-    <header className="evc-welcome"><div className="stack"><h1>Expert visits</h1><p className="muted">Ready cases, confirmed reservations and report review. Queue refreshes every 30 seconds.</p><p className="evc-process small">Plan <span>→</span> Confirm <span>→</span> Visit <span>→</span> Review</p></div><Icon name="calendar" /></header>
+    <header className="page-head"><div><h1>Expert visits</h1><p>Ready cases, confirmed reservations and report review. The queue refreshes every 30 seconds.</p>
+      <div className="evc-flow" aria-label="Visit steps">{['Plan', 'Confirm', 'Visit', 'Review'].map((step, i) => <span key={step}><b>{i + 1}</b>{step}</span>)}</div></div></header>
     <section className="card stack evc-queue">
       <h2>Readiness queue</h2>
       <div className="form-grid">
@@ -21,11 +21,11 @@ export function EvcPage() {
       {queue.isLoading ? <Loading /> : queue.error ? <ErrorState error={queue.error} onRetry={() => queue.refetch()} /> : <>
         <p className="small muted">{queue.data.total} accessible cases · refreshed {formatDate(queue.data.refreshedAt)}</p>
         {queue.data.rows.length ? <div className="table-wrap"><table><thead><tr><th>Case / institution</th><th>Ready since</th><th>Scheduling due</th><th>Visit</th></tr></thead><tbody>{queue.data.rows.map((r: any) => <tr key={r.application_id}>
-          <td><Link to={`/applications/${r.application_id}`}>{r.app_no}</Link><div className="small muted">{r.institution} · {r.region_id}</div></td>
+          <td><Link className="mono" to={`/applications/${r.application_id}`}>{r.app_no}</Link><div className="small muted">{r.institution} · {r.region_id}</div></td>
           <td>{formatDate(r.ready_at)}<div className="small">{r.waitingDays} days since readiness</div></td>
           <td>{r.scheduling_due_date ? <>By end of {formatDate(r.scheduling_due_date, false)}</> : '—'}{r.overdue && <Status value="OVERDUE" />}</td><td><Status value={r.visit_state} /></td>
         </tr>)}</tbody></table></div> : <Empty>No ready cases match your active scope and filters.</Empty>}
-        <div className="row"><button className="secondary" disabled={page === 1} onClick={() => setPage((p) => p - 1)}>Previous</button><span>Page {page}</span><button className="secondary" disabled={page * 50 >= queue.data.total} onClick={() => setPage((p) => p + 1)}>Next</button></div>
+        <div className="pager"><button className="secondary" disabled={page === 1} onClick={() => setPage((p) => p - 1)}>Previous</button><span>Page {page}</span><button className="secondary" disabled={page * 50 >= queue.data.total} onClick={() => setPage((p) => p + 1)}>Next</button></div>
       </>}
     </section>
     <VisitCalendar />
@@ -48,7 +48,7 @@ function VisitCalendar() {
     {query.isLoading || !range ? <Loading /> : query.error ? <ErrorState error={query.error} onRetry={() => query.refetch()} /> : query.data?.rows.length ? <div className="evc-calendar">{query.data.rows.map((v: any) => <article className="evc-calendar-item" key={v.id}>
       <Link to={`/applications/${v.application_id}`}>{v.app_no}</Link> <Status value={v.state} />
       <p>{new Date(v.starts_at).toLocaleString('en-IN', { timeZone: v.timezone })} — {new Date(v.ends_at).toLocaleTimeString('en-IN', { timeZone: v.timezone })}</p>
-      <p className="small muted">{v.timezone} · {v.mode}</p>
+      <p className="small muted">{v.timezone} · {humanise(v.mode)}</p>
       <ul>{v.members?.map((m: any) => <li key={m.name}>{m.name} · {m.reserved ? 'Reserved' : 'Released'} · {m.confirmedAt ? 'Member confirmed' : 'Member confirmation pending'}</li>)}</ul>
     </article>)}</div> : <Empty>No visits in this range for your active scope.</Empty>}
   </section>;

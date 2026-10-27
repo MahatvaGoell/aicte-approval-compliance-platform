@@ -17,7 +17,7 @@ import { NotificationsPage, useUnreadCount } from './pages/Notifications';
 import { OpsPage } from './pages/Ops';
 import { PolicyListPage, PolicyVersionPage } from './pages/Policy';
 import { SessionProvider, useMe, useMeta, useSession } from './session';
-import { ErrorState, Loading } from './ui';
+import { ErrorState, initials, Loading } from './ui';
 
 export function App() {
   const location = useLocation();
@@ -31,11 +31,7 @@ export function App() {
   );
 }
 
-function initials(name: string) {
-  return name.replace(/\(.*\)/, '').split(/[\s.]+/).filter(Boolean).map((w) => w[0]).slice(0, 2).join('').toUpperCase();
-}
-
-// Section label shown above each page, in the style "(02) Applications".
+// Section label for each page, shown as the location in the top bar.
 function sectionFor(path: string): [string, string] {
   if (path === '/') return ['01', 'Overview'];
   if (path === '/applications/new' || path.endsWith('/edit')) return ['03', 'Application form'];
@@ -74,7 +70,7 @@ function Shell() {
   const [navOpen, setNavOpen] = useState(false);
   useEffect(() => setNavOpen(false), [location.pathname]);
   useNavIndicator(navRef, indRef, location.pathname);
-  const [idx, label] = sectionFor(location.pathname);
+  const [, label] = sectionFor(location.pathname);
   // Case pages belong under Applications; the new-application form has its own entry.
   const inApplications = location.pathname.startsWith('/applications') && location.pathname !== '/applications/new' && !location.pathname.endsWith('/edit');
   return (
@@ -82,7 +78,7 @@ function Shell() {
       <a className="skip-link" href="#main">Skip to workspace</a>
       <aside className={`side ${navOpen ? 'menu-open' : ''}`}>
         <Link to="/" className="brand" aria-label="Home">
-          <span className="brand-mark">Ai</span>
+          <span className="brand-mark" aria-hidden="true">AT</span>
           <span className="brand-name">
             AICTE Compliance
             <small>Approval workflow · SIH26262</small>
@@ -90,7 +86,6 @@ function Shell() {
         </Link>
         <button className="mobile-menu" aria-controls="workspace-navigation" aria-expanded={navOpen} onClick={() => setNavOpen((open) => !open)}><Icon name="menu" />{navOpen ? 'Close menu' : 'Menu'}</button>
         <div className="workspace-navigation" id="workspace-navigation">
-          <div className="nav-label">Workspace</div>
           <nav className="nav" aria-label="Main" ref={navRef}>
             <span className="nav-indicator" ref={indRef} aria-hidden="true" />
             <NavLink to="/" end><Icon name={me.activeGrant.role === 'INSTITUTION_REP' ? 'home' : 'inbox'} />{me.activeGrant.role === 'INSTITUTION_REP' ? 'Home' : 'My work'}</NavLink>
@@ -117,11 +112,10 @@ function Shell() {
         </div>
       </aside>
       <div className="main">
-        <TopBar />
+        <TopBar label={label} />
         <DemoBanner />
         <main className="content" id="main">
           <div className={`page surface-${label.toLowerCase().replaceAll(' ', '-')}`} key={location.pathname}>
-            <div className="eyebrow"><span className="idx">({idx})</span>{label}</div>
             <Routes>
               <Route path="/" element={<HomePage />} />
               <Route path="/applications" element={<ApplicationsPage />} />
@@ -174,13 +168,14 @@ function NotificationBell() {
   );
 }
 
-function TopBar() {
+function TopBar({ label }: { label: string }) {
   const { me, switchRole, logout } = useSession();
   return (
     <header className="topbar">
+      <div className="crumb" aria-label="You are here"><span>Workspace</span><span className="sep" aria-hidden="true" /><strong>{label}</strong></div>
       <span className="who">
         <span className="avatar" aria-hidden="true">{initials(me.user.name)}</span>
-        <span className="identity"><strong>{me.user.name}</strong><span className="small muted">Your approval workspace</span></span>
+        <span className="identity"><strong>{me.user.name}</strong><span className="small muted">{me.activeGrant.roleLabel}</span></span>
       </span>
       {me.grants.length > 1 ? (
         <label className="row" style={{ fontWeight: 400 }}>
@@ -190,11 +185,11 @@ function TopBar() {
           </select>
         </label>
       ) : (
-        <span className="chip accent">{me.activeGrant.roleLabel} · {me.activeGrant.scope}</span>
+        <span className="chip neutral" title="Active role and scope">{me.activeGrant.scope}</span>
       )}
       <NotificationBell />
       <ThemeToggle />
-      <button onClick={logout}><Icon name="logout" />Sign out</button>
+      <button className="signout" onClick={logout} aria-label="Sign out"><Icon name="logout" /><span className="lbl">Sign out</span></button>
     </header>
   );
 }

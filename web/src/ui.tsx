@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useId, type CSSProperties, type ReactNode } from 'react';
 import { ApiError } from './api';
 import { Icon } from './motion';
 
@@ -17,9 +17,17 @@ const TONE: Record<string, string> = {
   DEMO_ASSUMPTION: 'demo', APH_CLAUSE: 'ok', ADMIN_INSTRUCTION: 'info',
 };
 
+const WORDS: Record<string, string> = { ACCEPT: 'Accepted', REJECT: 'Rejected' };
+
 export function humanise(s: string | null | undefined) {
   if (!s) return '—';
+  if (WORDS[s]) return WORDS[s];
   return s.charAt(0) + s.slice(1).toLowerCase().replace(/_/g, ' ');
+}
+
+/** Turns CODE_WORDS inside server-written sentences into plain words for display. */
+export function readable(text: string) {
+  return text.replace(/\b[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+\b|\b[A-Z]{4,}\b/g, (w) => humanise(w));
 }
 
 export function Status({ value, label }: { value: string | null | undefined; label?: string }) {
@@ -91,4 +99,116 @@ export function Disclosure({ title, subtitle, icon, count, children, id, open = 
     <summary><span className="disclosure-icon"><Icon name={icon} /></span><span className="disclosure-label"><strong>{title}</strong>{subtitle && <span className="small muted">{subtitle}</span>}</span>{count != null && <span className="disclosure-count num">{count}</span>}<Icon name="chevron" /></summary>
     <div className="disclosure-body">{children}</div>
   </details>;
+}
+
+function hash(s: string) {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619);
+  return h >>> 0;
+}
+
+/** Postmark date in the form 27 OCT 26, India time. */
+export function stampDate(v: string | null | undefined) {
+  if (!v) return '';
+  const d = new Date(v);
+  const day = d.toLocaleString('en-IN', { day: '2-digit', timeZone: 'Asia/Kolkata' });
+  const month = d.toLocaleString('en-IN', { month: 'short', timeZone: 'Asia/Kolkata' }).toUpperCase();
+  const year = d.toLocaleString('en-IN', { year: '2-digit', timeZone: 'Asia/Kolkata' });
+  return `${day} ${month} ${year}`;
+}
+
+/** A round dated postmark: the record that a step was completed or verified. */
+export function Postmark({ top, date, bottom = '', tone, size = 76, land = false, delay = 0, label }: {
+  top: string; date: string; bottom?: string; tone?: 'bad'; size?: number; land?: boolean; delay?: number; label?: string;
+}) {
+  const id = useId().replace(/[^a-zA-Z0-9]/g, '');
+  const seed = hash(top + date + bottom);
+  const style = { width: size, height: size, '--r': `${(seed % 23) - 11}deg`, '--d': `${delay}ms` } as CSSProperties;
+  return (
+    <span className={`postmark ${tone ?? ''} ${land ? 'land' : ''}`} style={style} role={label ? 'img' : undefined} aria-label={label} aria-hidden={label ? undefined : true}>
+      <svg viewBox="0 0 100 100">
+        <defs>
+          <filter id={`ink${id}`} x="-10%" y="-10%" width="120%" height="120%">
+            <feTurbulence type="fractalNoise" baseFrequency="1.3" numOctaves="2" seed={seed % 97} result="grain" />
+            <feDisplacementMap in="SourceGraphic" in2="grain" scale="2" result="rough" />
+            <feTurbulence type="fractalNoise" baseFrequency="0.07" seed={(seed >> 3) % 89} result="blot" />
+            <feColorMatrix in="blot" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -1.1 1.5" result="mask" />
+            <feComposite in="rough" in2="mask" operator="in" />
+          </filter>
+          <path id={`t${id}`} d="M 12 50 A 38 38 0 0 1 88 50" />
+          <path id={`b${id}`} d="M 7 50 A 43 43 0 0 0 93 50" />
+        </defs>
+        <g filter={`url(#ink${id})`} fill="none" stroke="currentColor">
+          <circle cx="50" cy="50" r="46" strokeWidth="3" />
+          <circle cx="50" cy="50" r="33" strokeWidth="1.4" />
+          <path d="M 17 40 H 83 M 17 60 H 83" strokeWidth="1.4" />
+          <text fontSize="9.4" fontWeight="800" letterSpacing="1" stroke="none" textAnchor="middle"><textPath href={`#t${id}`} startOffset="50%">{top.toUpperCase().slice(0, 18)}</textPath></text>
+          {bottom && <text fontSize="7.8" fontWeight="700" letterSpacing="0.9" stroke="none" textAnchor="middle"><textPath href={`#b${id}`} startOffset="50%">{bottom.toUpperCase().slice(0, 20)}</textPath></text>}
+          <text x="50" y="54.2" fontSize="11.2" fontWeight="800" letterSpacing="-0.2" stroke="none" textAnchor="middle">{date}</text>
+        </g>
+      </svg>
+    </span>
+  );
+}
+
+export function initials(name: string) {
+  return name.replace(/\(.*\)/, '').split(/[\s.]+/).filter(Boolean).map((w) => w[0]).slice(0, 2).join('').toUpperCase();
+}
+
+/** The same name plate for a responsible person wherever they appear. */
+export function NamePlate({ name, role }: { name: string; role?: string }) {
+  return (
+    <span className="plate">
+      <span className="plate-ini" aria-hidden="true">{initials(name) || '—'}</span>
+      <span className="plate-text"><strong>{name}</strong>{role && <span>{role}</span>}</span>
+    </span>
+  );
+}
+
+/** One urgency ramp: calm, near, soon, today, late. */
+export function urgencyOf(d: { state?: string; overdueDays: number; daysLeft: number }) {
+  if (d.state === 'PAUSED') return 'paused';
+  if (d.overdueDays > 0) return 'late';
+  if (d.daysLeft <= 1) return 'today';
+  if (d.daysLeft <= 3) return 'soon';
+  if (d.daysLeft <= 14) return 'near';
+  return 'calm';
+}
+
+const RAMP: [string, string][] = [['calm', '15+ d'], ['near', '4–14'], ['soon', '2–3'], ['today', 'Today'], ['late', 'Late']];
+
+export function Urgency({ due }: { due: { state?: string; overdueDays: number; daysLeft: number } }) {
+  const u = urgencyOf(due);
+  const [n, unit] = u === 'paused' ? ['—', 'Clock paused']
+    : u === 'late' ? [String(due.overdueDays), due.overdueDays === 1 ? 'day overdue' : 'days overdue']
+    : u === 'today' ? ['Today', 'Due today']
+    : [String(due.daysLeft), 'days left'];
+  return (
+    <span className={`urgency u-${u}`}>
+      <b>{n}</b><span>{unit}</span>
+      {u !== 'paused' && (
+        <span className="ramp" aria-hidden="true">
+          {RAMP.map(([key, label]) => <i key={key} className={key === u ? 'on' : ''}><em>{label}</em></i>)}
+        </span>
+      )}
+    </span>
+  );
+}
+
+/** Decorative consignment bars derived from the application number. */
+export function Barcode({ value }: { value: string }) {
+  const bars: number[] = [];
+  for (const ch of value) { const c = ch.charCodeAt(0); bars.push((c % 3) + 1, ((c >> 2) % 2) + 1, ((c >> 1) % 3) + 1); }
+  return (
+    <span className="barcode" aria-hidden="true">
+      {bars.map((w, i) => <i key={i} style={{ width: i % 2 ? w : w + 0.4, marginRight: i % 2 ? w + 1 : 1.2 }} />)}
+    </span>
+  );
+}
+
+/** The mark a document carries: a dated postmark once verified, a rubber stamp otherwise. */
+export function DocStamp({ state, top, date, bottom, size = 80 }: { state: string; top?: string; date?: string; bottom?: string; size?: number }) {
+  const tone = TONE[state] ?? 'neutral';
+  if (tone === 'ok') return <Postmark top={top ?? 'Verified'} date={date || 'ON RECORD'} bottom={bottom ?? humanise(state)} size={size} land label={`${humanise(state)}${date ? `, ${date}` : ''}`} />;
+  return <span className={`rubber ${tone === 'bad' ? 'bad' : 'pending'}`}>{humanise(state)}</span>;
 }

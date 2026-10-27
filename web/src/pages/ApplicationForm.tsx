@@ -76,6 +76,12 @@ export function ApplicationFormPage() {
     error instanceof ApiError && Array.isArray(error.details) ? error.details.find((d: any) => d.field === field)?.message : undefined;
   const upd = (patch: Partial<FormState>) => setForm((f) => ({ ...f, ...patch }));
   const category = ref.data?.activePolicy.categories.find((c) => c.code === form.categoryCode);
+  const parts = [
+    { label: 'Approval sought', target: 'approval', entered: !!form.categoryCode },
+    { label: 'Campus', target: 'campus', entered: !!form.campusAddress.trim() && !!form.landAreaAcres },
+    { label: 'Programmes', target: 'programmes', entered: form.programmes.some((p) => !!p.name.trim()) },
+    { label: 'Declaration', target: 'declaration', entered: form.declarationAccepted },
+  ];
 
   async function save(): Promise<{ id: string; rowVersion: number }> {
     const { details, draftData } = toPayload(form);
@@ -117,12 +123,12 @@ export function ApplicationFormPage() {
 
   return (
     <form className="stack application-editor" onSubmit={(e) => { e.preventDefault(); onSave(); }}>
-      <div className="section-head">
-        <h1>{id ? `Edit draft ${existing.data?.application.appNo ?? ''}` : 'New application'}</h1>
-        <span className="small muted">Demonstration form · save a draft at any time</span>
-      </div>
+      <header className="page-head">
+        <div><h1>{id ? `Edit draft ${existing.data?.application.appNo ?? ''}` : 'New application'}</h1><p>Fill the four parts below. Save a draft at any time; submitting freezes it.</p></div>
+      </header>
       <div className="editor-layout">
       <div className="stack editor-fields">
+      <div className="form-sheet-head" aria-hidden="true"><span>Application for approval · cycle {form.cycleCode}</span><span>{id ? 'Draft on record' : 'New draft'} · demonstration form</span></div>
       <section className="card stack" id="form-approval">
         <h2><span className="section-number">1</span>Approval sought</h2>
         <div className="form-grid">
@@ -201,15 +207,11 @@ export function ApplicationFormPage() {
       </div>
       <aside className="editor-guide">
         <div className="stack">
-          <Icon name="document" /><h2>Your draft, at a glance</h2>
+          <h2>Your draft, at a glance</h2>
           <p className="small muted">These fields have been entered. Submission checks still apply when you submit.</p>
+          <div className="editor-progress" role="progressbar" aria-label="Parts entered" aria-valuemin={0} aria-valuemax={4} aria-valuenow={parts.filter((p) => p.entered).length}><i style={{ transform: `scaleX(${parts.filter((p) => p.entered).length / 4})` }} /></div>
           <ul className="draft-checklist">
-            {[
-              { label: 'Approval sought', target: 'approval', entered: !!form.categoryCode },
-              { label: 'Campus', target: 'campus', entered: !!form.campusAddress.trim() && !!form.landAreaAcres },
-              { label: 'Programmes', target: 'programmes', entered: form.programmes.some((p) => !!p.name.trim()) },
-              { label: 'Declaration', target: 'declaration', entered: form.declarationAccepted },
-            ].map((item) => <li key={item.target}><a href={`#form-${item.target}`}><span className={`draft-check ${item.entered ? 'entered' : ''}`}>{item.entered ? <Icon name="check" /> : null}</span><span>{item.label}<small>{item.entered ? 'Entered' : 'Not entered'}</small></span></a></li>)}
+            {parts.map((item) => <li key={item.target}><a href={`#form-${item.target}`}><span className={`draft-check ${item.entered ? 'entered' : ''}`}>{item.entered ? <Icon name="check" /> : null}</span><span>{item.label}<small>{item.entered ? 'Entered' : 'Not entered'}</small></span></a></li>)}
           </ul>
           <p className="small muted">Submission freezes the application. You can save your draft before that.</p>
         </div>

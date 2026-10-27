@@ -115,8 +115,12 @@ export function useNavIndicator(navRef: RefObject<HTMLElement>, indicatorRef: Re
       ind.style.transform = `translate(${active.offsetLeft}px, ${active.offsetTop}px)`;
     };
     place();
+    // Web fonts can change link heights after first paint; measure again whenever the nav resizes.
+    document.fonts?.ready.then(place);
+    const observer = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(place) : null;
+    observer?.observe(nav);
     window.addEventListener('resize', place);
-    return () => window.removeEventListener('resize', place);
+    return () => { observer?.disconnect(); window.removeEventListener('resize', place); };
   }, [navRef, indicatorRef, dep]);
 }
 
@@ -145,6 +149,8 @@ const PATHS: Record<string, ReactNode> = {
   menu: <path d="M4 6h16M4 12h16M4 18h16" />,
   arrow: <><path d="M4 12h16M14 6l6 6-6 6" /></>,
   check: <path d="m5 12 4 4L19 6" />,
+  minus: <path d="M7 12h10" />,
+  search: <><circle cx="11" cy="11" r="6.5" /><path d="m16 16 4.5 4.5" /></>,
   document: <><path d="M6 3h8l4 4v14H6zM14 3v5h4M9 12h6M9 16h6" /></>,
 };
 

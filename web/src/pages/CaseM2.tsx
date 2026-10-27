@@ -218,7 +218,7 @@ export function ClassifyForm({ v }: { v: View }) {
   const [routeKey, setRouteKey] = useState('');
   const [reason, setReason] = useState('');
   return (
-    <form className="card stack action-panel human" onSubmit={async (e) => { e.preventDefault(); await cmd.run('CLASSIFY', { routeKey, reason }); }} aria-labelledby="cls-title">
+    <form className="card stack work-card" onSubmit={async (e) => { e.preventDefault(); await cmd.run('CLASSIFY', { routeKey, reason }); }} aria-labelledby="cls-title">
       <h2 id="cls-title">Classify this application</h2>
       <p className="small muted">No configured rule chose a route. Pick one from the case's policy version (v{v.workflow?.policyVersion.versionNo}) and record why.</p>
       <div className="route-pick">

@@ -71,7 +71,7 @@ function VisitDetail({ v, visit, historical = false }: { v: any; visit: any; his
   ].filter(([c]) => can(c) && !(c === 'ACKNOWLEDGE_VISIT' && visit.institution_acknowledged_at));
   const latestReport = visit.reports.at(-1);
   return <article className="stack evc-visit-detail">
-    <div className="row"><Status value={visit.state} /><strong>{visit.mode}</strong></div>
+    <div className="row"><Status value={visit.state} /><strong>{humanise(visit.mode)}</strong></div>
     <dl className="kv small"><dt>Visit</dt><dd>{new Date(visit.starts_at).toLocaleString('en-IN', { timeZone: visit.timezone })} — {new Date(visit.ends_at).toLocaleString('en-IN', { timeZone: visit.timezone })} ({visit.timezone})</dd>
       <dt>Ready since</dt><dd>{formatDate(visit.ready_at)}</dd><dt>Institution</dt><dd>{visit.institution_acknowledged_at ? `Acknowledged ${formatDate(visit.institution_acknowledged_at)}` : 'Acknowledgement pending'}</dd>
       <dt>Members</dt><dd><ul>{visit.members.map((m: any) => <li key={m.id}>{m.name} · {m.confirmed_at ? `Confirmed ${formatDate(m.confirmed_at)}` : 'Confirmation pending'}</li>)}</ul></dd></dl>

@@ -9,7 +9,10 @@ import { FilterBar, filtersFromParams, useCatalogue, useStageName } from './Repo
 type View = 'institution' | 'officer' | 'management';
 
 const VIEW_LABEL: Record<View, string> = { institution: 'Your institution', officer: 'Work needing attention', management: 'Pendency and ageing' };
-const TONE: Record<string, string> = { overdue: 'bad', 'obligations-overdue': 'bad', 'due-soon': 'warn', 'awaiting-institution': 'warn', 'evidence-backlog': 'warn', 'evc-unscheduled': 'warn' };
+// Only late work turns red; everything else reads through its label and count.
+const LATE = new Set(['overdue', 'obligations-overdue']);
+// Time pressure leads the board; the holding states sit in the rack below it.
+const LEAD = new Set(['overdue', 'due-soon']);
 
 function useViews(): View[] {
   const { me, can } = useSession();
@@ -46,24 +49,22 @@ export function DashboardPage() {
 
   return (
     <>
-      <div className="section-head">
+      <header className="page-head">
         <div>
           <h1>{VIEW_LABEL[view]}</h1>
-          <p className="muted small" style={{ marginTop: 6 }}>
-            Active scope only. Every number opens the same records, with the same filters, on the Reports page.
-          </p>
+          <p>Active scope only. Every slot opens the same records, with the same filters, on the Reports page.</p>
         </div>
         {views.length > 1 && (
-          <div className="row" role="tablist" aria-label="Dashboard view">
+          <div className="seg" role="tablist" aria-label="Dashboard view">
             {views.map((v) => (
-              <button key={v} role="tab" aria-selected={v === view} className={v === view ? 'primary' : 'secondary'}
+              <button key={v} role="tab" aria-selected={v === view}
                 onClick={() => { const next = new URLSearchParams(params); next.set('view', v); setParams(next); }}>
-                {humanise(v)}
+                {v === 'officer' ? 'Officer' : 'Management'}
               </button>
             ))}
           </div>
         )}
-      </div>
+      </header>
 
       <details className="dashboard-filters" open={Object.values(filters).some(Boolean)}>
         <summary><Icon name="sliders" /><strong>Filter dashboard</strong><span className="small muted">Region, category and reporting period</span><Icon name="chevron" /></summary>
@@ -74,9 +75,9 @@ export function DashboardPage() {
         : dash.isError && !dash.data ? <ErrorState error={dash.error} onRetry={() => dash.refetch()} />
         : (
           <>
-            <p className="small muted" aria-live="polite">
-              Last refreshed {formatDate(dash.data.refreshedAt)} · polls every {dash.data.pollSeconds} s
-              {dash.isFetching && ' · refreshing…'}
+            <p className="dash-meta" aria-live="polite">
+              <span className="live-dot">Live · refreshes every {dash.data.pollSeconds} s{dash.isFetching && ' · refreshing…'}</span>
+              <span>Last refreshed {formatDate(dash.data.refreshedAt)}</span>
             </p>
             {failedButStale && (
               <div className="alert warn" role="alert">
@@ -86,14 +87,26 @@ export function DashboardPage() {
             )}
 
             {dash.data.tiles.length === 0 ? <div className="card"><Empty>No figures are available for these filters.</Empty></div> : (
-              <div className="stats dashboard-tiles" aria-label="Key figures">
-                {dash.data.tiles.map((t: any) => (
-                  <Link key={t.key} to={drill(t.report, t.filters)} className={`stat ${t.count > 0 ? TONE[t.key] ?? '' : ''}`} style={{ textDecoration: 'none', color: 'inherit' }}
+              <div className="sorting" aria-label="Key figures">
+                {(() => {
+                  const lead = dash.data.tiles.filter((t: any) => LEAD.has(t.key));
+                  return lead.length > 0 && lead.every((t: any) => t.count === 0) && (
+                    <p className="clear-line"><Icon name="check" />Nothing is overdue or due in the next 7 days.
+                      {lead.map((t: any) => <Link key={t.key} to={drill(t.report, t.filters)}>{t.label}: none</Link>)}</p>
+                  );
+                })()}
+                {[dash.data.tiles.filter((t: any) => LEAD.has(t.key) && dash.data.tiles.some((x: any) => LEAD.has(x.key) && x.count > 0)), dash.data.tiles.filter((t: any) => !LEAD.has(t.key))].filter((g: any[]) => g.length).map((group: any[], gi: number) => (
+              <div className={group.some((t: any) => LEAD.has(t.key)) ? 'rack lead' : 'rack'} key={gi}>
+                {group.map((t: any) => (
+                  <Link key={t.key} to={drill(t.report, t.filters)} className={`cubby ${t.count === 0 ? 'zero' : ''} ${t.count > 0 && LATE.has(t.key) ? 'late' : ''}`}
                     title={defs.get(t.key)?.denominator}>
-                    <span className="stat-label">{t.label}</span>
-                    <span className="stat-value num">{t.count}</span>
-                    <span className="stat-footer small muted">{t.count === 0 ? 'None right now' : 'View records'}<Icon name="arrow" /></span>
+                    <span className="cubby-label">{t.label}</span>
+                    {t.count > 0 && <span className="pile" aria-hidden="true">{Array.from({ length: Math.min(t.count, 6) }).map((_, k) => <i key={k} style={{ '--k': k } as any} />)}</span>}
+                    <span className="cubby-count num">{t.count === 0 ? <span className="none">None</span> : t.count}</span>
+                    <span className="cubby-foot">{t.count > 0 && LATE.has(t.key) ? 'Late · open the list' : 'Open the list'}<Icon name="arrow" /></span>
                   </Link>
+                ))}
+              </div>
                 ))}
               </div>
             )}

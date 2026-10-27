@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link, useSearchParams } from 'react-router-dom';
 import { api, qs } from '../api';
+import { Icon } from '../motion';
 import { useSession } from '../session';
 import { Empty, ErrorState, formatDate, humanise, Loading, Status } from '../ui';
 
@@ -83,7 +84,7 @@ export function ApplicationTable({ rows, showAssignee }: { rows: ListRow[]; show
               <td><Status value={r.lifecycle_state} /></td>
               <td>{r.stage_key ? <>{stageName(r.stage_key)} <div><Status value={r.stage_state} /></div></> : <span className="muted">—</span>}</td>
               {showAssignee && <td>{r.assignee_name ?? <span className="muted">Unassigned</span>}</td>}
-              <td className="num">{r.stage_state && !['COMPLETED', 'CANCELLED'].includes(r.stage_state) ? ageDays(r.stage_entered_at) : '—'}</td>
+              <td className="num">{r.stage_state && !['COMPLETED', 'CANCELLED'].includes(r.stage_state) ? <span className="age">{ageDays(r.stage_entered_at)}</span> : <span className="muted">—</span>}</td>
               <td><Status value={r.decision_outcome} /></td>
             </tr>
           ))}
@@ -112,13 +113,12 @@ export function ApplicationsPage() {
 
   return (
     <>
-      <div className="section-head">
-        <div className="stack" style={{ gap: 8 }}><h1>Applications</h1><p className="muted small">Find a case and pick up the next action.</p></div>
-        <span className="muted small">{list.data ? `${list.data.total} matching` : ''}</span>
-      </div>
+      <header className="page-head">
+        <div><h1>Applications</h1><p>Every application on record in your scope. Open one to pick up its next action.</p></div>
+      </header>
       <div className="card application-filters" role="search">
         <div className="filters filters-primary">
-        <label>Search<input id="f-q" placeholder="Application no. or institution" value={filters.q ?? ''} onChange={(e) => set('q', e.target.value)} /></label>
+        <label className="search-field">Search<Icon name="search" /><input id="f-q" placeholder="Application no. or institution" value={filters.q ?? ''} onChange={(e) => set('q', e.target.value)} /></label>
         <label>Status
           <select id="f-life" value={filters.lifecycleState ?? ''} onChange={(e) => set('lifecycleState', e.target.value)}>
             <option value="">Any</option>
@@ -163,15 +163,17 @@ export function ApplicationsPage() {
       {list.isLoading ? <div className="card"><Loading /></div>
         : list.error ? <ErrorState error={list.error} onRetry={() => list.refetch()} />
         : list.data!.rows.length === 0 ? <div className="card"><Empty>No applications match these filters.</Empty></div>
-        : <ApplicationTable rows={list.data!.rows} showAssignee={internal} />}
+        : <>
+          <div className="list-meta"><span>{list.data!.total} matching</span><span>Last refreshed {formatDate(new Date(list.dataUpdatedAt || Date.now()).toISOString())}</span></div>
+          <ApplicationTable rows={list.data!.rows} showAssignee={internal} />
+        </>}
       {list.data && list.data.total > list.data.pageSize && (
-        <div className="row">
-          <button disabled={list.data.page <= 1} onClick={() => set('page', String(list.data!.page - 1))}>Previous</button>
+        <div className="pager">
+          <button className="secondary" disabled={list.data.page <= 1} onClick={() => set('page', String(list.data!.page - 1))}>Previous</button>
           <span className="small muted">Page {list.data.page} of {Math.ceil(list.data.total / list.data.pageSize)}</span>
-          <button disabled={list.data.page * list.data.pageSize >= list.data.total} onClick={() => set('page', String(list.data!.page + 1))}>Next</button>
+          <button className="secondary" disabled={list.data.page * list.data.pageSize >= list.data.total} onClick={() => set('page', String(list.data!.page + 1))}>Next</button>
         </div>
       )}
-      <p className="small muted">Last refreshed {formatDate(new Date(list.dataUpdatedAt || Date.now()).toISOString())}.</p>
     </>
   );
 }

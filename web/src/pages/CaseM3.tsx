@@ -83,7 +83,7 @@ function Clock({ d }: { d: any }) {
           {d.alerts.map((a: any, i: number) => (
             <li key={`al${i}`} className="small">
               <span className={`tag-alert ${a.state.toLowerCase()}`}>{a.state === 'CREATED' ? humanise(a.kind) : a.state === 'MISSED' ? 'Missed' : 'No recipient'}</span>
-              {' '}{a.stepId.replace(/_/g, ' ').toLowerCase()} · {formatDate(a.stepAt)}{a.recipient ? ` · to ${a.recipient}` : ''}{a.generation !== d.generation && <span className="muted"> · earlier generation</span>}
+              {a.stepId.toLowerCase() !== a.kind.toLowerCase() && <>{' '}{a.stepId.replace(/_/g, ' ').toLowerCase()} ·</>} {formatDate(a.stepAt)}{a.recipient ? ` · to ${a.recipient}` : ''}{a.generation !== d.generation && <span className="muted"> · earlier generation</span>}
             </li>
           ))}
         </ol>

@@ -3,7 +3,7 @@ import { useRef,useState,type FormEvent } from 'react';
 import { api } from '../api';
 import { useCommand } from '../caseCommand';
 import { useSession } from '../session';
-import { formatDate,MutationError,Provenance,Status } from '../ui';
+import { DocStamp,formatDate,humanise,MutationError,Provenance,stampDate,Status } from '../ui';
 
 const allowed=(v:any,c:string)=>!!v.permittedCommands.find((p:any)=>p.command===c)?.allowed;
 const downloads=(version:any)=><a className="btn secondary" href={`/api/v1/documents/versions/${version.id}/download`}>Download v{version.version_no}</a>;
@@ -13,9 +13,10 @@ export function DocumentsCard({v}:{v:any}) {
   {v.canUploadDocuments&&<details><summary>Upload a document or replacement</summary><UploadDocument v={v}/></details>}
   {!v.documents.length&&<p className="muted">No documents in your current scope.</p>}
   {v.documents.map((d:any)=><article className="evidence-record stack" key={d.id} id={`document-${d.id}`}>
-   <div className="row"><h3>{d.title}</h3><Status value={d.validity}/><Status value={d.visibility}/>{d.replacementPending&&<Status value="EVIDENCE_SUBMITTED" label="Replacement awaiting verification"/>}</div>
-   <p className="small">{d.document_type} · current verified: {d.current_verified_version_id?`v${d.versions.find((x:any)=>x.id===d.current_verified_version_id)?.version_no}`:'None'}{d.verifiedValidThrough&&` · valid through ${d.verifiedValidThrough}`}</p>
-   {d.versions.map((version:any)=><details key={version.id} open={version.id===d.latest_version_id}><summary>Version {version.version_no} · {version.verification_outcome??'Pending verification'} · {formatDate(version.received_at)}</summary>
+   <div className="doc-head"><div className="stack" style={{gap:4}}><h3>{d.title}</h3><span className="doc-type">{humanise(d.document_type)}</span></div><DocStamp state={d.validity} top={d.verifiedValidThrough?'Valid through':'Verified'} date={d.verifiedValidThrough?stampDate(d.verifiedValidThrough):undefined} bottom="Verified copy" size={78}/></div>
+   <div className="row"><Status value={d.validity}/><Status value={d.visibility}/>{d.replacementPending&&<Status value="EVIDENCE_SUBMITTED" label="Replacement awaiting verification"/>}</div>
+   <p className="small">{humanise(d.document_type)} · current verified: {d.current_verified_version_id?`v${d.versions.find((x:any)=>x.id===d.current_verified_version_id)?.version_no}`:'None'}{d.verifiedValidThrough&&` · valid through ${d.verifiedValidThrough}`}</p>
+   {d.versions.map((version:any)=><details key={version.id} open={version.id===d.latest_version_id}><summary>Version {version.version_no} · {version.verification_outcome?humanise(version.verification_outcome):'Pending verification'} · {formatDate(version.received_at)}</summary>
     <p className="small mono">{version.filename} · {version.size_bytes} bytes · SHA-256 {version.sha256}</p>{downloads(version)}
     {Object.keys(version.declared_metadata).length>0&&<p className="small pre">Uploader-suggested metadata (unconfirmed): {JSON.stringify(version.declared_metadata)}</p>}
     {version.confirmed_values&&<p className="small pre">Reviewer-confirmed metadata: {JSON.stringify(version.confirmed_values)}</p>}
@@ -85,8 +86,8 @@ function Obligation({v,o}:{v:any;o:any}) {
  const cmd=useCommand(v),{me}=useSession();const [reason,setReason]=useState(''),[versions,setVersions]=useState<string[]>([]);
  const current=o.submissions.find((s:any)=>s.id===o.current_submission_id),assigned=o.verifier_user_id===me.user.id;
  const payload={obligationId:o.id,obligationExpectedVersion:o.row_version,reason};
- return <article className="evidence-record stack" id={`obligation-${o.id}`}>
-  <div className="row"><h3>Condition {o.condition_index+1}</h3><Status value={o.state}/>{o.overdue&&<Status value="OVERDUE"/>}<Provenance value={o.provenance}/></div><p>{o.condition_text}</p>
+ return <article className="evidence-record stack ad-card" id={`obligation-${o.id}`}>
+  <div className="row"><h3>Approval condition {o.condition_index+1}</h3><Status value={o.state}/>{o.overdue&&<Status value="OVERDUE"/>}<Provenance value={o.provenance}/></div><p>{o.condition_text}</p>
   <dl className="kv small"><dt>Decision</dt><dd className="mono">{o.decision_id}</dd><dt>Required evidence</dt><dd>{o.required_document_type}</dd><dt>Due</dt><dd>{formatDate(o.current_due_date,false)} · original {formatDate(o.original_due_date,false)}</dd><dt>Rule</dt><dd>{o.rule_ref}</dd><dt>Verifier</dt><dd>{o.verifier_name}</dd><dt>Verification due</dt><dd>{formatDate(o.verificationClock?.current_due_at)}</dd></dl>
   {o.submissions.map((s:any)=><details key={s.id} open={s.id===o.current_submission_id}><summary>Receipt #{s.receipt_no} · {s.on_time?'On time':'Late'} · {s.outcome??'Awaiting verification'}</summary><p className="small">Received {formatDate(s.received_at)} · effective due at receipt {formatDate(s.effective_due_at)} · generation {s.deadline_generation}</p><ul>{s.documents.map((d:any)=><li key={d.id}><a href={`#document-${d.document_id}`}>{d.title} v{d.version_no}</a> · <a href={`/api/v1/documents/versions/${d.id}/download`}>Download exact evidence</a><span className="small mono"> · {d.sha256}</span></li>)}</ul>{s.verification_reason&&<p>Result: {s.verification_reason}</p>}</details>)}
   {o.closed_reason&&<p>Closure reason: {o.closed_reason}</p>}

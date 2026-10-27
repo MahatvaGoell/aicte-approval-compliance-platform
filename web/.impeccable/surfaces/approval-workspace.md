@@ -2,7 +2,7 @@
 
 Mode: Operate.
 
-User-pinned direction: bright off-white beige and near-black counterparts only, with natural red confined to compact borderless warning/error sections. No green, blue, olive or metallic accents. Keep the simplest possible user experience.
+User-pinned direction: bright off-white beige and almost-black counterparts with a very faint dark-brown undertone only, with natural red confined to compact borderless warning/error sections. No green, blue, olive or metallic accents. Keep the simplest possible user experience.
 
 First viewport: the shared role/scoped shell and synthetic notice, page identity, then the main task. A case opens with its next action, responsible person, deadline and actual blockers. A short route stepper precedes current work. Documents, obligations, deadline calculations, assignment and history have named disclosures. All existing controls and provenance remain available.
 

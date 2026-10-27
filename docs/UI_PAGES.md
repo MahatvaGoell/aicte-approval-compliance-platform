@@ -173,3 +173,5 @@ Design first: **01 Login, 05 Case workspace, 02 Institution home, 14 Officer que
 ### Palette revision
 
 The latest user request supersedes the forest/brass palette: bright off-white beige in light mode, near-black surfaces with beige text and controls in dark mode. Success, information and demo states are neutral; warning/error sections use natural red with no border. Layouts, actions and role permissions are unchanged.
+
+Dark-theme refinement: canvas `#030202`, main surfaces `#080605` and raised surfaces `#0c0907`. The large hero area now uses the same nearly black surface instead of visible brown. Light mode is unchanged.

@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useSession } from '../session';
 import { Icon } from '../motion';
-import { Empty, ErrorState, Loading } from '../ui';
+import { Empty, ErrorState, Loading, NamePlate } from '../ui';
 import { ApplicationTable, useApplications } from './Applications';
 
 export function HomePage() {
@@ -23,24 +23,24 @@ export function HomePage() {
     );
   }
 
+  const total = mine.data?.total;
   return (
     <>
-      <header className="work-welcome">
-        <div className="stack">
+      <header className="counter-head">
+        <div>
           <h1>{isInstitution ? 'Your workspace.' : 'Your work.'}</h1>
-          <p className="muted">{isInstitution ? 'Start an application or continue an existing one.' : 'Open a case to see the next action and its deadline.'}</p>
-          <span className="small muted">{me.activeGrant.roleLabel} · {me.activeGrant.scope}</span>
+          <p className="lede">{isInstitution ? 'Start an application or continue an existing one. Every step it takes is dated and kept on record.' : 'Open a case to see the next action, who holds it and when it is due.'}</p>
+          <NamePlate name={me.user.name} role={`${me.activeGrant.roleLabel} · ${me.activeGrant.scope}`} />
         </div>
-        <div className="work-start">
-          <Icon name={isInstitution ? 'building' : 'inbox'} />
-          <h2>{isInstitution ? 'An application starts here.' : 'One case at a time.'}</h2>
-          <p className="small muted">{isInstitution ? 'Save a draft and return when you are ready to submit.' : 'The case workspace keeps actions, evidence and history together.'}</p>
+        <div className="counter-slip">
+          <span className="urgency u-calm"><b>{total ?? '—'}</b><span>{isInstitution ? 'applications in your workspace' : total === 1 ? 'case assigned to you' : 'cases assigned to you'}</span></span>
+          <p>{isInstitution ? 'Save a draft and return when you are ready to submit.' : 'The case workspace keeps actions, evidence and history together.'}</p>
           {isInstitution && can('APPLICATION_CREATE') ? <Link className="btn primary" to="/applications/new"><Icon name="plus" />New application</Link> : <Link className="btn primary" to="/applications">Browse applications<Icon name="arrow" /></Link>}
         </div>
       </header>
       <div className="section-head work-list-heading">
         <h2>{isInstitution ? 'Your applications' : 'Cases assigned to you'}</h2>
-        {mine.data && <span className="small muted">{mine.data.total} in your workspace</span>}
+        {mine.data && <span className="small muted">{mine.data.total} on record</span>}
       </div>
       {mine.isLoading ? <div className="card"><Loading /></div>
         : mine.error ? <ErrorState error={mine.error} onRetry={() => mine.refetch()} />
