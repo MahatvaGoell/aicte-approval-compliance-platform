@@ -132,7 +132,6 @@ export function ApplicationFormPage() {
       <div className="editor-layout">
       <div className="stack editor-fields">
       <div className="form-sheet-head" aria-hidden="true"><span>Application for approval · cycle {form.cycleCode}</span><span>{id ? 'Draft on record' : 'New draft'} · demonstration form</span></div>
-      <ResourceClaimsForm value={form.resources} onChange={resources=>upd({resources})}/>
       <section className="card stack" id="form-approval">
         <h2><span className="section-number">1</span>Approval sought</h2>
         <div className="form-grid">
@@ -199,6 +198,7 @@ export function ApplicationFormPage() {
         {fieldError('programmes') && <span className="field-error">{fieldError('programmes')}</span>}
       </section>
 
+      <ResourceClaimsForm value={form.resources} onChange={resources=>upd({resources})}/>
       <section className="card stack" id="form-declaration">
         <h2><span className="section-number">4</span>Declaration</h2>
         <label>Remarks (optional)<textarea id="remarks" value={form.remarks} onChange={(e) => upd({ remarks: e.target.value })} /></label>

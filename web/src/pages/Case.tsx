@@ -9,6 +9,7 @@ import { Empty, ErrorState, formatDate, humanise, Loading, MutationError, Proven
 import { Amendments, AppealForm, ClassifyForm, FindingsPanel, WorkflowHistory } from './CaseM2';
 import { DeadlinesCard } from './CaseM3';
 import { EvcCaseCard } from './CaseM4';
+import {ApprovalLettersPanel} from './CaseLetters';
 import {DoubleClaimsPanel} from './CaseDoubleClaims';
 import {AccountabilityStrip} from './CaseAccountability';
 import { DocumentsCard,ObligationsCard } from './CaseM5';
@@ -68,6 +69,7 @@ export function CasePage() {
           {allowed('RECORD_DECISION') && <DecisionForm v={v} />}
           {v.decision && <DecisionCard decision={v.decision} />}
           {allowed('FILE_APPEAL') && <AppealForm v={v} />}
+          <ApprovalLettersPanel v={v}/>
           <DoubleClaimsPanel v={v}/>
           <EvcCaseCard v={v} />
           <Disclosure title="Documents" subtitle="Upload, exact versions and human verification" icon="document" count={v.documents.length} id="case-documents" open={window.location.hash.startsWith('#document-')}>

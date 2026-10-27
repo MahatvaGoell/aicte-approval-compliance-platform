@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { getPool } from '../../db.js';
 import { now } from '../../lib/clock.js';
 import { requireCapability } from '../../http/context.js';
+import {verifyWitness} from './witness.js';
 import { verifyChain } from './audit.js';
 import { auditDetail, auditQuery, INTEGRITY_LIMITS, listAudit } from './service.js';
 
@@ -22,6 +23,7 @@ export async function auditRoutes(app: FastifyInstance) {
     const actor = requireCapability(req, 'AUDIT_VIEW');
     const result = await verifyChain(getPool());
     const summary = actor.scopeAll ? result : {ok:result.ok,problem:result.problem};
-    return {...summary,verifiedAt:now(),limits:INTEGRITY_LIMITS};
+    const witness=await verifyWitness(getPool());
+    return {...summary,local:summary,witness:actor.scopeAll?witness:{status:witness.status,ok:witness.ok,problem:witness.problem},verifiedAt:now(),limits:INTEGRITY_LIMITS};
   });
 }

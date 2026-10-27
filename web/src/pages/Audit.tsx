@@ -1,3 +1,4 @@
+import {AuditIntegrityResult} from './AuditIntegrity';
 import { useQuery } from '@tanstack/react-query';
 import { Fragment, useState, type FormEvent } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
@@ -11,7 +12,7 @@ interface AuditEvent {
 }
 interface Facets {actions:string[];actors:Array<{id:string;name:string}>;entityTypes:string[]}
 interface AuditList {total:number;page:number;pageSize:number;rows:AuditEvent[];refreshedAt:string;facets:Facets;timezone:string}
-interface Integrity {ok:boolean;checked?:number;firstBrokenId?:number|null;problem:string|null;verifiedAt:string;limits:string}
+interface Integrity {local?:any;witness?:any;ok:boolean;checked?:number;firstBrokenId?:number|null;problem:string|null;verifiedAt:string;limits:string}
 const FILTERS = ['applicationId','appNo','action','entityType','actorUserId','from','to'] as const;
 const EMPTY_FACETS:Facets = {actions:[],actors:[],entityTypes:[]};
 
@@ -74,10 +75,7 @@ export function AuditPage() {
     <div className="section-head"><h1>Audit log</h1><button onClick={verify} disabled={busy}>{busy?'Checking…':'Verify integrity'}</button></div>
     <p className="small muted">The application cannot change or delete audit rows. Hash-chain verification makes tampering detectable; it does not make the log impossible to alter. Integrity checks cover the global chain, even when your event list is scoped.</p>
     <MutationError error={error}/>
-    {result&&<div className={`alert ${result.ok?'ok':'bad'}`} role="status">
-      <strong>{result.ok?'Global chain intact.':`Global chain integrity problem${result.firstBrokenId!=null?` at event #${result.firstBrokenId}`:''}: ${result.problem??'Verification failed'}.`}</strong>
-      {result.checked!==undefined&&<p>{result.checked} events checked.</p>}<p>Verified {formatDate(result.verifiedAt)}.</p><p className="small">{result.limits}</p>
-    </div>}
+    {result&&<AuditIntegrityResult result={result}/>}
     <Filters key={params.toString()} params={params} facets={data?.facets??EMPTY_FACETS} onApply={setParams}/>
     {list.isLoading?<div className="card"><Loading rows={5}/></div>:list.error&&!data?<ErrorState error={list.error} onRetry={()=>list.refetch()}/>:data&&<section className="card stack">
       {list.isError&&<div className="alert warn" role="alert">The last refresh failed; these events may be out of date. <button onClick={()=>list.refetch()}>Retry now</button></div>}

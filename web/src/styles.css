@@ -993,3 +993,18 @@ details.pw form, details.pw > .stack, details.pw > ul { margin-top: 12px; }
 
 .finale-claim {padding-block:.75rem;border-bottom:1px solid var(--line);overflow-wrap:anywhere;}
 .finale-resource {padding:1rem;border:1px solid var(--line);min-width:0;}
+
+.finale-verify {max-width:64rem;margin-inline:auto;padding:clamp(1rem,4vw,3rem);min-width:0;}
+.finale-letter {padding:clamp(1rem,3vw,2rem);background:var(--raised);color:var(--ink);border:1px solid var(--line);}
+.finale-letter-head {display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:2rem;}
+.finale-letter-head h2 {margin-bottom:1rem;}
+.finale-letter-fields {grid-template-columns:minmax(0,13rem) minmax(0,1fr);column-gap:1.5rem;}
+.finale-letter-fields dd {overflow-wrap:anywhere;}
+.finale-qr {display:flex;gap:1.5rem;align-items:center;margin-top:1.5rem;}
+.finale-qr img {width:192px;height:192px;flex-shrink:0;}
+@media (max-width:600px) {.finale-letter-head,.finale-qr {flex-direction:column;align-items:flex-start;}.finale-letter-fields {grid-template-columns:1fr;}.finale-letter-fields dd {margin-bottom:.75rem;}}
+.finale-print-page {max-width:54rem;margin:2rem auto;padding:1rem;}
+.finale-claim + form .check {display:flex;flex-direction:row;align-items:center;gap:.5rem;}
+@media print {@page {size:A4;margin:14mm;}.finale-no-print {display:none;}.finale-print-page {max-width:none;margin:0;padding:0;}.finale-letter {padding:0;border:0;box-shadow:none;background:var(--raised);}.finale-letter-head {flex-direction:row;}.finale-letter-fields {grid-template-columns:minmax(0,13rem) minmax(0,1fr);column-gap:1.5rem;}.finale-qr {flex-direction:row;}.finale-qr img {width:160px;height:160px;}}
+
+@media print {body:has(.finale-print-page) {background:var(--raised);}body:has(.finale-print-page)::before {display:none;}}

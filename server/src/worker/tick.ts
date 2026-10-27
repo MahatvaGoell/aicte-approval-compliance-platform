@@ -1,3 +1,4 @@
+import {publishCheckpoint} from '../modules/audit/witness.js';
 import {recheckClaims} from '../modules/claims/service.js';
 import os from 'node:os';
 import { config } from '../config.js';
@@ -42,7 +43,8 @@ export async function runTick(workerId = defaultWorkerId(), opts: { reconcile?: 
   const delivery = await deliverEmails(emailAdapter(), at, workerId);
   const reconcile = opts.reconcile ? await reconcileDeadlines(at) : null;
   const storage = opts.reconcile ? await reconcileDocumentStorage() : null;
+  const witness=await publishCheckpoint();
   await withTx((tx) => tx.query(`INSERT INTO system_settings (key, value) VALUES ('scheduler_last_run_at', $1)
     ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`, [JSON.stringify(at.toISOString())]));
-  return { at, doubleClaims, outbox: { events: outbox.events + outbox2.events, notified: outbox.notified + outbox2.notified }, scan, delivery, reconcile, storage };
+  return { at, doubleClaims, witness, outbox: { events: outbox.events + outbox2.events, notified: outbox.notified + outbox2.notified }, scan, delivery, reconcile, storage };
 }

@@ -8,7 +8,7 @@ import { endOfLocalDateExclusive, startOfLocalDay } from '../deadlines/calendar.
 import { isoDate } from '../reports/filters.js';
 
 export const AUDIT_TIMEZONE = 'Asia/Kolkata';
-export const INTEGRITY_LIMITS = 'This log is tamper-evident, not impossible to alter. Verification checks the global stored hash chain; a database superuser can bypass application protections. Independent protected checkpoints are not implemented.';
+export const INTEGRITY_LIMITS = 'This log is tamper-evident, not impossible to alter. Local recomputation cannot detect an administrator who rewrites every later hash. Signed witness checkpoints are checked separately. The demo witness runs on the same machine; production requires a witness operated by a separate organisation with protected keys and append-only storage. Events after the latest checkpoint are not yet witnessed.';
 export const auditQuery = z.object({
   applicationId: z.string().uuid().optional(),
   appNo: z.string().trim().min(1).max(80).optional(),

@@ -7,7 +7,7 @@ export type Holder='OFFICE'|'INSTITUTION'|'AUTHORITY';
 export interface Segment {holder:Holder;started_at:Date|string;ended_at:Date|string|null;opened_by_transition:string}
 const day=(at:Date|string)=>Date.parse(localDate(new Date(at),'Asia/Kolkata')+'T00:00:00Z')/86400000;
 /** DEMO_ASSUMPTION: calendar midnights crossed per recorded interval; gaps excluded and disclosed.
- * Splitting an interval at a transfer preserves the sum. The holder at midnight receives that day. */
+ * Splitting an interval at a transfer preserves the sum. Same-day transfers add zero days. */
 export function accountability(segments:Segment[],at:Date) {
  const days={OFFICE:0,INSTITUTION:0,AUTHORITY:0};let returns=0;
  for(const s of segments) {
