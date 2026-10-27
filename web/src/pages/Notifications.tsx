@@ -8,8 +8,8 @@ import { Empty, ErrorState, formatDate, Loading, MutationError, Postmark, Status
 // Reading or acknowledging never closes the case or the deadline.
 
 const FILTERS: Array<[string, string]> = [['all', 'All'], ['unread', 'Unread'], ['escalations', 'Overdue and escalations'], ['deadlines', 'Deadlines']];
-const SEVERITY_TONE: Record<string, string> = { INFO: 'NOT_STARTED', REMINDER: 'AWAITING_RESPONSE', OVERDUE: 'OVERDUE', ESCALATION: 'REJECTED' };
-const SEVERITY_LABEL: Record<string, string> = { INFO: 'Update', REMINDER: 'Reminder', OVERDUE: 'Overdue', ESCALATION: 'Escalation' };
+export const SEVERITY_TONE: Record<string, string> = { INFO: 'NOT_STARTED', REMINDER: 'AWAITING_RESPONSE', OVERDUE: 'OVERDUE', ESCALATION: 'REJECTED' };
+export const SEVERITY_LABEL: Record<string, string> = { INFO: 'Update', REMINDER: 'Reminder', OVERDUE: 'Overdue', ESCALATION: 'Escalation' };
 const EMAIL_LABEL: Record<string, string> = {
   PENDING: 'Email queued', SENDING: 'Email sending', RETRYING: 'Email retrying', ACCEPTED: 'Email accepted by provider',
   BOUNCED: 'Email bounced', DEAD: 'Email failed', CANCELLED: 'Email cancelled (no longer current)',
@@ -17,7 +17,7 @@ const EMAIL_LABEL: Record<string, string> = {
 const EMAIL_TONE: Record<string, string> = { ACCEPTED: 'SATISFIED', BOUNCED: 'DEFICIENT', DEAD: 'DEFICIENT', CANCELLED: 'NOT_APPLICABLE' };
 
 /** Time printed on the slip's counterfoil, India time. */
-function slipTime(v: string) {
+export function slipTime(v: string) {
   return new Date(v).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' });
 }
 

@@ -51,7 +51,7 @@ export function useApplications(params: Record<string, string | undefined>) {
   return useQuery({ queryKey: ['applications', params], queryFn: () => api.get<ListResponse>(`/applications${qs(params)}`) });
 }
 
-function ageDays(from: string | null) {
+export function ageDays(from: string | null) {
   if (!from) return null;
   return Math.floor((Date.now() - new Date(from).getTime()) / 86_400_000);
 }

@@ -2,31 +2,31 @@
 name: "AICTE Approval & Compliance Platform"
 description: "A registered-post counter: beige paper or soot-black counter, warm black ink, sepia postmarks, natural red only when work is late or returned."
 colors:
-  "bg": "#f3eee3"
-  "rail": "#ece5d6"
-  "surface": "#fbf8f1"
-  "surface-2": "#ebe3d3"
-  "raised": "#fffdf8"
-  "ink": "#1b1713"
-  "ink-2": "#463d33"
-  "on-ink": "#fbf8f1"
-  "accent-2": "#3a3129"
-  "muted": "#685c4e"
-  "line": "#d9cdb8"
-  "line-2": "#e7dfcf"
-  "control-line": "#a8987f"
-  "stamp": "#5b4431"
-  "stamp-soft": "rgba(91, 68, 49, 0.09)"
-  "ok": "#4c3f31"
-  "ok-soft": "#e9e1d0"
-  "info": "#5c5043"
-  "info-soft": "#ebe4d6"
+  "bg": "#ece3d1"
+  "rail": "#e4d9c4"
+  "surface": "#faf6ee"
+  "surface-2": "#e9dfcc"
+  "raised": "#fffdf9"
+  "ink": "#15110d"
+  "ink-2": "#3f362c"
+  "on-ink": "#fbf7f0"
+  "accent-2": "#352b22"
+  "muted": "#67594a"
+  "line": "#d5c6aa"
+  "line-2": "#e3d8c4"
+  "control-line": "#a3906f"
+  "stamp": "#7b4b2a"
+  "stamp-soft": "rgba(123, 75, 42, 0.1)"
+  "ok": "#4a3a2a"
+  "ok-soft": "#e6dac3"
+  "info": "#574a3c"
+  "info-soft": "#e9e0cf"
   "bad": "#923a2c"
-  "bad-soft": "#f3e0d8"
+  "bad-soft": "#f3ded4"
   "hatch": "rgba(146, 58, 44, 0.11)"
-  "focus": "#6b4f36"
-  "hero": "#eae2d1"
-  "hero-ink": "#2c251e"
+  "focus": "#7b4b2a"
+  "hero": "#e4d9c4"
+  "hero-ink": "#2a221b"
   "dark-bg": "#030202"
   "dark-rail": "#060403"
   "dark-surface": "#080605"
@@ -226,7 +226,7 @@ The palette is warm black ink on beige paper with a single sepia stamp ink. Natu
 - **Natural Red** (`bad` / `dark-bad`): overdue counts, returned hops, errors, rejected and expired statuses, the notification badge and late urgency. `bad-soft` is its borderless fill, and `hatch` is the 135-degree hatch that marks overdue fields.
 
 ### Neutral
-- **Counter Beige / Soot Counter** (`bg`): page ground.
+- **Kraft Counter / Soot Counter** (`bg`): page ground, one step deeper than the sheets so panels read without heavy borders.
 - **Rail** (`rail`): sidebar and demo banner.
 - **Paper** (`surface`): cards, tables, slips and rack cubbies.
 - **Fresh Sheet** (`raised`): inputs, buttons, the delivery note, document sheets and hover rows. It is the topmost paper.
@@ -236,6 +236,7 @@ The palette is warm black ink on beige paper with a single sepia stamp ink. Natu
 - **Status browns** (`ok`, `ok-soft`, `info`, `info-soft`): approved and informational chips. They stay inside the brown family and are told apart by their text, fill and border style.
 - **Counter Window** (`hero`, `hero-ink`): the login hero panel and the intro overlay.
 - **Focus** (`focus`): the 2px focus outline.
+- **Ink panel** (`.ink-panel`): one dark sheet on the light counter, such as the Today panel on My work. It re-points the tokens to their dark values inside, so chips and links keep contrast. The sidebar is always an ink panel in light mode; beyond it, use at most one per page.
 
 ### Named Rules
 **The Red Means Late Rule.** Natural red appears only for overdue, returned, rejected, expired or failed states. Warnings and errors are borderless `bad-soft` fills with `bad` text, and they never carry a coloured side stripe.

@@ -76,7 +76,7 @@ function Shell() {
   return (
     <div className="shell">
       <a className="skip-link" href="#main">Skip to workspace</a>
-      <aside className={`side ${navOpen ? 'menu-open' : ''}`}>
+      <aside className={`side ink-panel ${navOpen ? 'menu-open' : ''}`}>
         <Link to="/" className="brand" aria-label="Home">
           <span className="brand-mark" aria-hidden="true">AT</span>
           <span className="brand-name">
@@ -150,9 +150,11 @@ export function DemoBanner() {
   return (
     <div className="demo-banner" role="note">
       <span className="tag">DEMO</span>
-      <span><strong>Demonstration environment.</strong> All institutions, people and rules are synthetic. Routing and timing rules are labelled demo
+      <span className="demo-long"><strong>Demonstration environment.</strong> All institutions, people and rules are synthetic. Routing and timing rules are labelled demo
       assumptions, not AICTE rules.
       {days !== 0 && <> <strong>Demo clock: {days > 0 ? '+' : ''}{days.toFixed(1)} days.</strong></>}</span>
+      {/* One line on phones; the full notice stays available to screen readers. */}
+      <span className="demo-short" aria-hidden="true">Synthetic data · demo rules, not AICTE rules{days !== 0 && <> · <strong>clock {days > 0 ? '+' : ''}{days.toFixed(1)} d</strong></>}</span>
     </div>
   );
 }
